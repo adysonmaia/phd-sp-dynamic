@@ -1,0 +1,14 @@
+{
+  "nodes": [
+    {"id":  0, "type":  "CLOUD", "avail":  0.999, "power":  [200, 400], "position":  [0, 0], "capacity":  {"CPU":  "INF", "RAM":  "INF", "DISK":  "INF"}, "cost": {"CPU":  [0.025, 0.025], "RAM":  [0.025, 0.025], "DISK":  [0.025, 0.025]}},
+    {"id":  1, "type":  "CORE", "avail":  0.99, "power":  [50, 100], "position":  [0, 10], "capacity":  {"CPU":  200, "RAM":  8000, "DISK":  32000}, "cost": {"CPU":  [0.05, 0.05], "RAM":  [0.05, 0.05], "DISK":  [0.05, 0.05]}},
+    {"id":  2, "type":  "BS", "avail":  0.9, "power":  [20, 50], "position":  [0, 11], "capacity":  {"CPU":  40, "RAM":  4000, "DISK":  16000}, "cost": {"CPU":  [0.1, 0.1], "RAM":  [0.1, 0.1], "DISK":  [0.1, 0.1]}},
+    {"id":  3, "type":  "BS", "avail":  0.9, "power":  [20, 50], "position":  [1, 10], "capacity":  {"CPU":  40, "RAM":  4000, "DISK":  16000}, "cost": {"CPU":  [0.1, 0.1], "RAM":  [0.1, 0.1], "DISK":  [0.1, 0.1]}}
+  ],
+  "links": [
+    {"nodes":  [0, 1], "bw":  2e+10, "delay":  10.0},
+    {"nodes":  [1, 2], "bw":  1e+10, "delay":  1.0},
+    {"nodes":  [1, 3], "bw":  1e+10, "delay":  1.0},
+    {"nodes":  [2, 3], "bw":  1e+10, "delay":  1.4}
+  ]
+}

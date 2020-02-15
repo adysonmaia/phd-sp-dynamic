@@ -1,0 +1,7 @@
+{
+  "apps": [
+    {"id":  0, "type":  "EMBB", "deadline":  100, "work":  10, "data":  8e+6, "rate":  0.01, "avail":  0.99, "max_inst":  1000, "demand":  {"CPU":  [10, 1], "RAM":  [1, 50], "DISK":  [1, 50]}},
+    {"id":  1, "type":  "URLLC", "deadline":  10, "work":  5, "data":  8e+3, "rate":  0.1, "avail":  0.999, "max_inst":  1000, "demand":  {"CPU":  [5, 0.5], "RAM":  [1, 10], "DISK":  [1, 10]}},
+    {"id":  2, "type":  "MMTC", "deadline":  1000, "work":  5, "data":  8e+3, "rate":  0.001, "avail":  0.9, "max_inst":  1000, "demand":  {"CPU":  [5, 0.005], "RAM":  [1, 10], "DISK":  [1, 10]}}
+  ]
+}
