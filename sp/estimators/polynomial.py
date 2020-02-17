@@ -1,0 +1,67 @@
+from . import Estimator
+import math
+
+
+class PolyFunc(Estimator):
+    def __init__(self, coefficients=[]):
+        Estimator.__init__(self)
+        self.coefficients = coefficients
+
+    def calc(self, x):
+        value = 0.0
+        for n, c in enumerate(self.coefficients[::-1]):
+            value += c * math.pow(x, n)
+        return value
+
+
+class LinearFunc(Estimator):
+    K1 = "a"  # Slope constant of a linear function f(x) = ax + b
+    K2 = "b"  # Intercept constant of a linear function f(x) = ax + b
+
+    def __init__(self, coefficients=[]):
+        Estimator.__init__(self)
+        self.coefficients = coefficients
+
+    @property
+    def coefficients(self):
+        return self._coefficients[0], self._coefficients[1]
+
+    @coefficients.setter
+    def coefficients(self, value):
+        if isinstance(value, list) or isinstance(value, tuple):
+            if len(value) > 1:
+                self._coefficients = [float(value[0]), float(value[1])]
+            else:
+                self._coefficients = [0.0, 0.0]
+        elif isinstance(value, dict):
+            self._coefficients = [float(value[self.K1]), float(value[self.K2])]
+        else:
+            raise TypeError
+
+    @property
+    def slope_const(self):
+        return self._coefficients[0]
+
+    @property
+    def intercept_const(self):
+        return self._coefficients[1]
+
+    def calc(self, x):
+        return self._coefficients[0] * float(x) + self._coefficients[1]
+
+
+class ConstFunc(Estimator):
+    def __init__(self, const=0.0):
+        Estimator.__init__(self)
+        self.const = const
+
+    @property
+    def const(self):
+        return self.coefficients[0]
+
+    @const.setter
+    def const(self, value):
+        self.coefficients = [float(value)]
+
+    def calc(self, x):
+        return self.const
