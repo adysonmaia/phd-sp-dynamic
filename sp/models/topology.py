@@ -1,4 +1,5 @@
-from .resource import Resource
+from sp.models.resource import Resource
+from sp.estimators import Estimator
 
 
 class Topology:
@@ -74,6 +75,7 @@ class Node:
     BS_TYPE = "BS"
     CORE_TYPE = "CORE"
     CLOUD_TYPE = "CLOUD"
+
     POWER_IDLE = "idle"
     POWER_MAX = "max"
     K1 = "a"
@@ -120,21 +122,12 @@ class Node:
 
     @property
     def power_consumption(self):
-        value = self._power_consumption
-        return value[self.POWER_IDLE], value[self.POWER_MAX]
+        return self._power_consumption
 
     @power_consumption.setter
-    def power_consumption(self, value):
-        if isinstance(value, list) or isinstance(value, tuple):
-            self._power_consumption = {
-                self.POWER_IDLE: float(value[0]),
-                self.POWER_MAX: float(value[1])
-            }
-        elif isinstance(value, dict):
-            self._power_consumption = {
-                self.POWER_IDLE: float(value[self.POWER_IDLE]),
-                self.POWER_MAX: float(value[self.POWER_MAX])
-            }
+    def power_consumption(self, estimator):
+        if isinstance(estimator, Estimator):
+            self._power_consumption = estimator
         else:
             raise TypeError
 
@@ -147,37 +140,31 @@ class Node:
         if isinstance(value, list) or isinstance(value, tuple):
             self._position = [float(value[0]), float(value[1])]
         elif isinstance(value, dict):
-            self._position = [value["x"], value["y"]]
+            self._position = [float(value["x"]), float(value["y"])]
         else:
             raise TypeError
 
-    def get_capacity(self, resource_name):
-        return self._capacity[resource_name]
+    @property
+    def capacity(self):
+        return self._capacity
 
     def set_capacity(self, resource_name, value):
         resource_name = str(resource_name).upper()
         value = float(value)
         self._capacity[resource_name] = value
 
-    def get_cpu_capacity(self):
+    @property
+    def cpu_capacity(self):
         return self._capacity[Resource.CPU]
 
-    def get_cost(self, resource_name):
-        value = self._cost[resource_name]
-        return value[self.K1], value[self.K2]
+    @property
+    def cost(self):
+        return self._cost
 
-    def set_cost(self, resource_name, value):
+    def set_cost(self, resource_name, estimator):
         resource_name = str(resource_name).upper()
-        if isinstance(value, list) or isinstance(value, tuple):
-            self._cost[resource_name] = {
-                self.K1: float(value[0]),
-                self.K2: float(value[1])
-            }
-        elif isinstance(value, dict):
-            self._cost[resource_name] = {
-                self.K1: float(value[self.K1]),
-                self.K2: float(value[self.K2])
-            }
+        if isinstance(estimator, Estimator):
+            self._cost[resource_name] = estimator
         else:
             raise TypeError
 

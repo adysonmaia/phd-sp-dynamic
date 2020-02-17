@@ -1,5 +1,6 @@
-from sp.models import Application
 from sp.builders import ModelBuilder
+from sp.models.application import Application
+from sp.estimators.polynomial import PolyFunc, LinearFunc, ConstFunc
 from future.utils import iteritems
 import json
 
@@ -24,8 +25,21 @@ class ApplicationsFromFile(ModelBuilder):
                 app.availability = item["avail"]
                 app.max_instances = item["max_inst"]
                 for resource, value in iteritems(item["demand"]):
-                    app.set_demand(resource, value)
+                    app.set_demand(resource, self._build_estimator(value))
 
                 apps.append(app)
 
         return apps
+
+    def _build_estimator(self, value):
+        if isinstance(value, list) or isinstance(value, tuple):
+            if len(value) == 1:
+                return ConstFunc(value[0])
+            elif len(value) == 2:
+                return LinearFunc(value)
+            else:
+                return PolyFunc(list(value))
+        elif isinstance(value, dict):
+            return LinearFunc(value)
+        else:
+            return ConstFunc(float(value))

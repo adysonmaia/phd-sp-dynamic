@@ -10,3 +10,4 @@ class Resource:
     @property
     def id(self):
         return self.name
+

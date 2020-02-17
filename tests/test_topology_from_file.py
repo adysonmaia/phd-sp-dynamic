@@ -1,5 +1,7 @@
-from sp.models import Topology, Node, Link
 from sp.builders.topologies import TopologyFromFile
+from sp.models import Topology, Node, Link
+from sp.estimators.polynomial import LinearFunc
+from sp.estimators.power_consumption import LinearPowerEstimator
 import unittest
 
 
@@ -27,12 +29,14 @@ class TopologyFromFileTestCase(unittest.TestCase):
         self.assertEqual(node.id, 0)
         self.assertEqual(node.type, "CLOUD")
         self.assertEqual(node.availability, 0.999)
-        self.assertEqual(node.power_consumption, (200.0, 400.0))
         self.assertEqual(node.position, [0.0, 0.0])
+        self.assertIsInstance(node.power_consumption, LinearPowerEstimator)
+        self.assertEqual(node.power_consumption.coefficients, (200.0, 400.0))
 
         for resource in ["CPU", "RAM", "DISK"]:
-            self.assertEqual(node.get_capacity(resource), float("INF"))
-            self.assertEqual(node.get_cost(resource), (0.025, 0.025))
+            self.assertEqual(node.capacity[resource], float("INF"))
+            self.assertIsInstance(node.cost[resource], LinearFunc)
+            self.assertEqual(node.cost[resource].coefficients, (0.025, 0.025))
 
     def test_core_node(self):
         nodes = self.topology.get_nodes_by_type("CORE")
@@ -42,16 +46,17 @@ class TopologyFromFileTestCase(unittest.TestCase):
         self.assertEqual(node.id, 1)
         self.assertEqual(node.type, "CORE")
         self.assertEqual(node.availability, 0.99)
-        self.assertEqual(node.power_consumption, (50.0, 100.0))
         self.assertEqual(node.position, [0.0, 10.0])
+        self.assertIsInstance(node.power_consumption, LinearPowerEstimator)
+        self.assertEqual(node.power_consumption.coefficients, (50.0, 100.0))
 
-        self.assertEqual(node.get_capacity("CPU"), 200.0)
-        self.assertEqual(node.get_capacity("RAM"), 8000.0)
-        self.assertEqual(node.get_capacity("DISK"), 32000.0)
+        self.assertEqual(node.capacity["CPU"], 200.0)
+        self.assertEqual(node.capacity["RAM"], 8000.0)
+        self.assertEqual(node.capacity["DISK"], 32000.0)
 
-        self.assertEqual(node.get_cost("CPU"), (0.05, 0.05))
-        self.assertEqual(node.get_cost("RAM"), (0.05, 0.05))
-        self.assertEqual(node.get_cost("DISK"), (0.05, 0.05))
+        for resource in ["CPU", "RAM", "DISK"]:
+            self.assertIsInstance(node.cost[resource], LinearFunc)
+            self.assertEqual(node.cost[resource].coefficients, (0.05, 0.05))
 
     def test_bs_nodes(self):
         nodes = self.topology.get_bs_nodes()
@@ -61,16 +66,17 @@ class TopologyFromFileTestCase(unittest.TestCase):
             self.assertIn(node.id, [2, 3])
             self.assertEqual(node.type, "BS")
             self.assertEqual(node.availability, 0.9)
-            self.assertEqual(node.power_consumption, (20.0, 50.0))
             self.assertIn(node.position, [[0.0, 11.0], [1.0, 10.0]])
+            self.assertIsInstance(node.power_consumption, LinearPowerEstimator)
+            self.assertEqual(node.power_consumption.coefficients, (20.0, 50.0))
 
-            self.assertEqual(node.get_capacity("CPU"), 40.0)
-            self.assertEqual(node.get_capacity("RAM"), 4000.0)
-            self.assertEqual(node.get_capacity("DISK"), 16000.0)
+            self.assertEqual(node.capacity["CPU"], 40.0)
+            self.assertEqual(node.capacity["RAM"], 4000.0)
+            self.assertEqual(node.capacity["DISK"], 16000.0)
 
-            self.assertEqual(node.get_cost("CPU"), (0.1, 0.1))
-            self.assertEqual(node.get_cost("RAM"), (0.1, 0.1))
-            self.assertEqual(node.get_cost("DISK"), (0.1, 0.1))
+            for resource in ["CPU", "RAM", "DISK"]:
+                self.assertIsInstance(node.cost[resource], LinearFunc)
+                self.assertEqual(node.cost[resource].coefficients, (0.1, 0.1))
 
     def test_links_exists(self):
         self.assertEqual(len(self.topology.links), 4)
