@@ -65,3 +65,17 @@ class ConstFunc(Estimator):
 
     def calc(self, x):
         return self.const
+    
+
+def from_json(json_data):
+    if isinstance(json_data, list) or isinstance(json_data, tuple):
+        if len(json_data) == 1:
+            return ConstFunc(json_data[0])
+        elif len(json_data) == 2:
+            return LinearFunc(json_data)
+        else:
+            return PolyFunc(list(json_data))
+    elif isinstance(json_data, dict):
+        return LinearFunc(json_data)
+    else:
+        return ConstFunc(float(json_data))

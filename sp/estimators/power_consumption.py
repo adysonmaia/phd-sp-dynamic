@@ -32,3 +32,7 @@ class LinearPowerEstimator(Estimator):
 
     def calc(self, utilization):
         return self.idle_const + (self.max_const - self.idle_const) * float(utilization)
+
+
+def from_json(json_data):
+    return LinearPowerEstimator(json_data)

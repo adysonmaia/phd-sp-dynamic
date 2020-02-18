@@ -1,6 +1,6 @@
-from sp.builders.applications import ApplicationsFromFile
 from sp.estimators.polynomial import LinearFunc
-from sp.models import Application
+from sp.models.application import Application
+import json
 import unittest
 
 
@@ -8,7 +8,13 @@ class AppsFromFileCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         filename = "./tests/fixtures/test_apps_from_file.json"
-        cls.apps = ApplicationsFromFile(filename).build()
+        apps = None
+        with open(filename) as json_file:
+            apps = []
+            data = json.load(json_file)
+            for item in data["apps"]:
+                apps.append(Application.from_json(item))
+        cls.apps = apps
 
     def setUp(self):
         self.assertIsNotNone(self.apps)

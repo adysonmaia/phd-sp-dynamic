@@ -1,7 +1,9 @@
-from sp.builders.topologies import TopologyFromFile
-from sp.models import Topology, Node, Link
+from sp.models.topology import Topology
+from sp.models.node import Node
+from sp.models.link import Link
 from sp.estimators.polynomial import LinearFunc
 from sp.estimators.power_consumption import LinearPowerEstimator
+import json
 import unittest
 
 
@@ -9,7 +11,11 @@ class TopologyFromFileTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         filename = "./tests/fixtures/test_topology_from_file.json"
-        cls.topology = TopologyFromFile(filename).build()
+        topology = None
+        with open(filename) as json_file:
+            data = json.load(json_file)
+            topology = Topology.from_json(data)
+        cls.topology = topology
 
     def setUp(self):
         self.assertIsNotNone(self.topology)

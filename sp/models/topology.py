@@ -1,5 +1,6 @@
-from sp.models.resource import Resource
-from sp.estimators import Estimator
+from sp.models.node import Node
+from sp.models.link import Link
+import networkx as nx
 
 
 class Topology:
@@ -9,13 +10,13 @@ class Topology:
     CACHE_BS_KEY = "bs"
 
     def __init__(self):
-        self.graph = None
+        self.graph = nx.Graph()
         self._nodes = {}
         self._links = {}
         self._cache = {}
 
     def _clean_cache(self):
-        self.__cache = {}
+        self._cache.clear()
 
     @property
     def nodes(self):
@@ -63,158 +64,30 @@ class Topology:
             raise KeyError("link (%d,%d) not found" % (src_node_id, dst_node_id))
 
     def add_node(self, node):
+        self.graph.add_node(node.id)
         self._nodes[node.id] = node
         self._clean_cache()
 
     def add_link(self, link):
+        self.graph.add_edge(*link.nodes_id)
         self._links[link.nodes_id] = link
         self._clean_cache()
 
-
-class Node:
-    BS_TYPE = "BS"
-    CORE_TYPE = "CORE"
-    CLOUD_TYPE = "CLOUD"
-
-    POWER_IDLE = "idle"
-    POWER_MAX = "max"
-    K1 = "a"
-    K2 = "b"
-
-    def __init__(self):
-        self._id = -1
-        self._type = ""
-        self._availability = 0
-        self._power_consumption = {}
-        self._capacity = {}
-        self._cost = {}
-        self._position = None
-
-    def __eq__(self, other):
-        return self.id == other.id
-
-    def __lt__(self, other):
-        return self.id < other.id
-
-    @property
-    def id(self):
-        return self._id
-
-    @id.setter
-    def id(self, value):
-        self._id = int(value)
-
-    @property
-    def type(self):
-        return self._type
-
-    @type.setter
-    def type(self, value):
-        self._type = str(value).upper()
-
-    @property
-    def availability(self):
-        return self._availability
-
-    @availability.setter
-    def availability(self, value):
-        self._availability = float(value)
-
-    @property
-    def power_consumption(self):
-        return self._power_consumption
-
-    @power_consumption.setter
-    def power_consumption(self, estimator):
-        if isinstance(estimator, Estimator):
-            self._power_consumption = estimator
-        else:
-            raise TypeError
-
-    @property
-    def position(self):
-        return self._position
-
-    @position.setter
-    def position(self, value):
-        if isinstance(value, list) or isinstance(value, tuple):
-            self._position = [float(value[0]), float(value[1])]
-        elif isinstance(value, dict):
-            self._position = [float(value["x"]), float(value["y"])]
-        else:
-            raise TypeError
-
-    @property
-    def capacity(self):
-        return self._capacity
-
-    def set_capacity(self, resource_name, value):
-        resource_name = str(resource_name).upper()
-        value = float(value)
-        self._capacity[resource_name] = value
-
-    @property
-    def cpu_capacity(self):
-        return self._capacity[Resource.CPU]
-
-    @property
-    def cost(self):
-        return self._cost
-
-    def set_cost(self, resource_name, estimator):
-        resource_name = str(resource_name).upper()
-        if isinstance(estimator, Estimator):
-            self._cost[resource_name] = estimator
-        else:
-            raise TypeError
-
-    def is_base_station(self):
-        return self.type == self.BS_TYPE
-
-    def is_core(self):
-        return self.type == self.CORE_TYPE
-
-    def is_cloud(self):
-        return self.type == self.CLOUD_TYPE
+    @classmethod
+    def from_json(cls, json_data):
+        return from_json(json_data)
 
 
-class Link:
-    def __init__(self):
-        self._nodes_id = (-1,-1)
-        self._bandwidth = 0
-        self._propagation_delay = 0
+def from_json(json_data):
+    t = Topology()
 
-    def __eq__(self, other):
-        ids_1 = self.nodes_id
-        ids_2 = other.nodes_id
-        ids_3 = ids_2[::-1]
-        return (ids_1 == ids_2) or (ids_1 == ids_3)
+    for item in json_data["nodes"]:
+        node = Node.from_json(item)
+        t.add_node(node)
 
-    @property
-    def nodes_id(self):
-        return self._nodes_id
+    for item in json_data["links"]:
+        link = Link.from_json(item)
+        t.add_link(link)
 
-    @nodes_id.setter
-    def nodes_id(self, value):
-        if isinstance(value, list) or isinstance(value, tuple):
-            self._nodes_id = (int(value[0]), int(value[1]))
-        elif isinstance(value, dict):
-            self._nodes_id = (int(value["s"]), int(value["d"]))
-        else:
-            raise TypeError
+    return t
 
-    @property
-    def bandwidth(self):
-        return self._bandwidth
-
-    @bandwidth.setter
-    def bandwidth(self, value):
-        self._bandwidth = float(value)
-
-    @property
-    def propagation_delay(self):
-        return self._propagation_delay
-
-    @propagation_delay.setter
-    def propagation_delay(self, value):
-        self._propagation_delay = float(value)

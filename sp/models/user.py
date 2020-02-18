@@ -3,4 +3,4 @@ class User:
         self.id = -1
         self.app_id = -1
         self.node_id = -1
-        self.position = None
+        self.mobility = None

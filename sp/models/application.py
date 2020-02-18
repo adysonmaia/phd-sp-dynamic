@@ -1,18 +1,19 @@
 from sp.models.resource import Resource
-from sp.estimators import Estimator
+from sp.estimators import polynomial
+from future.utils import iteritems
 
 
 class Application:
     def __init__(self):
-        self._id = -1
-        self._type = ""
-        self._deadline = 0
-        self._work_size = 0
-        self._data_size = 0
-        self._request_rate = 0
-        self._max_instances = 0
-        self._availability = 0
-        self._demand = {}
+        self.id = -1
+        self.type = ""
+        self.deadline = 0.0
+        self.work_size = 0.0
+        self.data_size = 0.0
+        self.request_rate = 0.0
+        self.max_instances = 0
+        self.availability = 0.0
+        self.demand = {}
 
     def __eq__(self, other):
         return self.id == other.id
@@ -21,80 +22,27 @@ class Application:
         return self.id < other.id
 
     @property
-    def id(self):
-        return self._id
-
-    @id.setter
-    def id(self, value):
-        self._id = int(value)
-
-    @property
-    def type(self):
-        return self._type
-
-    @type.setter
-    def type(self, value):
-        self._type = str(value).upper()
-
-    @property
-    def deadline(self):
-        return self._deadline
-
-    @deadline.setter
-    def deadline(self, value):
-        self._deadline = float(value)
-
-    @property
-    def work_size(self):
-        return self._work_size
-
-    @work_size.setter
-    def work_size(self, value):
-        self._work_size = float(value)
-
-    @property
-    def data_size(self):
-        return self._data_size
-
-    @data_size.setter
-    def data_size(self, value):
-        self._data_size = float(value)
-
-    @property
-    def request_rate(self):
-        return self._request_rate
-
-    @request_rate.setter
-    def request_rate(self, value):
-        self._request_rate = float(value)
-
-    @property
-    def max_instances(self):
-        return self._max_instances
-
-    @max_instances.setter
-    def max_instances(self, value):
-        self._max_instances = int(value)
-
-    @property
-    def availability(self):
-        return self._availability
-
-    @availability.setter
-    def availability(self, value):
-        self._availability = float(value)
-
-    @property
-    def demand(self):
-        return self._demand
-
-    @property
     def cpu_demand(self):
-        return self.get_demand(Resource.CPU)
+        return self.demand[Resource.CPU]
 
-    def set_demand(self, resource_name, estimator):
-        resource_name = str(resource_name).upper()
-        if isinstance(estimator, Estimator):
-            self._demand[resource_name] = estimator
-        else:
-            raise TypeError
+    @classmethod
+    def from_json(cls, json_data):
+        return from_json(json_data)
+
+
+def from_json(json_data):
+    app = Application()
+    app.id = int(json_data["id"])
+    app.type = str(json_data["type"]).upper()
+    app.deadline = float(json_data["deadline"])
+    app.work_size = float(json_data["work"])
+    app.data_size = float(json_data["data"])
+    app.request_rate = float(json_data["rate"])
+    app.availability = float(json_data["avail"])
+    app.max_instances = int(json_data["max_inst"])
+    for resource, value in iteritems(json_data["demand"]):
+        resource = str(resource).upper()
+        estimator = polynomial.from_json(value)
+        app.demand[resource] = estimator
+
+    return app
