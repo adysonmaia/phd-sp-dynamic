@@ -35,7 +35,8 @@ class TopologyFromFileTestCase(unittest.TestCase):
         self.assertEqual(node.id, 0)
         self.assertEqual(node.type, "CLOUD")
         self.assertEqual(node.availability, 0.999)
-        self.assertEqual(node.position, [0.0, 0.0])
+        self.assertEqual(node.position[0], 0.0)
+        self.assertEqual(node.position[1], 0.0)
         self.assertIsInstance(node.power_consumption, LinearPowerEstimator)
         self.assertEqual(node.power_consumption.coefficients, (200.0, 400.0))
 
@@ -52,7 +53,8 @@ class TopologyFromFileTestCase(unittest.TestCase):
         self.assertEqual(node.id, 1)
         self.assertEqual(node.type, "CORE")
         self.assertEqual(node.availability, 0.99)
-        self.assertEqual(node.position, [0.0, 10.0])
+        self.assertEqual(node.position[0], 0.0)
+        self.assertEqual(node.position[1], 10.0)
         self.assertIsInstance(node.power_consumption, LinearPowerEstimator)
         self.assertEqual(node.power_consumption.coefficients, (50.0, 100.0))
 
@@ -72,7 +74,8 @@ class TopologyFromFileTestCase(unittest.TestCase):
             self.assertIn(node.id, [2, 3])
             self.assertEqual(node.type, "BS")
             self.assertEqual(node.availability, 0.9)
-            self.assertIn(node.position, [[0.0, 11.0], [1.0, 10.0]])
+            self.assertIn(node.position[0], [0.0, 1.0])
+            self.assertIn(node.position[1], [11.0, 10.0])
             self.assertIsInstance(node.power_consumption, LinearPowerEstimator)
             self.assertEqual(node.power_consumption.coefficients, (20.0, 50.0))
 
