@@ -1,6 +1,6 @@
-from sp.models.user import User
-from sp.mobilities.static import StaticMobility
-from sp.mobilities.track import TrackMobility
+from sp.model.user import User
+from sp.mobility.static import StaticMobility
+from sp.mobility.track import TrackMobility
 import json
 import unittest
 
@@ -53,7 +53,7 @@ class UsersFromFileTestCase(unittest.TestCase):
         self.assertEqual(user.app_id, 1)
         self.assertEqual(user.node_id, -1)
         self.assertIsInstance(user.mobility, TrackMobility)
-        self.assertEqual(len(user.mobility.tracks), 23495)
+        self.assertEqual(len(user.mobility.tracks), 100)
 
     def test_update_position(self):
         user = self.users[1]
@@ -101,6 +101,7 @@ class UsersFromFileTestCase(unittest.TestCase):
     def test_gps_positions(self):
         user = self.users[3]
         user.update_position(1213084687)
+        self.assertIsNotNone(user.current_position)
         self.assertEqual(user.current_position[0], 37.75134)
         self.assertEqual(user.current_position[1], -122.39488)
 

@@ -1,5 +1,6 @@
-from sp.models.node import Node
-from sp.models.link import Link
+from .node import Node
+from .link import Link
+from  sp.utils import json_util
 import networkx as nx
 
 
@@ -42,16 +43,17 @@ class Topology:
                     break
         return self._cache[self.CACHE_CLOUD_KEY]
 
+    @property
+    def bs_nodes(self):
+        if self.CACHE_BS_KEY not in self._cache:
+            self._cache[self.CACHE_BS_KEY] = self.get_nodes_by_type(Node.BS_TYPE)
+        return self._cache[self.CACHE_BS_KEY]
+
     def get_node(self, node_id):
         return self._nodes[node_id]
 
     def get_nodes_by_type(self, type):
         return list(filter(lambda i: i.type == type, self.nodes))
-
-    def get_bs_nodes(self):
-        if self.CACHE_BS_KEY not in self._cache:
-            self._cache[self.CACHE_BS_KEY] = self.get_nodes_by_type(Node.BS_TYPE)
-        return self._cache[self.CACHE_BS_KEY]
 
     def get_link(self, src_node_id, dst_node_id):
         key_1 = (src_node_id, dst_node_id)
@@ -81,11 +83,11 @@ class Topology:
 def from_json(json_data):
     t = Topology()
 
-    for item in json_data["nodes"]:
+    for item in json_util.load_key_content(json_data, "nodes"):
         node = Node.from_json(item)
         t.add_node(node)
 
-    for item in json_data["links"]:
+    for item in json_util.load_key_content(json_data, "links"):
         link = Link.from_json(item)
         t.add_link(link)
 

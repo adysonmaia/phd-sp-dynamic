@@ -1,7 +1,7 @@
-from sp.models.resource import Resource
-from sp.models import position
-from sp.estimators import polynomial
-from sp.estimators import power_consumption
+from sp.model.resource import Resource
+from sp import position
+from sp.estimator import polynomial
+from sp.estimator import power_consumption
 from future.utils import iteritems
 
 
@@ -28,6 +28,10 @@ class Node:
     @property
     def cpu_capacity(self):
         return self.capacity[Resource.CPU]
+
+    @property
+    def current_position(self):
+        return self.position
 
     def is_base_station(self):
         return self.type == self.BS_TYPE

@@ -1,11 +1,11 @@
 from . import Mobility
-from sp.models import position
+from sp import position
 
 
 class StaticMobility(Mobility):
-    def __init__(self, position=None):
+    def __init__(self, pos=None):
         Mobility.__init__(self)
-        self.position = position
+        self.position = pos
 
     @property
     def current_position(self):

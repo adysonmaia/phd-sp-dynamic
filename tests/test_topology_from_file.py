@@ -1,8 +1,8 @@
-from sp.models.topology import Topology
-from sp.models.node import Node
-from sp.models.link import Link
-from sp.estimators.polynomial import LinearFunc
-from sp.estimators.power_consumption import LinearPowerEstimator
+from sp.model.topology import Topology
+from sp.model.node import Node
+from sp.model.link import Link
+from sp.estimator.polynomial import LinearFunc
+from sp.estimator.power_consumption import LinearPowerEstimator
 import json
 import unittest
 
@@ -67,7 +67,7 @@ class TopologyFromFileTestCase(unittest.TestCase):
             self.assertEqual(node.cost[resource].coefficients, (0.05, 0.05))
 
     def test_bs_nodes(self):
-        nodes = self.topology.get_bs_nodes()
+        nodes = self.topology.bs_nodes
         self.assertEqual(len(nodes), 2)
 
         for node in nodes:

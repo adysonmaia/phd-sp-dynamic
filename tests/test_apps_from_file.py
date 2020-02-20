@@ -1,5 +1,5 @@
-from sp.estimators.polynomial import LinearFunc
-from sp.models.application import Application
+from sp.estimator.polynomial import LinearFunc
+from sp.model.application import Application
 import json
 import unittest
 

@@ -1,5 +1,6 @@
 from . import Mobility
-from sp.models import position
+from sp import position
+import copy
 
 
 class TrackMobility(Mobility):
@@ -24,23 +25,21 @@ class TrackMobility(Mobility):
         new_index = start
 
         if tracks_len > 0:
-            prev_t = None
-            next_t = None
+            prev_tf = None
+            next_tf = None
 
             for i in range(start, tracks_len):
                 next_i = min(i + 1, tracks_len - 1)
                 if self.tracks[i].time <= time <= self.tracks[next_i].time:
-                    prev_t = self.tracks[i]
-                    next_t = self.tracks[next_i]
+                    prev_tf = self.tracks[i]
+                    next_tf = self.tracks[next_i]
                     new_index = i
                     break
 
-            if prev_t is not None and next_t is not None:
-                new_pos = prev_t.position
-                time_diff = float(next_t.time - prev_t.time)
-                if prev_t.time != time and time_diff > 0.0:
-                    pos_diff = next_t.position - prev_t.position
-                    new_pos = prev_t.position + pos_diff * (time - prev_t.time) / time_diff
+            if prev_tf is not None and next_tf is not None:
+                new_pos = prev_tf.position
+                if prev_tf.time != time:
+                    new_pos = prev_tf.intermediate(next_tf, time).position
 
         self._current_time = time
         self._current_index = new_index
@@ -64,6 +63,16 @@ class TrackFrame:
 
     def __str__(self):
         return "t: {} p: {}".format(self.time, self.position)
+
+    def intermediate(self, other_frame, time):
+        inter_pos = None
+        delta_time = abs(float(other_frame.time - self.time))
+        if delta_time != 0.0:
+            fraction = (time - self.time) / delta_time
+            inter_pos = self.position.intermediate(other_frame.position, fraction)
+        else:
+            inter_pos = copy.deepcopy(self.position)
+        return TrackFrame(inter_pos, time)
 
 
 def _frame_from_json(json_data):

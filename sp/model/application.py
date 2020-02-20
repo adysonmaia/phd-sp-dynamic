@@ -1,5 +1,5 @@
-from sp.models.resource import Resource
-from sp.estimators import polynomial
+from sp.model.resource import Resource
+from sp.estimator import polynomial
 from future.utils import iteritems
 
 
