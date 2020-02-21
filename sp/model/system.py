@@ -27,6 +27,10 @@ class System:
         return self.scenario.topology.bs_nodes
 
     @property
+    def links(self):
+        return self.scenario.topology.links
+
+    @property
     def apps(self):
         return self.scenario.apps
 
@@ -51,17 +55,28 @@ class System:
         return self.scenario.resources_name
 
     def get_node(self, node_id):
-        return self.topology.get_node(node_id)
+        return self.scenario.topology.get_node(node_id)
 
     def get_link(self, src_node_id, dst_node_id):
-        return self.topology.get_link(src_node_id, dst_node_id)
+        return self.scenario.topology.get_link(src_node_id, dst_node_id)
 
     def link_exists(self, src_node_id, dst_node_id):
-        return self.topology.link_exists(src_node_id, dst_node_id)
+        return self.scenario.topology.link_exists(src_node_id, dst_node_id)
 
     def get_app(self, app_id):
         return self.scenario.get_app(app_id)
 
     def get_user(self, user_id):
         return self.scenario.get_user(user_id)
+
+    def get_nb_users(self, app_id=None, node_id=None):
+        return self.scenario.get_nb_users(app_id, node_id)
+
+    def get_request_load(self, app_id, node_id):
+        return self.request_load[app_id][node_id]
+
+    def get_app_queue_size(self, app_id, node_id):
+        return self.app_queue_size[app_id][node_id]
+
+
 

@@ -14,7 +14,7 @@ class LinkDelayEstimator(Estimator):
 
 class DefaultLinkDelayEstimator(LinkDelayEstimator):
     def __init__(self, system=None):
-        LinkDelayEstimator.__init__(system)
+        LinkDelayEstimator.__init__(self, system)
 
     def calc(self, app_id, src_node_id, dst_node_id):
         if self.system.link_exists(src_node_id, dst_node_id):

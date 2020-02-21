@@ -44,13 +44,22 @@ class CoverageTestCase(unittest.TestCase):
             count[node.id] = 0
         for user in self.system.users:
             count[user.node_id] += 1
-        count = dict(count)
 
         self.assertEqual(count[-1], 3)
         self.assertEqual(count[0], 0)  # Cloud node
         self.assertEqual(count[1], 0)  # Core node
         self.assertEqual(count[2], 2)  # 1st BS node
         self.assertEqual(count[3], 5)  # 2nd BS node
+        for node in self.system.nodes:
+            self.assertEqual(self.system.get_nb_users(node_id=node.id), count[node.id])
+
+        count = {-1: 0}
+        for app in self.system.apps:
+            count[app.id] = 0
+        for user in self.system.users:
+            count[user.app_id] += 1
+        for app in self.system.apps:
+            self.assertEqual(self.system.get_nb_users(app_id=app.id), count[app.id])
 
     def test_min_dist_coverage(self):
         cov = MinDistCoverage(self.system)
@@ -69,6 +78,16 @@ class CoverageTestCase(unittest.TestCase):
         self.assertEqual(count[1], 0)  # Core node
         self.assertEqual(count[2], 4)  # 1st BS node
         self.assertEqual(count[3], 6)  # 2nd BS node
+        for node in self.system.nodes:
+            self.assertEqual(self.system.get_nb_users(node_id=node.id), count[node.id])
+
+        count = {-1: 0}
+        for app in self.system.apps:
+            count[app.id] = 0
+        for user in self.system.users:
+            count[user.app_id] += 1
+        for app in self.system.apps:
+            self.assertEqual(self.system.get_nb_users(app_id=app.id), count[app.id])
 
 
 if __name__ == '__main__':

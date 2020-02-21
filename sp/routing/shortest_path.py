@@ -17,11 +17,11 @@ class ShortestPathRouting(Routing):
     def get_path_length(self, app_id, src_node_id, dst_node_id):
         return self.distances[app_id][src_node_id][dst_node_id]
 
-    def get_all_paths(self, app_id):
-        return self.paths[app_id]
+    def get_all_paths(self):
+        return self.paths
 
-    def get_all_paths_length(self, app_id):
-        return self.distances[app_id]
+    def get_all_paths_length(self):
+        return self.distances
 
     def update(self, time):
         if self.static_routing and self.paths is not None:
@@ -32,10 +32,11 @@ class ShortestPathRouting(Routing):
         else:
             self.estimator.system = self.system
 
-        graph = self.system.topology
+        graph = self.system
         self.distances = {}
         self.paths = {}
         for app in self.system.apps:
+            # TODO: improve this part because the shortest paths are the same for all applications
             succ, dist = floyd_warshall(graph, lambda s, d: self.estimator.calc(app.id, s, d))
             self.distances[app.id] = dist
             self.paths[app.id] = reconstruct_all_paths(graph, succ)
@@ -74,7 +75,7 @@ def floyd_warshall(graph, weight_func=None):
     return dict(succ), dict(dist)
 
 
-def reconstruct_path(topology, src_node_id, dst_node_id, successors):
+def reconstruct_path(src_node_id, dst_node_id, successors):
     if src_node_id not in successors or dst_node_id not in successors[src_node_id]:
         return []
     u, v = src_node_id, dst_node_id

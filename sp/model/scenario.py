@@ -84,6 +84,12 @@ class Scenario:
         self._resources[resource.name] = resource
         self._clean_cache()
 
+    def get_nb_users(self, app_id=None, node_id=None):
+        def user_filter(user):
+            return (app_id is None or user.app_id == app_id) and (node_id is None or user.node_id == node_id)
+
+        return len(list(filter(user_filter, self.users)))
+
     @classmethod
     def from_json(cls, json_data):
         return from_json(json_data)
