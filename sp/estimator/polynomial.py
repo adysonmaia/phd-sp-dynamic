@@ -3,9 +3,11 @@ import math
 
 
 class PolyFunc(Estimator):
-    def __init__(self, coefficients=[]):
+    def __init__(self, coefficients=None):
         Estimator.__init__(self)
-        self.coefficients = coefficients
+        self.coefficients = []
+        if coefficients is not None:
+            self.coefficients = coefficients
 
     def calc(self, x):
         value = 0.0
@@ -18,9 +20,11 @@ class LinearFunc(Estimator):
     K1 = "a"  # Slope constant of a linear function f(x) = ax + b
     K2 = "b"  # Intercept constant of a linear function f(x) = ax + b
 
-    def __init__(self, coefficients=[]):
+    def __init__(self, coefficients=None):
         Estimator.__init__(self)
-        self.coefficients = coefficients
+        self._coefficients = [0.0, 0.0]
+        if coefficients is not None:
+            self.coefficients = coefficients
 
     @property
     def coefficients(self):
@@ -54,14 +58,6 @@ class ConstFunc(Estimator):
     def __init__(self, const=0.0):
         Estimator.__init__(self)
         self.const = const
-
-    @property
-    def const(self):
-        return self.coefficients[0]
-
-    @const.setter
-    def const(self, value):
-        self.coefficients = [float(value)]
 
     def calc(self, x):
         return self.const

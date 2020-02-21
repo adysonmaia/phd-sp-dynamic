@@ -8,13 +8,16 @@ class CartesianPosition(Position):
     Y_INDEX = 1
     Z_INDEX = 2
 
-    def __init__(self, values=[]):
+    def __init__(self, *args):
         Position.__init__(self)
-        self._values = None
-        if len(values) > 0:
-            self.values = values
-        else:
-            self.values = [0.0, 0.0]
+        self._values = [0.0, 0.0]
+        if len(args) == 1:
+            if isinstance(args[0], list) or isinstance(args[0], tuple):
+                self.values = args[0]
+            else:
+                self.values = list(args[0])
+        elif len(args) > 1:
+            self.values = args
 
     @property
     def values(self):
@@ -36,7 +39,7 @@ class CartesianPosition(Position):
     def y(self):
         return self._values[self.Y_INDEX]
 
-    @x.setter
+    @y.setter
     def y(self, v):
         self._values[self.Y_INDEX] = v
 
@@ -46,7 +49,12 @@ class CartesianPosition(Position):
 
     @z.setter
     def z(self, v):
-        self._values[self.Z_INDEX] = v
+        if len(self._values) > 2:
+            self._values[self.Z_INDEX] = v
+        elif len(self._values) == 2:
+            self._values.append(v)
+        else:
+            raise IndexError
 
     def distance(self, other_pos):
         if not isinstance(other_pos, CartesianPosition):

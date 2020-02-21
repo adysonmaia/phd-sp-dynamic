@@ -30,20 +30,16 @@ class Scenario:
         self._clean_cache()
 
     @property
-    def nodes(self):
-        return self.topology.nodes
-
-    @property
-    def links(self):
-        return self.topology.links
-
-    @property
     def apps(self):
         if self.CACHE_APPS_KEY not in self._cache:
             data = list(self._apps.values())
             data.sort()
             self._cache[self.CACHE_APPS_KEY] = data
         return self._cache[self.CACHE_APPS_KEY]
+
+    @property
+    def apps_id(self):
+        return self._apps.keys()
 
     @property
     def users(self):
@@ -53,6 +49,10 @@ class Scenario:
         return self._cache[self.CACHE_USERS_KEY]
 
     @property
+    def users_id(self):
+        return self._users.keys()
+
+    @property
     def resources(self):
         if self.CACHE_RESOURCES_KEY not in self._cache:
             data = list(self._resources.values())
@@ -60,15 +60,8 @@ class Scenario:
         return self._cache[self.CACHE_RESOURCES_KEY]
 
     @property
-    def resource_names(self):
+    def resources_name(self):
         return self._resources.keys()
-
-    @property
-    def cloud_node(self):
-        return self.topology.cloud_node
-
-    def get_node(self, node_id):
-        return self.topology.get_node(node_id)
 
     def add_app(self, app):
         self._apps[app.id] = app

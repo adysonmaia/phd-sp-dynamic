@@ -33,8 +33,8 @@ class ScenarioFromFileCase(unittest.TestCase):
         self.assertIsInstance(self.scenario.resources[0], Resource)
 
         self.assertIsInstance(self.scenario.topology, Topology)
-        self.assertGreater(len(self.scenario.nodes), 0)
-        self.assertIsInstance(self.scenario.nodes[0], Node)
+        self.assertGreater(len(self.scenario.topology.nodes), 0)
+        self.assertIsInstance(self.scenario.topology.nodes[0], Node)
 
-        self.assertGreater(len(self.scenario.links), 0)
-        self.assertIsInstance(self.scenario.links[0], Link)
+        self.assertGreater(len(self.scenario.topology.links), 0)
+        self.assertIsInstance(self.scenario.topology.links[0], Link)

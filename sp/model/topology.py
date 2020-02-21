@@ -28,6 +28,10 @@ class Topology:
         return self._cache[self.CACHE_NODES_KEY]
 
     @property
+    def nodes_id(self):
+        return self._nodes.keys()
+
+    @property
     def links(self):
         if self.CACHE_LINKS_KEY not in self._cache:
             data = list(self._links.values())
@@ -64,6 +68,11 @@ class Topology:
             return self._links[key_2]
         else:
             raise KeyError("link (%d,%d) not found" % (src_node_id, dst_node_id))
+
+    def link_exists(self, src_node_id, dst_node_id):
+        key_1 = (src_node_id, dst_node_id)
+        key_2 = key_1[::-1]
+        return key_1 in self._links or key_2 in self._links
 
     def add_node(self, node):
         self.graph.add_node(node.id)

@@ -21,7 +21,7 @@ class GpsPosition(Position):
 
     @values.setter
     def values(self, v):
-        self._values = v
+        self._values = list(v)
 
     @property
     def lat(self):
