@@ -1,5 +1,6 @@
 from sp.model import System, Scenario
 from sp.routing.shortest_path import ShortestPathRouting
+from sp.estimator.link_delay import DefaultLinkDelayEstimator
 import json
 import unittest
 
@@ -36,6 +37,8 @@ class RoutingTestCase(unittest.TestCase):
         app_id = 0
         app = self.system.get_app(app_id)
         routing = ShortestPathRouting(self.system)
+        routing.static_routing = True
+        routing.link_delay_estimator = DefaultLinkDelayEstimator(self.system)
         routing.update(0)
 
         for link in self.system.links:

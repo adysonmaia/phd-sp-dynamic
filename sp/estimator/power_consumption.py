@@ -1,12 +1,20 @@
 from . import Estimator
 
 
-class LinearPowerEstimator(Estimator):
+class PowerEstimator(Estimator):
+    def __init__(self):
+        Estimator.__init__(self)
+
+    def calc(self, utilization):
+        return 0.0
+
+
+class LinearPowerEstimator(PowerEstimator):
     K1 = "a"  # Slope constant of a linear function f(x) = ax + b
     K2 = "b"  # Intercept constant of a linear function f(x) = ax + b
 
     def __init__(self, coefficients=None):
-        Estimator.__init__(self)
+        PowerEstimator.__init__(self)
         self._coefficients = [0.0, 0.0]
         if coefficients is not None:
             self.coefficients = coefficients

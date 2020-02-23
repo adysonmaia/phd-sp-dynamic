@@ -1,7 +1,6 @@
 from .node import Node
 from .link import Link
-from  sp.utils import json_util
-import networkx as nx
+from sp.utils import json_util
 
 
 class Topology:
@@ -11,7 +10,6 @@ class Topology:
     CACHE_BS_KEY = "bs"
 
     def __init__(self):
-        self.graph = nx.Graph()
         self._nodes = {}
         self._links = {}
         self._cache = {}
@@ -75,12 +73,10 @@ class Topology:
         return key_1 in self._links or key_2 in self._links
 
     def add_node(self, node):
-        self.graph.add_node(node.id)
         self._nodes[node.id] = node
         self._clean_cache()
 
     def add_link(self, link):
-        self.graph.add_edge(*link.nodes_id)
         self._links[link.nodes_id] = link
         self._clean_cache()
 

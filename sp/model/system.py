@@ -2,13 +2,8 @@ class System:
     def __init__(self):
         self.time = 0
         self.scenario = None
-        self.app_placement = {}
-        self.app_queue_size = {}
-        self.app_resource_alloc = {}
-        self.load_distribution = {}
-        self.request_load = {}
-        self.net_delay = {}
-        self.net_path = {}
+        self.environment = None
+        self.allocation = None
 
     @property
     def nodes(self):
@@ -73,10 +68,22 @@ class System:
         return self.scenario.get_nb_users(app_id, node_id)
 
     def get_request_load(self, app_id, node_id):
-        return self.request_load[app_id][node_id]
+        return self.environment.get_request_load(app_id, node_id)
+
+    def get_net_delay(self, app_id, src_node_id, dst_node_id):
+        return self.environment.get_net_delay(app_id, src_node_id, dst_node_id)
+
+    def get_net_path(self, app_id, src_node_id, dst_node_id):
+        return self.environment.get_net_path(app_id, src_node_id, dst_node_id)
 
     def get_app_queue_size(self, app_id, node_id):
-        return self.app_queue_size[app_id][node_id]
+        return self.environment.get_app_queue_size(app_id, node_id)
 
+    def get_app_placement(self, app_id, node_id):
+        return self.allocation.get_app_placement(app_id, node_id)
 
+    def get_load_distribution(self, app_id, src_node_id, dst_node_id):
+        return self.allocation.get_load_distribution(self, app_id, src_node_id, dst_node_id)
 
+    def get_allocated_resource(self, app_id, node_id, resource_name):
+        return self.allocation.get_allocated_resource(self, app_id, node_id, resource_name)

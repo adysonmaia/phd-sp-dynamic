@@ -3,6 +3,7 @@ from . import Estimator
 
 class QueueSizeEstimator(Estimator):
     def __init__(self, system=None):
+        Estimator.__init__(self)
         self.system = system
 
     def calc_app_queue_sizes(self, app_id):

@@ -3,6 +3,7 @@ from . import Estimator
 
 class RequestLoadEstimator(Estimator):
     def __init__(self, system=None):
+        Estimator.__init__(self)
         self.system = system
 
     def calc_app_loads(self, app_id):
@@ -25,7 +26,7 @@ class RequestLoadEstimator(Estimator):
             loads[app.id] = self.calc_app_loads(app.id)
 
     def calc(self, app_id, node_id):
-        return None
+        return 0.0
 
 
 class DefaultRequestLoadEstimator(RequestLoadEstimator):

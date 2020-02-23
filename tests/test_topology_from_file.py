@@ -115,16 +115,6 @@ class TopologyFromFileTestCase(unittest.TestCase):
         self.assertEqual(link.bandwidth, 10000000000.0)
         self.assertEqual(link.propagation_delay, 1.4)
 
-    def test_graph(self):
-        self.assertIsNotNone(self.topology.graph)
-        self.assertEqual(self.topology.graph.number_of_nodes(), 4)
-        self.assertEqual(self.topology.graph.number_of_edges(), 4)
-        self.assertIn(1, self.topology.graph.adj[0])
-        self.assertIn(2, self.topology.graph.adj[1])
-        self.assertIn(2, self.topology.graph.adj[3])
-        self.assertIn(3, self.topology.graph.adj[1])
-        self.assertIn(3, self.topology.graph.adj[2])
-
 
 if __name__ == '__main__':
     unittest.main()
