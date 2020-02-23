@@ -1,5 +1,8 @@
-from . import Solver
+from . import Solver, utils
 from sp.model.allocation import Allocation
+
+
+ALL_LOAD = 1.0
 
 
 class CloudSolver(Solver):
@@ -13,8 +16,8 @@ class CloudSolver(Solver):
         for app in system.apps:
             alloc.set_app_placement(app.id, cloud_node.id, True)
             for src_node in system.nodes:
-                alloc.set_load_distribution(app.id, src_node.id, cloud_node.id, 1.0)
+                alloc.set_load_distribution(app.id, src_node.id, cloud_node.id, ALL_LOAD)
 
-        # TODO: set the amount of allocated resource
+        utils.alloc_demanded_resources(system, alloc)
 
         return alloc

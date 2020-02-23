@@ -11,10 +11,10 @@ class Allocation:
         self.app_placement[app_id][node_id] = bool(value)
 
     def get_load_distribution(self, app_id, src_node_id, dst_node_id):
-        return self.app_placement[app_id][src_node_id][dst_node_id]
+        return self.load_distribution[app_id][src_node_id][dst_node_id]
 
     def set_load_distribution(self, app_id, src_node_id, dst_node_id, value):
-        self.app_placement[app_id][src_node_id][dst_node_id] = float(value)
+        self.load_distribution[app_id][src_node_id][dst_node_id] = float(value)
 
     def get_allocated_resource(self, app_id, node_id, resource_name):
         return self.allocated_resource[app_id][node_id][resource_name]

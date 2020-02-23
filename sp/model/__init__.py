@@ -6,4 +6,6 @@ from .link import Link
 from .topology import Topology
 from .scenario import Scenario
 from .system import System
+from .environment import Environment
+from .allocation import Allocation
 

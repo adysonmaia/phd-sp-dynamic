@@ -1,3 +1,6 @@
+from sp.utils import resource_allocation
+
+
 class Solver:
     def __init__(self):
         pass
@@ -8,3 +11,6 @@ class Solver:
 
 class SolverError(Exception):
     pass
+
+
+utils = resource_allocation

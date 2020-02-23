@@ -36,7 +36,7 @@ class RequestLoadEstimatorTestCase(unittest.TestCase):
 
         self.coverage.update(time)
 
-    def test_req_load(self):
+    def test_calc(self):
         estimator = DefaultRequestLoadEstimator(self.system)
 
         # (app_id, node_id): load
@@ -47,6 +47,35 @@ class RequestLoadEstimatorTestCase(unittest.TestCase):
         }
         for ids, load in iteritems(values):
             self.assertEqual(estimator.calc(*ids), load)
+
+    def test_calc_all_loads(self):
+        estimator = DefaultRequestLoadEstimator(self.system)
+        all_loads = estimator.calc_all_loads()
+
+        self.assertIsNotNone(all_loads)
+        for app in self.system.apps:
+            self.assertIn(app.id, all_loads)
+            app_loads = all_loads[app.id]
+            for node in self.system.nodes:
+                self.assertIn(node.id, app_loads)
+
+    def test_calc_node_loads(self):
+        estimator = DefaultRequestLoadEstimator(self.system)
+        node_id = 0
+        node_loads = estimator.calc_node_loads(node_id)
+
+        self.assertIsNotNone(node_loads)
+        for app in self.system.apps:
+            self.assertIn(app.id, node_loads)
+
+    def test_calc_app_loads(self):
+        estimator = DefaultRequestLoadEstimator(self.system)
+        app_id = 0
+        app_loads = estimator.calc_app_loads(app_id)
+
+        self.assertIsNotNone(app_loads)
+        for node in self.system.nodes:
+            self.assertIn(node.id, app_loads)
 
 
 if __name__ == '__main__':

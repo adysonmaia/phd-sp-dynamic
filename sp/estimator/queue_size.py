@@ -24,6 +24,7 @@ class QueueSizeEstimator(Estimator):
         loads = {}
         for app in self.system.apps:
             loads[app.id] = self.calc_app_queue_sizes(app.id)
+        return loads
 
     def calc(self, app_id, node_id):
         return None

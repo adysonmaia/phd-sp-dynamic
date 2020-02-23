@@ -18,14 +18,14 @@ class PeriodicAllocationController(AllocationController):
     def __init__(self):
         AllocationController.__init__(self)
         self.period = 1
-        self._next_update = 0
+        self.next_update = 0
 
     def start(self, system):
         AllocationController.start(self, system)
-        self._next_update = system.time
+        self.next_update = system.time
 
     def update(self, time):
-        if time != self._next_update:
+        if time != self.next_update:
             return
 
         alloc = None
@@ -36,5 +36,5 @@ class PeriodicAllocationController(AllocationController):
 
         if alloc is not None:
             self.system.allocation = alloc
-        self._next_update = time + self.period
+        self.next_update = time + self.period
 

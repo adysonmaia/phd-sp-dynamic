@@ -63,6 +63,17 @@ class Application:
         """
         return self.demand[Resource.CPU]
 
+    def get_demand(self, resource_name):
+        """Get the demand estimator for a specific resource
+        Args:
+            resource_name (str): name of the resource
+        Returns:
+            :py:class:`sp.estimator.Estimator`: The demand estimator
+        Raises:
+            KeyError: Resource not found
+        """
+        return self.demand[resource_name]
+
     @classmethod
     def from_json(cls, json_data):
         """Create an application object from a json data

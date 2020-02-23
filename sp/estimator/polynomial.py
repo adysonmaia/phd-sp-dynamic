@@ -35,6 +35,8 @@ class LinearFunc(Estimator):
         if isinstance(value, list) or isinstance(value, tuple):
             if len(value) > 1:
                 self._coefficients = [float(value[0]), float(value[1])]
+            elif len(value) == 1:
+                self._coefficients = [0.0, float(value[0])]
             else:
                 self._coefficients = [0.0, 0.0]
         elif isinstance(value, dict):
