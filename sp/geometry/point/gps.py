@@ -1,16 +1,16 @@
-from . import Position
+from . import Point
 import warnings
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=DeprecationWarning)
     from pygeodesy.ellipsoidalNvector import LatLon
 
 
-class GpsPosition(Position):
-    LAT_INDEX = 0
-    LON_INDEX = 1
+class GpsPoint(Point):
+    LON_INDEX = 0
+    LAT_INDEX = 1
 
-    def __init__(self, lat=0, lon=0):
-        Position.__init__(self)
+    def __init__(self, lon=0, lat=0):
+        Point.__init__(self)
         self._values = [0, 0]
         self.lat = lat
         self.lon = lon
@@ -47,20 +47,20 @@ class GpsPosition(Position):
     def lon_lat(self):
         return self.lon, self.lat
 
-    def distance(self, other_pos):
-        if not isinstance(other_pos, GpsPosition):
+    def distance(self, other):
+        if not isinstance(other, GpsPoint):
             raise TypeError
         s = LatLon(*self.lat_lon)
-        d = LatLon(*other_pos.lat_lon)
+        d = LatLon(*other.lat_lon)
         return s.distanceTo(d)
 
-    def intermediate(self, other_pos, fraction):
-        if not isinstance(other_pos, GpsPosition):
+    def intermediate(self, other, fraction):
+        if not isinstance(other, GpsPoint):
             raise TypeError
         s = LatLon(*self.lat_lon)
-        d = LatLon(*other_pos.lat_lon)
+        d = LatLon(*other.lat_lon)
         inter_p = s.intermediateTo(d, fraction)
-        return GpsPosition(inter_p.lat, inter_p.lon)
+        return GpsPoint(lon=inter_p.lon, lat=inter_p.lat)
 
     @classmethod
     def from_json(cls, json_data):
@@ -68,17 +68,21 @@ class GpsPosition(Position):
 
 
 def from_json(json_data):
-    pos = None
+    lat = None
+    lon = None
     if isinstance(json_data, list) or isinstance(json_data, tuple):
-        pos = (float(json_data[0]), float(json_data[1]))
+        lon = float(json_data[0])
+        lat = float(json_data[1])
     elif isinstance(json_data, dict):
         if "x" in json_data and "y" in json_data:
-            pos = (float(json_data["y"]), float(json_data["x"]))
+            lon = float(json_data["x"])
+            lat = float(json_data["y"])
         elif "lat" in json_data and "lon" in json_data:
-            pos = (float(json_data["lat"]), float(json_data["lon"]))
+            lon = float(json_data["lon"])
+            lat = float(json_data["lat"])
     else:
         raise TypeError
-    return GpsPosition(*pos)
+    return GpsPoint(lon=lon, lat=lat)
 
 
 

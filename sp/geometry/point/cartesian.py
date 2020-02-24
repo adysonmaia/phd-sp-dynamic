@@ -1,15 +1,15 @@
-from . import Position
+from . import Point
 from scipy.spatial import distance
 import numpy as np
 
 
-class CartesianPosition(Position):
+class CartesianPoint(Point):
     X_INDEX = 0
     Y_INDEX = 1
     Z_INDEX = 2
 
     def __init__(self, *args):
-        Position.__init__(self)
+        Point.__init__(self)
         self._values = [0.0, 0.0]
         if len(args) == 1:
             if isinstance(args[0], list) or isinstance(args[0], tuple):
@@ -56,19 +56,19 @@ class CartesianPosition(Position):
         else:
             raise IndexError
 
-    def distance(self, other_pos):
-        if not isinstance(other_pos, CartesianPosition):
+    def distance(self, other):
+        if not isinstance(other, CartesianPoint):
             raise TypeError
-        return distance.euclidean(self.values, other_pos.values)
+        return distance.euclidean(self.values, other.values)
 
-    def intermediate(self, other_pos, fraction):
-        if not isinstance(other_pos, CartesianPosition):
+    def intermediate(self, other, fraction):
+        if not isinstance(other, CartesianPoint):
             raise TypeError
         inter_pos = self.values
         if fraction > 0.0:
-            delta_pos = other_pos.values - self.values
+            delta_pos = other.values - self.values
             inter_pos = self.values + delta_pos * fraction
-        return CartesianPosition(inter_pos)
+        return CartesianPoint(inter_pos)
 
     @classmethod
     def from_json(cls, json_data):
@@ -83,7 +83,7 @@ def from_json(json_data):
         pos = [float(json_data["x"]), float(json_data["y"])]
     else:
         raise TypeError
-    return CartesianPosition(pos)
+    return CartesianPoint(pos)
 
 
 

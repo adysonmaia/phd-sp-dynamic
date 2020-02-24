@@ -1,5 +1,5 @@
 from sp.model.resource import Resource
-from sp import position
+from sp.geometry import point
 from sp.estimator import polynomial
 from sp.estimator import power_consumption
 from future.utils import iteritems
@@ -53,7 +53,7 @@ def from_json(json_data):
     node.type = str(json_data["type"]).upper()
     node.availability = float(json_data["avail"])
     node.power_consumption = power_consumption.from_json(json_data["power"])
-    node.position = position.from_json(json_data["position"])
+    node.position = point.from_json(json_data["position"])
 
     for resource, value in iteritems(json_data["capacity"]):
         node.capacity[resource] = float(value)

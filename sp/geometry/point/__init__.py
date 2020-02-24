@@ -1,4 +1,4 @@
-class Position:
+class Point:
     def __init__(self):
         pass
 
@@ -19,10 +19,10 @@ class Position:
     def values(self, v):
         pass
 
-    def distance(self, other_pos):
+    def distance(self, other):
         return 0.0
 
-    def intermediate(self, other_pos, fraction):
+    def intermediate(self, other, fraction):
         return None
 
 

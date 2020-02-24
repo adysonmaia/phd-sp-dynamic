@@ -1,5 +1,5 @@
 from . import Mobility
-from sp import position
+from sp.geometry import point
 
 
 class StaticMobility(Mobility):
@@ -17,5 +17,5 @@ class StaticMobility(Mobility):
 
 
 def from_json(json_data):
-    pos = position.from_json(json_data)
+    pos = point.from_json(json_data)
     return StaticMobility(pos)

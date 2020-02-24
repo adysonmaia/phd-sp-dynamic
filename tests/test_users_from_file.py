@@ -1,6 +1,7 @@
 from sp.model.user import User
 from sp.mobility.static import StaticMobility
 from sp.mobility.track import TrackMobility
+from sp.geometry.point.gps import GpsPoint
 import json
 import unittest
 
@@ -101,9 +102,9 @@ class UsersFromFileTestCase(unittest.TestCase):
     def test_gps_positions(self):
         user = self.users[3]
         user.update_position(1213084687)
-        self.assertIsNotNone(user.current_position)
-        self.assertEqual(user.current_position[0], 37.75134)
-        self.assertEqual(user.current_position[1], -122.39488)
+        self.assertIsInstance(user.current_position, GpsPoint)
+        self.assertEqual(user.current_position.lat, 37.75134)
+        self.assertEqual(user.current_position.lon, -122.39488)
 
 
 if __name__ == '__main__':

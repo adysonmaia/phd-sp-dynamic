@@ -1,5 +1,5 @@
 from . import Mobility
-from sp import position
+from sp.geometry import point
 import copy
 
 
@@ -77,7 +77,7 @@ class TrackFrame:
 
 def _frame_from_json(json_data):
     f = TrackFrame()
-    f.position = position.from_json(json_data)
+    f.position = point.from_json(json_data)
     if isinstance(json_data, list):
         f.time = int(json_data[2])
     elif isinstance(json_data, dict) and "time" in json_data:
