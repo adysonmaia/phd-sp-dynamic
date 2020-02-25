@@ -1,7 +1,7 @@
 from sp.model import System, Scenario, Node, Allocation
 from sp.controller.environment import EnvironmentController, DefaultEnvironmentController
 from sp.controller.allocation import PeriodicAllocationController
-from sp.solver.cloud import Solver, CloudSolver
+from sp.solver.static.cloud import Solver, CloudSolver
 import json
 import unittest
 

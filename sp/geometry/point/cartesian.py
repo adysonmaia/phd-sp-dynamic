@@ -70,8 +70,8 @@ class CartesianPoint(Point):
             inter_pos = self.values + delta_pos * fraction
         return CartesianPoint(inter_pos)
 
-    @classmethod
-    def from_json(cls, json_data):
+    @staticmethod
+    def from_json(json_data):
         return from_json(json_data)
 
 

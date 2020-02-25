@@ -19,8 +19,8 @@ class User:
         if self.mobility is not None:
             return self.mobility.update_position(time)
 
-    @classmethod
-    def from_json(cls, json_data):
+    @staticmethod
+    def from_json(json_data):
         return from_json(json_data)
 
 

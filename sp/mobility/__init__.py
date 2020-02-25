@@ -1,11 +1,16 @@
+from abc import ABC, abstractmethod
+
+
 class Mobility:
     def __init__(self):
         pass
 
     @property
+    @abstractmethod
     def current_position(self):
         return None
 
+    @abstractmethod
     def update_position(self, time):
         pass
 

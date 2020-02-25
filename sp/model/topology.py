@@ -80,8 +80,8 @@ class Topology:
         self._links[link.nodes_id] = link
         self._clean_cache()
 
-    @classmethod
-    def from_json(cls, json_data):
+    @staticmethod
+    def from_json(json_data):
         return from_json(json_data)
 
 

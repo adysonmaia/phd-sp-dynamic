@@ -1,6 +1,6 @@
 from sp.model import System, Scenario, Node, Allocation
 from sp.controller.environment import EnvironmentController, DefaultEnvironmentController
-from sp.solver.cloud import CloudSolver
+from sp.solver.static.cloud import CloudSolver
 import json
 import unittest
 

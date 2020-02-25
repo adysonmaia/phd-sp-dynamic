@@ -42,8 +42,8 @@ class Node:
     def is_cloud(self):
         return self.type == self.CLOUD_TYPE
 
-    @classmethod
-    def from_json(cls, json_data):
+    @staticmethod
+    def from_json(json_data):
         return from_json(json_data)
 
 

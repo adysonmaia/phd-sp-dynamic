@@ -11,8 +11,11 @@ class StaticMobility(Mobility):
     def current_position(self):
         return self.position
 
-    @classmethod
-    def from_json(cls, json_data):
+    def update_position(self, time):
+        pass
+
+    @staticmethod
+    def from_json(json_data):
         return from_json(json_data)
 
 

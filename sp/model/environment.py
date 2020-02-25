@@ -17,8 +17,8 @@ class Environment:
     def get_app_queue_size(self, app_id, node_id):
         return self.app_queue_size[app_id][node_id]
 
-    @classmethod
-    def create_empty(cls, system):
+    @staticmethod
+    def create_empty(system):
         env = Environment()
 
         for app in system.apps:

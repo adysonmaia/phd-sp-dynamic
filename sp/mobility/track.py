@@ -4,9 +4,11 @@ import copy
 
 
 class TrackMobility(Mobility):
-    def __init__(self, tracks=[]):
+    def __init__(self, tracks=None):
         Mobility.__init__(self)
-        self.tracks = tracks
+        self.tracks = []
+        if tracks is not None:
+            self.tracks = tracks
         self._current_position = None
         self._current_time = 0
         self._current_index = 0
@@ -45,8 +47,8 @@ class TrackMobility(Mobility):
         self._current_index = new_index
         self._current_position = new_pos
 
-    @classmethod
-    def from_json(cls, json_data):
+    @staticmethod
+    def from_json(json_data):
         return from_json(json_data)
 
 

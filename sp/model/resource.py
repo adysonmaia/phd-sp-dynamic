@@ -11,8 +11,8 @@ class Resource:
     def id(self):
         return self.name
 
-    @classmethod
-    def from_json(cls, json_data):
+    @staticmethod
+    def from_json(json_data):
         return from_json(json_data)
 
 

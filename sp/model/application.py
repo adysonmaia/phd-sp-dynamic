@@ -74,8 +74,8 @@ class Application:
         """
         return self.demand[resource_name]
 
-    @classmethod
-    def from_json(cls, json_data):
+    @staticmethod
+    def from_json(json_data):
         """Create an application object from a json data
         See :py:func:`sp.model.application.from_json`
         Args:

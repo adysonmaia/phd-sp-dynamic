@@ -1,6 +1,9 @@
-class Point:
+from abc import ABC, abstractmethod
+
+
+class Point(ABC):
     def __init__(self):
-        pass
+        ABC.__init__(self)
 
     def __getitem__(self, index):
         return self.values[index]
@@ -12,16 +15,20 @@ class Point:
         return str(self.values)
 
     @property
+    @abstractmethod
     def values(self):
         return None
 
     @values.setter
+    @abstractmethod
     def values(self, v):
         pass
 
+    @abstractmethod
     def distance(self, other):
         return 0.0
 
+    @abstractmethod
     def intermediate(self, other, fraction):
         return None
 

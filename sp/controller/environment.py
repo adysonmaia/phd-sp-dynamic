@@ -11,6 +11,12 @@ class EnvironmentController(Controller):
     def __init__(self):
         Controller.__init__(self)
 
+    def update(self, time):
+        pass
+
+    def stop(self):
+        pass
+
 
 class DefaultEnvironmentController(EnvironmentController):
     def __init__(self):

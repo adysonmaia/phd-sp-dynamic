@@ -1,4 +1,4 @@
-from . import Solver, utils
+from sp.solver import Solver, utils
 from sp.model.allocation import Allocation
 
 

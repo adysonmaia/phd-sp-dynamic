@@ -10,8 +10,8 @@ class Link:
         ids_3 = ids_2[::-1]
         return (ids_1 == ids_2) or (ids_1 == ids_3)
 
-    @classmethod
-    def from_json(cls, json_data):
+    @staticmethod
+    def from_json(json_data):
         return from_json(json_data)
 
 

@@ -90,22 +90,9 @@ class Scenario:
 
         return len(list(filter(user_filter, self.users)))
 
-    @classmethod
-    def from_json(cls, json_data):
+    @staticmethod
+    def from_json(json_data):
         return from_json(json_data)
-
-
-def _json_key_content(json_data, key):
-    if key not in json_data:
-        raise TypeError
-
-    item = json_data[key]
-    if isinstance(item, str):
-        import json
-        with open(item) as json_file:
-            return json.load(json_file)
-    else:
-        return item
 
 
 def from_json(json_data):

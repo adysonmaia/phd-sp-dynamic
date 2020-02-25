@@ -62,8 +62,8 @@ class GpsPoint(Point):
         inter_p = s.intermediateTo(d, fraction)
         return GpsPoint(lon=inter_p.lon, lat=inter_p.lat)
 
-    @classmethod
-    def from_json(cls, json_data):
+    @staticmethod
+    def from_json(json_data):
         return from_json(json_data)
 
 

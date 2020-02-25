@@ -1,6 +1,6 @@
 from . import Controller
 from sp.solver import SolverError
-from sp.solver.cloud import CloudSolver
+from sp.solver.static.cloud import CloudSolver
 
 
 class AllocationController(Controller):
@@ -12,6 +12,12 @@ class AllocationController(Controller):
         Controller.start(self, system)
         if self.solver is None:
             self.solver = CloudSolver()
+
+    def update(self, time):
+        pass
+
+    def stop(self):
+        pass
 
 
 class PeriodicAllocationController(AllocationController):
