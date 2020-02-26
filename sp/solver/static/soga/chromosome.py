@@ -1,4 +1,8 @@
-from sp.heuristic.brkga import BRKGA, Chromosome
+from sp.heuristic.brkga import Chromosome
+from sp.model.allocation import Allocation
+from sp.solver.utils import local_search
+from . import individual_generator as indiv_gen
+from collections import defaultdict
 import math
 import numpy
 
@@ -6,6 +10,7 @@ INF = float("inf")
 POOL_SIZE = 4
 DEFAULT_STALL_WINDOW = 30
 DEFAULT_STALL_THRESHOLD = 0.0
+LOAD_CHUNK_PERCENT = 0.1
 
 
 class SOGAChromosome(Chromosome):
@@ -17,14 +22,8 @@ class SOGAChromosome(Chromosome):
 
         nb_apps = len(self.system.apps)
         nb_nodes = len(self.system.nodes)
-
-        self.requests = []
-        for app in self.system.apps:
-            for node in self.system.nodes:
-                load = self.system.get_request_load(app.id, node.id)
-                self.requests += [(app.id, node.id)] * math.ceil(load)
-
-        self.nb_genes = nb_apps * (nb_nodes + 1) + len(self.requests)
+        self.nb_genes = nb_apps * (2 * nb_nodes + 1)
+        self.requests = [(app.id, node.id) for app in self.system.apps for node in self.system.nodes]
 
         self.stall_window = DEFAULT_STALL_WINDOW
         self.stall_threshold = DEFAULT_STALL_THRESHOLD
@@ -39,20 +38,20 @@ class SOGAChromosome(Chromosome):
             return []
 
         indiv_list = [
-            ga_heuristic.create_individual_cloud(self),
-            ga_heuristic.create_individual_net_delay(self),
-            ga_heuristic.create_individual_cluster_metoids(self),
-            ga_heuristic.create_individual_deadline(self)
+            indiv_gen.create_individual_cloud(self),
+            indiv_gen.create_individual_net_delay(self),
+            indiv_gen.create_individual_cluster_metoids(self),
+            indiv_gen.create_individual_deadline(self)
         ]
         merged_indiv = []
         for indiv_1 in indiv_list:
-            indiv = ga_heuristic.invert_individual(self, indiv_1)
+            indiv = indiv_gen.invert_individual(self, indiv_1)
             merged_indiv.append(indiv)
 
             for indiv_2 in indiv_list:
                 if indiv_1 == indiv_2:
                     continue
-                indiv = ga_heuristic.merge_population(self, [indiv_1, indiv_2])
+                indiv = indiv_gen.merge_population(self, [indiv_1, indiv_2])
                 merged_indiv.append(indiv)
         indiv_list += merged_indiv
 
@@ -77,87 +76,83 @@ class SOGAChromosome(Chromosome):
         return self.objective(*result)
 
     def decode(self, individual):
-        nb_apps = len(self.apps)
-        r_apps = range(nb_apps)
-        nb_nodes = len(self.nodes)
-        r_nodes = range(nb_nodes)
-        nb_requests = len(self.requests)
-        r_requests = range(nb_requests)
-        cloud = self.get_cloud_index()
+        nb_apps = len(self.system.apps)
+        nb_nodes = len(self.system.nodes)
+        cloud_node = self.system.cloud_node
 
-        place = {(a, h): 0
-                 for h in r_nodes
-                 for a in r_apps}
-        load = {(a, b, h): 0
-                for h in r_nodes
-                for b in r_nodes
-                for a in r_apps}
-        app_load = {(a, h): 0
-                    for h in r_nodes
-                    for a in r_apps}
+        alloc = Allocation.create_empty(self.system)
+        alloc.received_load = defaultdict(lambda: defaultdict(float))
 
-        selected_nodes = []
-        for a in r_apps:
-            app = self.apps[a]
-            start = nb_apps + a * nb_nodes
+        selected_nodes = {}
+        for (a_index, app) in enumerate(self.system.apps):
+            start = nb_apps + a_index * nb_nodes
             end = start + nb_nodes
             priority = individual[start:end]
 
-            nodes = list(r_nodes)
-            nodes.sort(key=lambda v: priority[v], reverse=True)
-            percentage = individual[a]
+            nodes_index = list(range(nb_nodes))
+            nodes_index.sort(key=lambda v: priority[v], reverse=True)
+            percentage = individual[a_index]
             nb_instances = int(math.ceil(percentage * app.max_instances))
             max_nodes = min(nb_nodes, nb_instances)
-            selected_nodes.append(nodes[:max_nodes])
+            nodes_index = nodes_index[:max_nodes]
 
-        resource_used = {(h, r): 0 for h in r_nodes for r in self.resources}
+            selected_nodes[app.id] = list(map(lambda n_index: self.system.nodes[n_index], nodes_index))
 
         start = nb_apps * (nb_nodes + 1)
-        end = start + nb_requests
+        end = start + self.nb_genes
         priority = individual[start:end]
 
-        s_requests = sorted(r_requests, key=lambda v: priority[v], reverse=True)
-        for req in s_requests:
-            a, b = self.requests[req]
-            nodes = list(selected_nodes[a])
-            nodes.sort(key=lambda h: self._node_priority(individual,
-                                                         a, b, h, app_load))
-            nodes.append(cloud)
-            for h in nodes:
-                fit = True
-                resources = {}
-                for r in self.resources:
-                    k1, k2 = self.apps[a].get_demand(r)
-                    value = resource_used[h, r] + k1 + (1 - place[a, h]) * k2
-                    capacity = self.nodes[h].get_capacity(r)
-                    resources[r] = value
-                    fit = fit and (value <= capacity)
+        requests_index = list(range(len(self.requests)))
+        requests_index.sort(key=lambda i: priority[i], reverse=True)
+        for req_index in requests_index:
+            app_id, src_node_id = self.requests[req_index]
+            app = self.system.get_app(app_id)
+            src_node = self.system.get_node(src_node_id)
 
-                if fit:
-                    load[a, b, h] += 1
-                    app_load[a, h] += 1
-                    place[a, h] = 1
-                    for r in self.resources:
-                        resource_used[h, r] = resources[r]
-                    break
+            nodes = selected_nodes[app.id]
+            nodes.sort(key=lambda n: self._node_priority(app, src_node, n, alloc))
+            nodes.append(cloud_node)
 
-        return self.local_search(place, load)
+            total_load = float(self.system.get_request_load(app.id, src_node.id))
+            remaining_load = total_load
+            chunk = total_load * LOAD_CHUNK_PERCENT
 
-    def _node_priority(self, indiv, a, b, h, app_load):
-        app = self.apps[a]
-        work_size = app.work_size
-        cpu_k1, cpu_k2 = app.get_cpu_demand()
+            while remaining_load > 0.0:
+                for dst_node in nodes:
+                    alloc[dst_node.id][app.id] += chunk
+                    if self._check_capacity_constraint(dst_node, alloc):
+                        alloc.set_app_placement(app.id, dst_node.id, True)
+                        ld = alloc.get_load_distribution(app.id, src_node.id, dst_node.id)
+                        ld += chunk / total_load
+                        alloc.set_load_distribution(app.id, src_node.id, dst_node.id, ld)
+                        remaining_load -= chunk
+                        chunk = min(remaining_load, chunk)
+                        break
+                    else:
+                        alloc[dst_node.id][app.id] -= chunk
 
-        proc_delay = 0.0
-        net_delay = self.get_net_delay(a, b, h)
+        del alloc.received_load
+        return local_search(alloc)
 
-        # new request + current load
-        node_load = 1 + app_load[a, h]
-        proc_delay_divisor = float(node_load * (cpu_k1 - work_size) + cpu_k2)
-        if proc_delay_divisor > 0.0:
-            proc_delay = work_size / proc_delay_divisor
-        else:
-            proc_delay = INF
+    def _check_capacity_constraint(self, node, alloc):
+        # TODO: improve the performance of this method
+        for resource in self.system.resources:
+            capacity = node.capacity[resource.name]
+            demand = 0.0
+            for app in self.system.apps:
+                demand += app.demand[resource.name](alloc.received_load[node.id][app.id])
+            if demand > capacity:
+                return False
+        return True
+
+    def _node_priority(self, app, src_node, dst_node, alloc):
+        net_delay = self.system.get_net_delay(app.id, src_node.id, dst_node.id)
+
+        arrival_rate = alloc.received_load[dst_node.id][app.id]
+        service_rate = app.cpu_demand(arrival_rate) / float(app.work_size)
+        proc_delay = INF
+        if service_rate > arrival_rate:
+            proc_delay = 1.0 / float(service_rate - arrival_rate)
 
         return net_delay + proc_delay
 

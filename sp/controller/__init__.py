@@ -6,15 +6,11 @@ class Controller(ABC):
         ABC.__init__(self)
         self.system = None
 
-    def start(self, system):
+    def init_params(self, system):
         self.system = system
         if self.system is None:
             raise ValueError("System not defined")
 
     @abstractmethod
-    def update(self, time):
-        pass
-
-    @abstractmethod
-    def stop(self):
+    def update(self, system):
         pass

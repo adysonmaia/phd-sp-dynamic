@@ -17,7 +17,7 @@ def floyd_warshall(graph, weight_func=None):
     succ = defaultdict(dict)
     for link in graph.links:
         u, v = link.nodes_id
-        l_weight = weight_func(u, v)
+        l_weight = weight_func(graph, u, v)
         dist[u][v] = min(l_weight, dist[u][v])
         succ[u][v] = v
 
@@ -34,7 +34,7 @@ def floyd_warshall(graph, weight_func=None):
     return dict(succ), dict(dist)
 
 
-def default_link_weight(src_node_id, dst_node_id):
+def default_link_weight(graph, src_node_id, dst_node_id):
     return 1.0
 
 

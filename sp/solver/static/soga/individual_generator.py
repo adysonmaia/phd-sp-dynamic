@@ -3,10 +3,16 @@ from sp.heuristic.kmedoids import KMedoids
 INF = float("inf")
 
 
+def create_individual_empty(chromosome):
+    """Create a default individual
+    """
+    return [0.0] * chromosome.nb_genes
+
+
 def create_individual_cloud(chromosome):
     """Create an individual that prioritizes the cloud node
     """
-    return [0] * chromosome.nb_genes
+    return [0.0] * chromosome.nb_genes
 
 
 def create_individual_net_delay(chromosome):
@@ -17,7 +23,7 @@ def create_individual_net_delay(chromosome):
     nb_apps = len(system.apps)
     nb_nodes = len(system.nodes)
 
-    indiv = [0] * chromosome.nb_genes
+    indiv = create_individual_empty(chromosome)
     for (a_index, app) in enumerate(system.apps):
         indiv[a_index] = 1.0
 
@@ -43,7 +49,7 @@ def create_individual_net_delay(chromosome):
     return indiv
 
 
-def create_individual_cluster(chromosome):
+def create_individual_cluster_metoids(chromosome, use_sc=False):
     """Create an individual based on k-medoids clustering.
     The idea is the users of an application are grouped and central nodes of each group are prioritized.
     It also prioritizes requests with strict deadlines
@@ -53,104 +59,22 @@ def create_individual_cluster(chromosome):
     nb_nodes = len(system.nodes)
     kmedoids = KMedoids()
 
-    indiv = [0] * chromosome.nb_genes
+    indiv = create_individual_empty(chromosome)
     for (a_index, app) in enumerate(system.apps):
         indiv[a_index] = 1.0
 
         distances = [[system.get_net_delay(app.id, src_node.id, dst_node.id)
                       for dst_node in system.nodes]
                      for src_node in system.nodes]
-        features = list(filter(lambda node: system.get_request_load(app.id, node.id) > 0, system.nodes))
-        max_nb_clusters = min(len(features), app.max_instances)
+        features = list(filter(lambda n: system.get_request_load(app.id, n.id) > 0, system.nodes))
 
-        clusters = [list(range(nb_nodes))]
-        max_score = -1
-        if max_nb_clusters > 1:
-            for k in range(1, max_nb_clusters + 1):
-                k_clusters = kmedoids.fit(k, features, distances)
-                k_score = kmedoids.silhouette_score(k_clusters, distances)
-                if k_score > max_score:
-                    max_score = k_score
-                    clusters = k_clusters
-
-        nb_instances = min(nb_nodes, app.max_instances)
-        cluster_nb_instances = nb_instances // len(clusters)
-        for cluster in clusters:
-            priority = {i: sum([distances[i][j] for j in cluster])
-                        for i in cluster}
-            cluster.sort(key=lambda i: priority[i])
-            for (c_index, n_index) in enumerate(cluster):
-                key = nb_apps + a_index * nb_nodes + n_index
-                value = 0
-                if c_index < cluster_nb_instances:
-                    value = 1.0 - c_index / float(cluster_nb_instances)
-                indiv[key] = value
-
-    return indiv
-
-
-def create_individual_cluster_metoids(chromosome):
-    """Create an individual based on k-medoids clustering.
-    The idea is the users of an application are grouped and central nodes of each group are prioritized.
-    It also prioritizes requests with strict deadlines
-    """
-    system = chromosome.system
-    nb_apps = len(system.apps)
-    nb_nodes = len(system.nodes)
-    kmedoids = KMedoids()
-
-    indiv = [0] * chromosome.nb_genes
-    for (a_index, app) in enumerate(system.apps):
-        indiv[a_index] = 1.0
-
-        distances = [[system.get_net_delay(app.id, src_node.id, dst_node.id)
-                      for dst_node in system.nodes]
-                     for src_node in system.nodes]
-        features = list(filter(lambda src_node: system.get_request_load(app.id, src_node.id) > 0, system.nodes))
-
-        nb_clusters = min(len(features), app.max_instances)
-        kmedoids.fit(nb_clusters, features, distances)
-        metoids = kmedoids.get_last_metoids()
-        m_distances = []
-        max_dist = 1.0
-        for (n_index, node) in enumerate(system.nodes):
-            dist = min(map(lambda m: distances[n_index][m], metoids))
-            m_distances.append(dist)
-            if dist > max_dist:
-                max_dist = dist
-
-        for (n_index, node) in enumerate(system.nodes):
-            key = nb_apps + a_index * nb_nodes + n_index
-            value = 1.0 - m_distances[n_index] / float(max_dist)
-            indiv[key] = value
-
-    return indiv
-
-
-def create_individual_cluster_metoids_sc(chromosome):
-    """Create an individual based on k-medoids clustering with silhouette score.
-    The idea is the users of an application are grouped and central nodes of each group are prioritized.
-    It also prioritizes requests with strict deadlines
-    """
-    system = chromosome.system
-    nb_apps = len(system.apps)
-    nb_nodes = len(system.nodes)
-    kmedoids = KMedoids()
-
-    indiv = [0] * chromosome.nb_genes
-    for (a_index, app) in enumerate(system.apps):
-        indiv[a_index] = 1.0
-
-        distances = [[system.get_net_delay(app.id, src_node.id, dst_node.id)
-                      for dst_node in system.nodes]
-                     for src_node in system.nodes]
-        features = list(filter(lambda src_node: system.get_request_load(app.id, src_node.id) > 0, system.nodes))
-        max_nb_clusters = min(len(features), app.max_instances)
+        max_nb_clusters = int(min(len(features), app.max_instances))
+        min_nb_clusters = 1 if use_sc else max_nb_clusters
 
         metoids = list(range(nb_nodes))
         max_score = -1
         if max_nb_clusters > 1:
-            for k in range(1, max_nb_clusters + 1):
+            for k in range(min_nb_clusters, max_nb_clusters + 1):
                 k_clusters = kmedoids.fit(k, features, distances)
                 k_score = kmedoids.silhouette_score(k_clusters, distances)
                 k_metoids = kmedoids.get_last_metoids()
@@ -174,6 +98,14 @@ def create_individual_cluster_metoids_sc(chromosome):
     return indiv
 
 
+def create_individual_cluster_metoids_sc(chromosome):
+    """Create an individual based on k-medoids clustering with silhouette score.
+    The idea is the users of an application are grouped and central nodes of each group are prioritized.
+    It also prioritizes requests with strict deadlines
+    """
+    return create_individual_cluster_metoids(chromosome, use_sc=True)
+
+
 def create_individual_load(chromosome):
     """Create an individual that prioritizes nodes with large load
     """
@@ -181,7 +113,7 @@ def create_individual_load(chromosome):
     nb_apps = len(system.apps)
     nb_nodes = len(system.nodes)
 
-    indiv = [0] * chromosome.nb_genes
+    indiv = create_individual_empty(chromosome)
     max_deadline = 1.0
     max_load = 0.0
 
@@ -226,7 +158,7 @@ def create_individual_capacity(chromosome):
     nb_nodes = len(system.nodes)
     nb_resources = len(system.resources)
 
-    indiv = [0] * chromosome.nb_genes
+    indiv = create_individual_empty(chromosome)
 
     max_capacity = {r.name: 1.0 for r in system.resources}
     for (n_index, node) in enumerate(system.nodes):
@@ -263,7 +195,7 @@ def create_individual_deadline(chromosome):
     nb_apps = len(system.apps)
     nb_nodes = len(system.nodes)
 
-    indiv = [0] * chromosome.nb_genes
+    indiv = create_individual_empty(chromosome)
     max_deadline = 1.0
 
     for (a_index, app) in enumerate(system.apps):

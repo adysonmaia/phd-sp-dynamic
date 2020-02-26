@@ -1,38 +1,33 @@
 from . import Estimator
+from abc import abstractmethod
 
 
 class QueueSizeEstimator(Estimator):
-    def __init__(self, system=None):
-        Estimator.__init__(self)
-        self.system = system
-
-    def calc_app_queue_sizes(self, app_id):
-        app = self.system.get_app(app_id)
+    def calc_app_queue_sizes(self, system, app_id):
+        app = system.get_app(app_id)
         q_sizes = {}
-        for node in self.system.nodes:
-            q_sizes[node.id] = self.calc(app.id, node.id)
+        for node in system.nodes:
+            q_sizes[node.id] = self.calc(system, app.id, node.id)
         return q_sizes
 
-    def calc_node_queue_sizes(self, node_id):
-        node = self.system.get_node(node_id)
+    def calc_node_queue_sizes(self, system, node_id):
+        node = system.get_node(node_id)
         q_sizes = {}
-        for app in self.system.apps:
-            q_sizes[app.id] = self.calc(app.id, node.id)
+        for app in system.apps:
+            q_sizes[app.id] = self.calc(system, app.id, node.id)
         return q_sizes
 
-    def calc_all_queue_sizes(self):
+    def calc_all_queue_sizes(self, system):
         loads = {}
-        for app in self.system.apps:
-            loads[app.id] = self.calc_app_queue_sizes(app.id)
+        for app in system.apps:
+            loads[app.id] = self.calc_app_queue_sizes(system, app.id)
         return loads
 
-    def calc(self, app_id, node_id):
-        return None
+    @abstractmethod
+    def calc(self, system, app_id, node_id):
+        pass
 
 
 class DefaultQueueSizeEstimator(QueueSizeEstimator):
-    def __init__(self, system=None):
-        QueueSizeEstimator.__init__(self, system)
-
-    def calc(self, app_id, node_id):
+    def calc(self, system, app_id, node_id):
         return 0.0

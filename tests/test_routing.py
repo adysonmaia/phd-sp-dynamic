@@ -36,10 +36,10 @@ class RoutingTestCase(unittest.TestCase):
     def test_shortest_path(self):
         app_id = 0
         app = self.system.get_app(app_id)
-        routing = ShortestPathRouting(self.system)
+        routing = ShortestPathRouting()
         routing.static_routing = True
-        routing.link_delay_estimator = DefaultLinkDelayEstimator(self.system)
-        routing.update(0)
+        routing.link_delay_estimator = DefaultLinkDelayEstimator()
+        routing.update(self.system)
 
         for link in self.system.links:
             l_nodes = list(link.nodes_id)

@@ -43,15 +43,11 @@ class Simulator:
 
         if self._env_control is None:
             self._env_control = DefaultEnvironmentController()
-        self._env_control.start(self._system)
+        self._env_control.init_params(self._system)
 
         if self._alloc_control is None:
             self._alloc_control = PeriodicAllocationController()
-        self._alloc_control.start(self._system)
-
-    def _stop_sim(self):
-        self._env_control.stop()
-        self._alloc_control.stop()
+        self._alloc_control.init_params(self._system)
 
     def run(self):
         self._start_sim()
@@ -59,9 +55,12 @@ class Simulator:
         while self._current_time < self._stop_time:
             self._system.time = self._current_time
 
-            self._env_control.update(self._current_time)
-            self._alloc_control.update(self._current_time)
+            env = self._env_control.update(self._system)
+            if env is not None:
+                self._system.environment = env
+
+            alloc = self._alloc_control.update(self._system)
+            if alloc is not None:
+                self._system.allocation = alloc
 
             self._current_time += self._step_time
-
-        self._stop_sim()

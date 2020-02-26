@@ -28,12 +28,13 @@ class CloudSolverTestCase(unittest.TestCase):
 
         time = 0
         self.system.time = time
-        self.env_ctl.start(self.system)
-        self.env_ctl.update(time)
+        self.env_ctl.init_params(self.system)
+        self.system.environment = self.env_ctl.update(self.system)
+        self.assertIsNotNone(self.system.environment)
 
     def test_solver(self):
         solver = CloudSolver()
-        solution = solver.solve(self.system, self.system.time)
+        solution = solver.solve(self.system)
 
         self.assertIsInstance(solution, Allocation)
         self.assertIsNotNone(solution.app_placement)

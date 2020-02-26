@@ -1,10 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class Mobility:
-    def __init__(self):
-        pass
-
+class Mobility(ABC):
     @property
     @abstractmethod
     def current_position(self):

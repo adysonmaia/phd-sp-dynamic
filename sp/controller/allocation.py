@@ -1,6 +1,7 @@
 from . import Controller
 from sp.solver import SolverError
 from sp.solver.static.cloud import CloudSolver
+from abc import abstractmethod
 
 
 class AllocationController(Controller):
@@ -8,39 +9,34 @@ class AllocationController(Controller):
         Controller.__init__(self)
         self.solver = None
 
-    def start(self, system):
-        Controller.start(self, system)
+    def init_params(self, system):
+        Controller.init_params(self, system)
         if self.solver is None:
             self.solver = CloudSolver()
 
-    def update(self, time):
-        pass
-
-    def stop(self):
+    @abstractmethod
+    def update(self, system):
         pass
 
 
 class PeriodicAllocationController(AllocationController):
-    def __init__(self):
+    def __init__(self, period=1):
         AllocationController.__init__(self)
-        self.period = 1
+        self.period = period
         self.next_update = 0
 
-    def start(self, system):
-        AllocationController.start(self, system)
+    def init_params(self, system):
+        AllocationController.init_params(self, system)
         self.next_update = system.time
 
-    def update(self, time):
-        if time != self.next_update:
-            return
-
+    def update(self, system):
+        current_time = system.time
         alloc = None
-        try:
-            alloc = self.solver.solve(self.system, time)
-        except SolverError:
-            alloc = None
-
-        if alloc is not None:
-            self.system.allocation = alloc
-        self.next_update = time + self.period
+        if current_time == self.next_update:
+            try:
+                alloc = self.solver.solve(self.system)
+            except SolverError:
+                alloc = None
+            self.next_update = current_time + self.period
+        return alloc
 

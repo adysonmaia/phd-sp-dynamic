@@ -1,40 +1,35 @@
 from . import Estimator
+from abc import abstractmethod
 
 
 class RequestLoadEstimator(Estimator):
-    def __init__(self, system=None):
-        Estimator.__init__(self)
-        self.system = system
-
-    def calc_app_loads(self, app_id):
-        app = self.system.get_app(app_id)
+    def calc_app_loads(self, system, app_id):
+        app = system.get_app(app_id)
         loads = {}
-        for node in self.system.nodes:
-            loads[node.id] = self.calc(app.id, node.id)
+        for node in system.nodes:
+            loads[node.id] = self.calc(system, app.id, node.id)
         return loads
 
-    def calc_node_loads(self, node_id):
-        node = self.system.get_node(node_id)
+    def calc_node_loads(self, system, node_id):
+        node = system.get_node(node_id)
         loads = {}
-        for app in self.system.apps:
-            loads[app.id] = self.calc(app.id, node.id)
+        for app in system.apps:
+            loads[app.id] = self.calc(system, app.id, node.id)
         return loads
 
-    def calc_all_loads(self):
+    def calc_all_loads(self, system):
         loads = {}
-        for app in self.system.apps:
-            loads[app.id] = self.calc_app_loads(app.id)
+        for app in system.apps:
+            loads[app.id] = self.calc_app_loads(system, app.id)
         return loads
 
-    def calc(self, app_id, node_id):
-        return 0.0
+    @abstractmethod
+    def calc(self, system, app_id, node_id):
+        pass
 
 
 class DefaultRequestLoadEstimator(RequestLoadEstimator):
-    def __init__(self, system=None):
-        RequestLoadEstimator.__init__(self, system)
-
-    def calc(self, app_id, node_id):
-        nb_users = self.system.get_nb_users(app_id, node_id)
-        app = self.system.get_app(app_id)
+    def calc(self, system, app_id, node_id):
+        nb_users = system.get_nb_users(app_id, node_id)
+        app = system.get_app(app_id)
         return float(app.request_rate * nb_users)

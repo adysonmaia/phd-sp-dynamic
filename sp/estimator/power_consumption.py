@@ -1,12 +1,11 @@
 from . import Estimator
+from abc import abstractmethod
 
 
 class PowerEstimator(Estimator):
-    def __init__(self):
-        Estimator.__init__(self)
-
+    @abstractmethod
     def calc(self, utilization):
-        return 0.0
+        pass
 
 
 class LinearPowerEstimator(PowerEstimator):

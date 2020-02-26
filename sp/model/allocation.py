@@ -22,8 +22,8 @@ class Allocation:
     def set_allocated_resource(self, app_id, node_id, resource_name, value):
         self.allocated_resource[app_id][node_id][resource_name] = float(value)
 
-    @classmethod
-    def create_empty(cls, system):
+    @staticmethod
+    def create_empty(system):
         alloc = Allocation()
 
         for app in system.apps:

@@ -1,4 +1,4 @@
-from sp.model import System, Scenario
+from sp.model import System, Scenario, Environment
 from sp.controller.environment import DefaultEnvironmentController
 from sp.routing.shortest_path import Routing, ShortestPathRouting
 from sp.coverage.min_dist import Coverage, MinDistCoverage
@@ -35,7 +35,7 @@ class EnvControlTestCase(unittest.TestCase):
 
         time = 0
         self.system.time = time
-        control.start(self.system)
+        control.init_params(self.system)
 
         self.assertIsInstance(control.system, System)
         self.assertIsInstance(control.routing, Routing)
@@ -43,8 +43,6 @@ class EnvControlTestCase(unittest.TestCase):
         self.assertIsInstance(control.link_delay_estimator, LinkDelayEstimator)
         self.assertIsInstance(control.req_load_estimator, RequestLoadEstimator)
         self.assertIsInstance(control.queue_size_estimator, QueueSizeEstimator)
-
-        control.stop()
 
     def test_env_update(self):
         control = DefaultEnvironmentController()
@@ -56,39 +54,36 @@ class EnvControlTestCase(unittest.TestCase):
 
         for time in [0, 1]:
             self.system.time = time
-            control.start(self.system)
-            control.update(time)
-            control.update(time)
-            env_mode = self.system.environment
+            control.init_params(self.system)
+            env_model = control.update(self.system)
+            self.system.environment = env_model
 
-            self.assertIsNotNone(env_mode)
-            self.assertIsNotNone(env_mode.request_load)
-            self.assertIsNotNone(env_mode.net_delay)
-            self.assertIsNotNone(env_mode.net_path)
-            self.assertIsNotNone(env_mode.app_queue_size)
+            self.assertIsInstance(env_model, Environment)
+            self.assertIsNotNone(env_model.request_load)
+            self.assertIsNotNone(env_model.net_delay)
+            self.assertIsNotNone(env_model.net_path)
+            self.assertIsNotNone(env_model.app_queue_size)
 
             for app in self.system.apps:
                 for src_node in self.system.nodes:
-                    queue_size = env_mode.get_app_queue_size(app.id, src_node.id)
+                    queue_size = env_model.get_app_queue_size(app.id, src_node.id)
                     self.assertEqual(queue_size, 0.0)
 
-                    load = env_mode.get_request_load(app.id, src_node.id)
+                    load = env_model.get_request_load(app.id, src_node.id)
                     if src_node.is_base_station():
                         self.assertGreater(load, 0.0)
                     else:
                         self.assertEqual(load, 0.0)
 
                     for dst_node in self.system.nodes:
-                        delay = env_mode.get_net_delay(app.id, src_node.id, dst_node.id)
-                        path = env_mode.get_net_path(app.id, src_node.id, dst_node.id)
+                        delay = env_model.get_net_delay(app.id, src_node.id, dst_node.id)
+                        path = env_model.get_net_path(app.id, src_node.id, dst_node.id)
                         if src_node.id == dst_node.id:
                             self.assertEqual(delay, 0.0)
                             self.assertEqual(len(path), 0.0)
                         else:
                             self.assertGreater(delay, 0.0)
                             self.assertGreater(len(path), 0.0)
-
-        control.stop()
 
 
 if __name__ == '__main__':

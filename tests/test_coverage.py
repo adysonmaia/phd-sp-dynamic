@@ -34,11 +34,10 @@ class CoverageTestCase(unittest.TestCase):
 
     def test_circle_coverage(self):
         radius = 1000
-        cov = CircleCoverage(self.system, radius=radius)
-        self.assertIsInstance(cov.system, System)
+        cov = CircleCoverage(radius=radius)
         self.assertEqual(cov.radius, radius)
 
-        cov.update(self.system.time)
+        cov.update(self.system)
         count = {-1: 0}
         for node in self.system.nodes:
             count[node.id] = 0
@@ -62,10 +61,9 @@ class CoverageTestCase(unittest.TestCase):
             self.assertEqual(self.system.get_nb_users(app_id=app.id), count[app.id])
 
     def test_min_dist_coverage(self):
-        cov = MinDistCoverage(self.system)
-        self.assertIsInstance(cov.system, System)
+        cov = MinDistCoverage()
 
-        cov.update(self.system.time)
+        cov.update(self.system)
         count = {-1: 0}
         for node in self.system.nodes:
             count[node.id] = 0

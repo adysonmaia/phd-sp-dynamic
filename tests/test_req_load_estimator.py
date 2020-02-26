@@ -1,5 +1,5 @@
 from sp.model import System, Scenario
-from sp.estimator.request_load import RequestLoadEstimator, DefaultRequestLoadEstimator
+from sp.estimator.request_load import DefaultRequestLoadEstimator
 from sp.coverage.min_dist import MinDistCoverage
 from future.utils import iteritems
 import json
@@ -16,7 +16,7 @@ class RequestLoadEstimatorTestCase(unittest.TestCase):
             system = System()
             system.scenario = Scenario.from_json(data)
         cls.system = system
-        cls.coverage = MinDistCoverage(system)
+        cls.coverage = MinDistCoverage()
 
     def setUp(self):
         self.assertIsInstance(self.system, System)
@@ -34,10 +34,10 @@ class RequestLoadEstimatorTestCase(unittest.TestCase):
         for node in self.system.nodes:
             self.assertIsNotNone(node.current_position)
 
-        self.coverage.update(time)
+        self.coverage.update(self.system)
 
     def test_calc(self):
-        estimator = DefaultRequestLoadEstimator(self.system)
+        estimator = DefaultRequestLoadEstimator()
 
         # (app_id, node_id): load
         values = {
@@ -46,11 +46,12 @@ class RequestLoadEstimatorTestCase(unittest.TestCase):
             (2, 0): 0.0, (2, 1): 0.0, (2, 2): 1.0,   (2, 3): 2.0,
         }
         for ids, load in iteritems(values):
-            self.assertEqual(estimator.calc(*ids), load)
+            self.assertEqual(estimator.calc(self.system, *ids), load)
+            self.assertEqual(estimator(self.system, *ids), load)
 
     def test_calc_all_loads(self):
-        estimator = DefaultRequestLoadEstimator(self.system)
-        all_loads = estimator.calc_all_loads()
+        estimator = DefaultRequestLoadEstimator()
+        all_loads = estimator.calc_all_loads(self.system)
 
         self.assertIsNotNone(all_loads)
         for app in self.system.apps:
@@ -60,18 +61,18 @@ class RequestLoadEstimatorTestCase(unittest.TestCase):
                 self.assertIn(node.id, app_loads)
 
     def test_calc_node_loads(self):
-        estimator = DefaultRequestLoadEstimator(self.system)
+        estimator = DefaultRequestLoadEstimator()
         node_id = 0
-        node_loads = estimator.calc_node_loads(node_id)
+        node_loads = estimator.calc_node_loads(self.system, node_id)
 
         self.assertIsNotNone(node_loads)
         for app in self.system.apps:
             self.assertIn(app.id, node_loads)
 
     def test_calc_app_loads(self):
-        estimator = DefaultRequestLoadEstimator(self.system)
+        estimator = DefaultRequestLoadEstimator()
         app_id = 0
-        app_loads = estimator.calc_app_loads(app_id)
+        app_loads = estimator.calc_app_loads(self.system, app_id)
 
         self.assertIsNotNone(app_loads)
         for node in self.system.nodes:

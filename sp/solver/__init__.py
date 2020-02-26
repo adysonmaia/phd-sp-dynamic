@@ -1,4 +1,3 @@
-from sp.utils import resource_allocation
 from abc import ABC, abstractmethod
 
 
@@ -7,12 +6,10 @@ class Solver(ABC):
         ABC.__init__(self)
 
     @abstractmethod
-    def solve(self, system, time=0):
+    def solve(self, system):
         return None
 
 
 class SolverError(Exception):
     pass
 
-
-utils = resource_allocation

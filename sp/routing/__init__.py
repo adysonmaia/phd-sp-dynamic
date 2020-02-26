@@ -2,10 +2,6 @@ from abc import ABC, abstractmethod
 
 
 class Routing(ABC):
-    def __init__(self, system=None):
-        ABC.__init__(self)
-        self.system = system
-
     @abstractmethod
     def get_path(self, app_id, src_node_id, dst_node_id):
         return None
@@ -23,5 +19,5 @@ class Routing(ABC):
         return None
 
     @abstractmethod
-    def update(self, time):
+    def update(self, system):
         pass

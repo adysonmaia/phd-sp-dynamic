@@ -6,10 +6,7 @@ ALL_LOAD = 1.0
 
 
 class CloudSolver(Solver):
-    def __init__(self):
-        Solver.__init__(self)
-
-    def solve(self, system, time=0):
+    def solve(self, system):
         alloc = Allocation.create_empty(system)
         cloud_node = system.cloud_node
 

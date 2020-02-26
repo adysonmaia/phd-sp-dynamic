@@ -32,15 +32,13 @@ class AllocControlTestCase(unittest.TestCase):
 
         time = 0
         self.system.time = time
-        self.env_ctl.start(self.system)
+        self.env_ctl.init_params(self.system)
 
-        alloc_ctr.start(self.system)
+        alloc_ctr.init_params(self.system)
         self.assertIsInstance(alloc_ctr.system, System)
         self.assertIsInstance(alloc_ctr.solver, Solver)
         self.assertEqual(alloc_ctr.next_update, time)
         self.assertGreater(alloc_ctr.period, 0)
-
-        alloc_ctr.stop()
 
     def test_periodic_update(self):
         alloc_ctr = PeriodicAllocationController()
@@ -51,24 +49,22 @@ class AllocControlTestCase(unittest.TestCase):
 
             time = 0
             self.system.time = time
-            self.env_ctl.start(self.system)
-            alloc_ctr.start(self.system)
+            self.env_ctl.init_params(self.system)
+            alloc_ctr.init_params(self.system)
 
             for time in range(4):
                 self.system.time = time
-                self.env_ctl.update(time)
+                self.system.environment = self.env_ctl.update(self.system)
+                self.assertIsNotNone(self.system.environment)
 
                 self.system.allocation = None
                 updated = (alloc_ctr.next_update == time)
-                alloc_ctr.update(time)
+                self.system.allocation = alloc_ctr.update(self.system)
                 if updated:
                     self.assertIsInstance(self.system.allocation, Allocation)
                     self.assertEqual(alloc_ctr.next_update, time + period)
                 else:
                     self.assertIsNone(self.system.allocation)
-
-            self.env_ctl.stop()
-            alloc_ctr.stop()
 
 
 if __name__ == '__main__':
