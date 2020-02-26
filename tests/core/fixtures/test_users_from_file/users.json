@@ -1,0 +1,8 @@
+{
+  "users": [
+    {"id":  0, "app_id":  0, "pos":  [0.0, 0.0]},
+    {"id":  1, "app_id":  1, "pos":  [{"x": 0, "y":  0, "t":  0}, {"x": 0, "y":  1, "t":  1}, {"x": 1, "y":  1, "t":  2}]},
+    {"id":  2, "app_id":  0, "pos":  [[0, 0, 0], [2, 2, 2], [5, 5, 5]]},
+    {"id":  3, "app_id":  1, "pos":  "tests/core/fixtures/test_users_from_file/user_3_traces.json"}
+  ]
+}

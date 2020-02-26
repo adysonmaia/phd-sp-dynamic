@@ -1,5 +1,0 @@
-{
-  "topology": "./tests/fixtures/test_topology_from_file.json",
-  "apps": "./tests/fixtures/test_apps_from_file.json",
-  "users": "./tests/fixtures/test_users_from_file/users.json"
-}
