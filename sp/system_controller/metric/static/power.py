@@ -4,17 +4,17 @@ from statistics import mean
 
 def overall_power_consumption(system, solution):
     values = _calc_cpu_power_consumption(system, solution)
-    return sum(values)
+    return sum(values) if len(values) > 0 else 0.0
 
 
 def avg_power_consumption(system, solution):
     values = _calc_cpu_power_consumption(system, solution)
-    return mean(values)
+    return mean(values) if len(values) > 0 else 0.0
 
 
 def max_power_consumption(system, solution):
     values = _calc_cpu_power_consumption(system, solution)
-    return max(values)
+    return max(values) if len(values) > 0 else 0.0
 
 
 def _calc_cpu_power_consumption(system, solution):

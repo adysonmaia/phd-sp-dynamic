@@ -3,24 +3,22 @@ from statistics import mean
 
 def avg_unavailability(system, solution):
     probs = _calc_unavailability_probability(system, solution)
-    return mean(probs)
+    return mean(probs) if len(probs) > 0 else 0.0
 
 
 def avg_availability(system, solution):
     probs = _calc_unavailability_probability(system, solution)
-    probs = map(lambda p: 1.0 - p, probs)
-    return mean(probs)
+    return mean(map(lambda p: 1.0 - p, probs)) if len(probs) > 0 else 0.0
 
 
 def max_unavailability(system, solution):
     probs = _calc_unavailability_probability(system, solution)
-    return max(probs)
+    return max(probs) if len(probs) > 0 else 0.0
 
 
 def min_availability(system, solution):
     probs = _calc_unavailability_probability(system, solution)
-    probs = map(lambda p: 1.0 - p, probs)
-    return min(probs)
+    return min(map(lambda p: 1.0 - p, probs)) if len(probs) > 0 else 0.0
 
 
 def _calc_unavailability_probability(system, solution):

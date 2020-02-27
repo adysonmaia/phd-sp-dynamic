@@ -4,17 +4,19 @@ from statistics import mean
 
 def max_deadline_violation(system, solution):
     delta = _calc_delta_time(system, solution)
-    return max(filter(lambda d: d > 0.0, delta))
+    violations = list(filter(lambda d: d > 0.0, delta))
+    return max(violations) if len(violations) > 0 else 0.0
 
 
-def avg_deadline_violation(self, system, solution):
+def avg_deadline_violation(system, solution):
     delta = _calc_delta_time(system, solution)
-    return mean(filter(lambda d: d > 0.0, delta))
+    violations = list(filter(lambda d: d > 0.0, delta))
+    return mean(violations) if len(violations) > 0 else 0.0
 
 
 def deadline_satisfaction(system, solution):
     delta = _calc_delta_time(system, solution)
-    success_count = sum(map(lambda d: d <= 0.0), delta)
+    success_count = sum(map(lambda d: d <= 0.0, delta))
     return success_count / float(len(delta))
 
 
@@ -30,7 +32,7 @@ def _calc_delta_time(system, solution):
 
             for src_node in system.nodes:
                 load = system.get_request_load(app.id, src_node.id)
-                ld = solution.load_distribution[app.id][src_node.id][dst_node]
+                ld = solution.load_distribution[app.id][src_node.id][dst_node.id]
                 if load == 0.0 or ld == 0.0:
                     continue
 

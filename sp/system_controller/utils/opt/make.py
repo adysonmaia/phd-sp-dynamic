@@ -27,7 +27,7 @@ def make_max_instances_constraint_feasible(system, solution):
                 instances.insert(0, cloud_node)
                 continue
 
-            solution.app_placement[app.id][dst_node.id] = True
+            solution.app_placement[app.id][dst_node.id] = False
             solution.received_load[app.id][cloud_node.id] += solution.received_load[app.id][dst_node.id]
             solution.received_load[app.id][dst_node.id] = 0.0
 
@@ -68,7 +68,7 @@ def make_load_distribution_constraint_feasible(system, solution):
                     dst_node = instances[0]
 
                 remaining_load = remaining_ld * system.get_request_load(app.id, src_node.id)
-                solution.load_distribution[app.id][dst_node.id] += remaining_ld
+                solution.load_distribution[app.id][src_node.id][dst_node.id] += remaining_ld
                 solution.received_load[app.id][dst_node.id] += remaining_load
 
                 if remaining_load > 0.0:
