@@ -1,3 +1,4 @@
+from sp.system_controller.model import ControlInput
 from sp.system_controller.scheduler.periodic import PeriodicScheduler
 from sp.system_controller.optimizer.static.cloud import CloudOptimizer
 from sp.system_controller.optimizer import OptimizerError
@@ -21,7 +22,8 @@ class SystemController:
         if self.scheduler.needs_update(system):
             self.scheduler.update(system)
             try:
-                control_input = self.optimizer.solve(system)
+                solution = self.optimizer.solve(system)
+                control_input = ControlInput.from_opt_solution(solution)
             except OptimizerError:
                 pass
 

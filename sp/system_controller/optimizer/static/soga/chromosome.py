@@ -1,8 +1,8 @@
+from sp.core.model import Resource
 from sp.core.heuristic.brkga import Chromosome
-from sp.system_controller.model.allocation import Allocation
-from sp.controller.solver import local_search
+from sp.system_controller.model import OptSolution
+from sp.system_controller.utils.opt import make_solution_feasible, calc_response_time
 from . import individual_generator as indiv_gen
-from collections import defaultdict
 import math
 import numpy
 
@@ -74,16 +74,15 @@ class SOChromosome(Chromosome):
         return best_value == 0.0 or variance <= self.stall_threshold
 
     def fitness(self, individual):
-        result = self.decode(individual)
-        return self.objective(*result)
+        solution = self.decode(individual)
+        return self.objective(self.system, solution)
 
     def decode(self, individual):
         nb_apps = len(self.system.apps)
         nb_nodes = len(self.system.nodes)
         cloud_node = self.system.cloud_node
 
-        alloc = Allocation.create_empty(self.system)
-        alloc.received_load = defaultdict(lambda: defaultdict(float))
+        solution = OptSolution.create_empty(self.system)
 
         selected_nodes = {}
         for (a_index, app) in enumerate(self.system.apps):
@@ -112,7 +111,7 @@ class SOChromosome(Chromosome):
             src_node = self.system.get_node(src_node_id)
 
             nodes = selected_nodes[app.id]
-            nodes.sort(key=lambda n: self._node_priority(app, src_node, n, alloc))
+            nodes.sort(key=lambda n: calc_response_time(app, src_node, n, self.system, solution))
             nodes.append(cloud_node)
 
             total_load = float(self.system.get_request_load(app.id, src_node.id))
@@ -121,40 +120,35 @@ class SOChromosome(Chromosome):
 
             while remaining_load > 0.0:
                 for dst_node in nodes:
-                    alloc[dst_node.id][app.id] += chunk
-                    if self._check_capacity_constraint(dst_node, alloc):
-                        alloc.set_app_placement(app.id, dst_node.id, True)
-                        ld = alloc.get_load_distribution(app.id, src_node.id, dst_node.id)
-                        ld += chunk / total_load
-                        alloc.set_load_distribution(app.id, src_node.id, dst_node.id, ld)
+                    solution.received_load[app.id][dst_node.id] += chunk
+                    self._update_alloc_resources(app, dst_node, solution)
+
+                    if self._check_capacity_constraint(dst_node, solution):
+                        solution.app_placement[app.id][dst_node.id] = True
+                        solution.load_distribution[app.id][src_node.id][dst_node.id] += chunk / total_load
+
                         remaining_load -= chunk
                         chunk = min(remaining_load, chunk)
                         break
                     else:
-                        alloc[dst_node.id][app.id] -= chunk
+                        solution.received_load[app.id][dst_node.id] -= chunk
+                        self._update_alloc_resources(app, dst_node, solution)
 
-        del alloc.received_load
-        return local_search(alloc)
+        return make_solution_feasible(solution)
 
-    def _check_capacity_constraint(self, node, alloc):
-        # TODO: improve the performance of this method
+    def _update_alloc_resources(self, app, node, solution):
+        for resource in self.system.resources:
+            load = solution.received_load[node.id][app.id]
+            demand = app.demand[resource.name](load)
+            solution.allocated_resource[app.id][node.id][resource.name] = demand
+        return solution
+
+    def _check_capacity_constraint(self, node, solution):
+        alloc_res = solution.allocated_resource
         for resource in self.system.resources:
             capacity = node.capacity[resource.name]
-            demand = 0.0
-            for app in self.system.apps:
-                demand += app.demand[resource.name](alloc.received_load[node.id][app.id])
+            demand = sum(map(lambda a: alloc_res[a.id][node.id][resource.name], self.system.apps))
             if demand > capacity:
                 return False
         return True
-
-    def _node_priority(self, app, src_node, dst_node, alloc):
-        net_delay = self.system.get_net_delay(app.id, src_node.id, dst_node.id)
-
-        arrival_rate = alloc.received_load[dst_node.id][app.id]
-        service_rate = app.cpu_demand(arrival_rate) / float(app.work_size)
-        proc_delay = INF
-        if service_rate > arrival_rate:
-            proc_delay = 1.0 / float(service_rate - arrival_rate)
-
-        return net_delay + proc_delay
 

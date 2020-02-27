@@ -1,12 +1,14 @@
-from sp.controller.solver import Solver, utils
+from sp.system_controller.optimizer import Optimizer
+from sp.system_controller.metric.static import deadline
 from sp.core.heuristic.brkga import BRKGA
+
 from .chromosome import SOChromosome
 from . import individual_generator as indiv_gen
 
 
-class SOGASolver(Solver):
+class SOGAOptimizer(Optimizer):
     def __init__(self):
-        Solver.__init__(self)
+        Optimizer.__init__(self)
         self.objective = None
         self.nb_generations = 100
         self.population_size = 100
@@ -17,7 +19,9 @@ class SOGASolver(Solver):
         self.pool_size = 4
 
     def solve(self, system):
-        # TODO: set a default objective
+        if self.objective is None:
+            self.objective = deadline.max_deadline_violation
+
         so_chromosome = SOChromosome(system,
                                      objective=self.objective,
                                      use_heuristic=self.use_heuristic)
@@ -30,5 +34,5 @@ class SOGASolver(Solver):
                       pool_size=self.pool_size)
 
         population = so_ga.solve()
-        allocation = so_chromosome.decode(population[0])
-        return utils.alloc_demanded_resources(system, allocation)
+        solution = so_chromosome.decode(population[0])
+        return solution

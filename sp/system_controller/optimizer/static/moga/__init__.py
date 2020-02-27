@@ -1,10 +1,11 @@
-from sp.controller.solver import Solver, utils
+from sp.system_controller.optimizer import Optimizer
+from sp.system_controller.metric.static import deadline, availability, cost
 from .ga import MOGA, MOChromosome
 
 
-class MOGASolver(Solver):
+class MOGAOptimizer(Optimizer):
     def __init__(self):
-        Solver.__init__(self)
+        Optimizer.__init__(self)
         self.objective = None
         self.nb_generations = 100
         self.population_size = 100
@@ -17,7 +18,13 @@ class MOGASolver(Solver):
         self.pool_size = 4
 
     def solve(self, system):
-        # TODO: set a default objective
+        if self.objective is None:
+            self.objective = [
+                deadline.max_deadline_violation,
+                cost.overall_cost,
+                availability.avg_unavailability,
+            ]
+
         mo_chromosome = MOChromosome(system,
                                      objective=self.objective,
                                      use_heuristic=self.use_heuristic)
@@ -32,5 +39,5 @@ class MOGASolver(Solver):
                      pool_size=self.pool_size)
 
         population = mo_ga.solve()
-        allocation = mo_chromosome.decode(population[0])
-        return utils.alloc_demanded_resources(system, allocation)
+        solution = mo_chromosome.decode(population[0])
+        return solution

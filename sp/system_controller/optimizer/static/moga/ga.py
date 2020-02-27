@@ -1,4 +1,4 @@
-from sp.controller.solver.static.soga import SOChromosome
+from sp.system_controller.optimizer.static.soga import SOChromosome
 from sp.core.heuristic.nsgaii import NSGAII
 
 DEFAULT_DOMINANCE_ERROR = 0.01

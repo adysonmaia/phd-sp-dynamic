@@ -1,10 +1,10 @@
-from sp.controller.solver import Solver, SolverError, utils
-from sp.controller.solver.static.soga import SOChromosome, indiv_gen
+from sp.system_controller.optimizer import Optimizer, OptimizerError
+from sp.system_controller.optimizer.static.soga import SOChromosome, indiv_gen
 
 
-class SOHeuristicSolver(Solver):
+class SOHeuristicOptimizer(Optimizer):
     def __init__(self):
-        Solver.__init__(self)
+        Optimizer.__init__(self)
         self.objective = None
         self.version = None
 
@@ -26,10 +26,10 @@ class SOHeuristicSolver(Solver):
         elif isinstance(self.version, str):
             functions = [self._versions[self.version]]
         else:
-            SolverError("Version not found")
+            OptimizerError("Version not found")
 
         chromosome = SOChromosome(system, objective=self.objective)
         individual = indiv_gen.merge_creation_functions(chromosome, functions)
 
-        allocation = chromosome.decode(individual)
-        return utils.alloc_demanded_resources(system, allocation)
+        solution = chromosome.decode(individual)
+        return solution

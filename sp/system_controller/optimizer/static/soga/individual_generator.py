@@ -1,4 +1,4 @@
-from sp.core.heuristic import KMedoids
+from sp.core.heuristic.kmedoids import KMedoids
 
 INF = float("inf")
 

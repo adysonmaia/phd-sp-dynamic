@@ -33,15 +33,15 @@ class BoundBox:
 
     @property
     def width(self):
-        return self.get_diff_value(self.X_INDEX)
+        return self.get_delta_value(self.X_INDEX)
 
     @property
     def height(self):
-        return self.get_diff_value(self.Y_INDEX)
+        return self.get_delta_value(self.Y_INDEX)
 
     @property
     def length(self):
-        return self.get_diff_value(self.Z_INDEX)
+        return self.get_delta_value(self.Z_INDEX)
 
     @property
     def x_distance(self):
@@ -101,7 +101,7 @@ class BoundBox:
             other_p[d] = p_2[d]
         return p_1.distance(other_p)
 
-    def get_diff_value(self, dim):
+    def get_delta_value(self, dim):
         return float(self._max_values[dim] - self._min_values[dim])
 
     def get_min_value(self, dim):

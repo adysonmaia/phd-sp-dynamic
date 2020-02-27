@@ -1,16 +1,16 @@
 from sp.core.model import Scenario, Node
 from sp.physical_system.model import SystemState
 from sp.physical_system.environment_controller import EnvironmentController
-from sp.system_controller.model import Allocation
+from sp.system_controller.model import OptSolution
 from sp.system_controller.optimizer.static.cloud import CloudOptimizer
 import json
 import unittest
 
 
-class CloudSolverTestCase(unittest.TestCase):
+class CloudOptTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        filename = "tests/system_controller/fixtures/test_cloud_solver.json"
+        filename = "tests/system_controller/fixtures/test_cloud_opt.json"
         system = None
         with open(filename) as json_file:
             data = json.load(json_file)
@@ -38,7 +38,7 @@ class CloudSolverTestCase(unittest.TestCase):
         solver = CloudOptimizer()
         solution = solver.solve(self.system)
 
-        self.assertIsInstance(solution, Allocation)
+        self.assertIsInstance(solution, OptSolution)
         self.assertIsNotNone(solution.app_placement)
         self.assertIsNotNone(solution.allocated_resource)
         self.assertIsNotNone(solution.load_distribution)
