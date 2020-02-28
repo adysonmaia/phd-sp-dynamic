@@ -14,7 +14,7 @@ def calc_processing_delay(app, node, system, solution):
 
     if solution.app_placement[app.id][node.id]:
         alloc_cpu = solution.allocated_resource[app.id][node.id][Resource.CPU]
-        arrival_rate = solution.received_load[node.id][app.id]
+        arrival_rate = solution.received_load[app.id][node.id]
         service_rate = alloc_cpu / float(app.work_size)
 
         if service_rate > arrival_rate:

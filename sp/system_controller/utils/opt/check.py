@@ -1,3 +1,6 @@
+ERROR_TOLERANCE = 0.0001
+
+
 def is_solution_valid(system, solution):
     for app in system.apps:
         nb_instances = sum([solution.app_placement[app.id][n.id] for n in system.nodes])
@@ -12,7 +15,7 @@ def is_solution_valid(system, solution):
                     return False
 
                 src_ld += dst_ld
-            if src_ld != 1.0:
+            if abs(1.0 - src_ld) > ERROR_TOLERANCE:
                 return False
 
     for dst_node in system.nodes:
@@ -25,7 +28,8 @@ def is_solution_valid(system, solution):
                     src_load = system.get_request_load(app.id, src_node.id)
                     dst_load += float(ld * src_load)
 
-                if dst_load != solution.received_load[app.id][dst_node.id]:
+                received_load = solution.received_load[app.id][dst_node.id]
+                if abs(dst_load - received_load) > ERROR_TOLERANCE:
                     return False
 
                 if dst_load > 0.0:
@@ -33,7 +37,8 @@ def is_solution_valid(system, solution):
                         return False
 
                     app_demand = app.demand[resource.name](dst_load)
-                    if app_demand != solution.allocated_resource[app.id][dst_node.id][resource.name]:
+                    alloc_res = solution.allocated_resource[app.id][dst_node.id][resource.name]
+                    if abs(app_demand - alloc_res) > ERROR_TOLERANCE:
                         return False
 
                     allocated += app_demand

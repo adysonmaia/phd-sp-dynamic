@@ -1,12 +1,13 @@
 from sp.system_controller.optimizer import Optimizer, OptimizerError
 from sp.system_controller.optimizer.static.soga import SOChromosome, indiv_gen
+from sp.system_controller.metric.static import deadline
 
 
 class SOHeuristicOptimizer(Optimizer):
-    def __init__(self):
+    def __init__(self, version=None):
         Optimizer.__init__(self)
         self.objective = None
-        self.version = None
+        self.version = version
 
         self._versions = {
             "cloud": indiv_gen.create_individual_cloud,
@@ -19,6 +20,9 @@ class SOHeuristicOptimizer(Optimizer):
     def solve(self, system):
         if self.version is None:
             self.version = ["net_delay", "deadline"]
+
+        if self.objective is None:
+            self.objective = deadline.max_deadline_violation
 
         functions = []
         if isinstance(self.version, list) or isinstance(self.version, tuple):

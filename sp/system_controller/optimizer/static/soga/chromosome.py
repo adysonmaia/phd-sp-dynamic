@@ -134,11 +134,11 @@ class SOChromosome(Chromosome):
                         solution.received_load[app.id][dst_node.id] -= chunk
                         self._update_alloc_resources(app, dst_node, solution)
 
-        return make_solution_feasible(solution)
+        return make_solution_feasible(self.system, solution)
 
     def _update_alloc_resources(self, app, node, solution):
         for resource in self.system.resources:
-            load = solution.received_load[node.id][app.id]
+            load = solution.received_load[app.id][node.id]
             demand = app.demand[resource.name](load)
             solution.allocated_resource[app.id][node.id][resource.name] = demand
         return solution
