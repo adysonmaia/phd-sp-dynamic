@@ -76,7 +76,7 @@ class BRKGA:
         self._elite_size = int(round(self.elite_proportion * self.pop_size))
         self._mutant_size = int(round(self.mutant_proportion * self.pop_size))
         self._init_pool()
-        self.chromosome.start()
+        self.chromosome.init_params()
 
     def _init_pool(self):
         """Initialize the multiprocessing pool

@@ -63,10 +63,12 @@ def create_individual_cluster_metoids(chromosome, use_sc=False):
     for (a_index, app) in enumerate(system.apps):
         indiv[a_index] = 1.0
 
-        distances = [[system.get_net_delay(app.id, src_node.id, dst_node.id)
+        distances = [[float(system.get_net_delay(app.id, src_node.id, dst_node.id))
                       for dst_node in system.nodes]
                      for src_node in system.nodes]
-        features = list(filter(lambda n: system.get_request_load(app.id, n.id) > 0, system.nodes))
+
+        features = [n_index for (n_index, node) in enumerate(system.nodes)
+                    if system.get_request_load(app.id, node.id) > 0]
 
         max_nb_clusters = int(min(len(features), app.max_instances))
         min_nb_clusters = 1 if use_sc else max_nb_clusters

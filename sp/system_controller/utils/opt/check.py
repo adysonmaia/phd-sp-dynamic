@@ -1,4 +1,4 @@
-ERROR_TOLERANCE = 0.0001
+ERROR_TOLERANCE = 0.00001
 
 
 def is_solution_valid(system, solution):
@@ -42,7 +42,8 @@ def is_solution_valid(system, solution):
                         return False
 
                     allocated += app_demand
-            if allocated > dst_node.capacity[resource.name]:
+            capacity = dst_node.capacity[resource.name]
+            if allocated - capacity > ERROR_TOLERANCE:
                 return False
 
     return True

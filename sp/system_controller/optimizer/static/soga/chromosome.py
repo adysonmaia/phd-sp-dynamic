@@ -1,4 +1,3 @@
-from sp.core.model import Resource
 from sp.core.heuristic.brkga import Chromosome
 from sp.system_controller.model import OptSolution
 from sp.system_controller.utils.opt import make_solution_feasible, calc_response_time
@@ -125,7 +124,9 @@ class SOChromosome(Chromosome):
 
                     if self._check_capacity_constraint(dst_node, solution):
                         solution.app_placement[app.id][dst_node.id] = True
-                        solution.load_distribution[app.id][src_node.id][dst_node.id] += chunk / total_load
+
+                        chunk_ld = chunk / total_load
+                        solution.load_distribution[app.id][src_node.id][dst_node.id] += chunk_ld
 
                         remaining_load -= chunk
                         chunk = min(remaining_load, chunk)

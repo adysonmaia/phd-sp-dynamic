@@ -1,4 +1,8 @@
+ROUND_PRECISION = 5
+
+
 def make_solution_feasible(system, solution):
+    solution = _round_values(system, solution)
     solution = make_max_instances_constraint_feasible(system, solution)
     solution = make_load_distribution_constraint_feasible(system, solution)
 
@@ -54,11 +58,11 @@ def make_load_distribution_constraint_feasible(system, solution):
                 instances.append(dst_node)
 
         for src_node in system.nodes:
-            ld = 0.0
+            src_ld = 0.0
             for dst_node in instances:
-                ld += solution.load_distribution[app.id][src_node.id][dst_node.id]
+                src_ld += solution.load_distribution[app.id][src_node.id][dst_node.id]
 
-            remaining_ld = 1.0 - ld
+            remaining_ld = 1.0 - src_ld
             if remaining_ld > 0.0:
                 dst_node = None
                 if solution.app_placement[app.id][cloud_node.id]:
@@ -76,5 +80,25 @@ def make_load_distribution_constraint_feasible(system, solution):
                     for resource in system.resources:
                         demand = app.demand[resource.name](load)
                         solution.allocated_resource[app.id][dst_node.id][resource.name] = demand
+
+    return solution
+
+
+def _round_values(system, solution):
+    for app in system.apps:
+        for dst_node in system.nodes:
+            value = solution.received_load[app.id][dst_node.id]
+            value = round(value, ROUND_PRECISION)
+            solution.received_load[app.id][dst_node.id] = value
+
+            for src_node in system.nodes:
+                value = solution.load_distribution[app.id][src_node.id][dst_node.id]
+                value = round(value, ROUND_PRECISION)
+                solution.load_distribution[app.id][src_node.id][dst_node.id] = value
+
+            for resource in system.resources:
+                value = solution.allocated_resource[app.id][dst_node.id][resource.name]
+                value = round(value, ROUND_PRECISION)
+                solution.allocated_resource[app.id][dst_node.id][resource.name] = value
 
     return solution
