@@ -31,11 +31,12 @@ class MOGA(NSGAII):
 class MOChromosome(SOChromosome):
     def __init__(self, system, objective, use_heuristic=True):
         SOChromosome.__init__(self, system, objective=objective, use_heuristic=use_heuristic)
-        self.objective = list(self.objective)
+        if not isinstance(self.objective, list):
+            self.objective = [self.objective]
 
     def stopping_criteria(self, population):
         return False
 
     def fitness(self, individual):
         solution = self.decode(individual)
-        return [f(*solution) for f in self.objective]
+        return [f(self.system, solution) for f in self.objective]

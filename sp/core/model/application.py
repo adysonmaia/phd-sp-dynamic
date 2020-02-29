@@ -22,13 +22,13 @@ class Application:
             by an application instance with a certain workload.
 
             The dictionary's keys are the resource names and the values are
-            estimator :py:class:`sp.estimator.Estimator` objects.
-            Call :py:meth:`sp.estimator.Estimator.calc` to obtain the required amount of resource.
+            estimator :py:class:`sp.core.estimator.Estimator` objects.
+            Call :py:meth:`sp.core.estimator.Estimator.calc` to obtain the required amount of resource.
             E.g. code-block:: python
 
                 resource_name = 'CPU'
                 workload = 1
-                app.demand[resource_name].calc(workload)
+                app.demand[resource_name](workload)
 
     """
 
@@ -59,7 +59,7 @@ class Application:
     def cpu_demand(self):
         """Get the CPU demand estimator
         Returns:
-            :py:class:`sp.estimator.Estimator`: The demand estimator
+            :py:class:`sp.core.estimator.Estimator`: The demand estimator
         Raises:
             KeyError: Resource not found
         """
@@ -70,7 +70,7 @@ class Application:
         Args:
             resource_name (str): name of the resource
         Returns:
-            :py:class:`sp.estimator.Estimator`: The demand estimator
+            :py:class:`sp.core.estimator.Estimator`: The demand estimator
         Raises:
             KeyError: Resource not found
         """
@@ -79,11 +79,11 @@ class Application:
     @staticmethod
     def from_json(json_data):
         """Create an application object from a json data
-        See :py:func:`sp.model.application.from_json`
+        See :py:func:`sp.core.model.application.from_json`
         Args:
             json_data (dict): data loaded from a json
         Returns:
-            :py:class:`sp.model.application.Application`: loaded application
+            :py:class:`sp.core.model.application.Application`: loaded application
         """
         return from_json(json_data)
 
@@ -91,7 +91,7 @@ class Application:
 def from_json(json_data):
     """Create an application object from a json data.
     The resource demands are loaded as a polynomial, linear or constant function
-    using the :py:module:`sp.estimator.polynomial` module
+    using the :py:module:`sp.core.estimator.polynomial` module
 
     E.g. code-block:: python
 
@@ -105,18 +105,18 @@ def from_json(json_data):
             'avail': 0.99,
             'max_inst': 100,
             'demand': {
-                'CPU': [1, 10, 5],  # Polynomial demand: f(x) = 1 * x^2 + 10 * x + 5
-                'RAM': [2, 30],  # Linear demand: f(x) = 2 * x + 30
-                'DISK': 20  # Constant demand f(x) = 20
+                'CPU': [3, 10, 5],  # Polynomial demand: f(x) = 3x^2 + 10x + 5
+                'RAM': [2, 30],     # Linear demand: f(x) = 2x + 30
+                'DISK': 20          # Constant demand f(x) = 20
             }
         }
 
-        app = sp.model.application.from_json(json_data)
+        app = sp.core.model.application.from_json(json_data)
 
     Args:
         json_data (dict): data loaded from a json
     Returns:
-        :py:class:`sp.model.application.Application`: loaded application
+        :py:class:`sp.core.model.application.Application`: loaded application
     Raises:
         KeyError: Application's attributes not found
     """
