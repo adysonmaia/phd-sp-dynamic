@@ -1,16 +1,16 @@
 from sp.core.model import Scenario
 from sp.physical_system.model import SystemState, EnvironmentInput
-from sp.physical_system.estimator import DefaultRequestLoadEstimator
+from sp.physical_system.estimator import DefaultGeneratedLoadEstimator
 from sp.physical_system.coverage.min_distance import MinDistanceCoverage
 from future.utils import iteritems
 import json
 import unittest
 
 
-class RequestLoadEstimatorTestCase(unittest.TestCase):
+class GeneratedLoadEstimatorTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        filename = "tests/physical_system/fixtures/test_req_load_estimator.json"
+        filename = "tests/physical_system/fixtures/test_gen_load_estimator.json"
         system = None
         with open(filename) as json_file:
             data = json.load(json_file)
@@ -32,7 +32,7 @@ class RequestLoadEstimatorTestCase(unittest.TestCase):
         self.system.environment.attached_users = self.coverage.update(self.system)
 
     def test_calc(self):
-        estimator = DefaultRequestLoadEstimator()
+        estimator = DefaultGeneratedLoadEstimator()
 
         # (app_id, node_id): load
         values = {
@@ -45,7 +45,7 @@ class RequestLoadEstimatorTestCase(unittest.TestCase):
             self.assertEqual(estimator(self.system, *ids), load)
 
     def test_calc_all_loads(self):
-        estimator = DefaultRequestLoadEstimator()
+        estimator = DefaultGeneratedLoadEstimator()
         all_loads = estimator.calc_all_loads(self.system)
 
         self.assertIsNotNone(all_loads)
@@ -56,7 +56,7 @@ class RequestLoadEstimatorTestCase(unittest.TestCase):
                 self.assertIn(node.id, app_loads)
 
     def test_calc_node_loads(self):
-        estimator = DefaultRequestLoadEstimator()
+        estimator = DefaultGeneratedLoadEstimator()
         node_id = 0
         node_loads = estimator.calc_node_loads(self.system, node_id)
 
@@ -65,7 +65,7 @@ class RequestLoadEstimatorTestCase(unittest.TestCase):
             self.assertIn(app.id, node_loads)
 
     def test_calc_app_loads(self):
-        estimator = DefaultRequestLoadEstimator()
+        estimator = DefaultGeneratedLoadEstimator()
         app_id = 0
         app_loads = estimator.calc_app_loads(self.system, app_id)
 

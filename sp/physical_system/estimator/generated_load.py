@@ -2,7 +2,7 @@ from sp.core.estimator import Estimator
 from abc import abstractmethod
 
 
-class RequestLoadEstimator(Estimator):
+class GeneratedLoadEstimator(Estimator):
     def calc_app_loads(self, system, app_id):
         app = system.get_app(app_id)
         loads = {}
@@ -28,7 +28,7 @@ class RequestLoadEstimator(Estimator):
         pass
 
 
-class DefaultRequestLoadEstimator(RequestLoadEstimator):
+class DefaultGeneratedLoadEstimator(GeneratedLoadEstimator):
     def calc(self, system, app_id, node_id):
         nb_users = system.get_nb_users(app_id, node_id)
         app = system.get_app(app_id)

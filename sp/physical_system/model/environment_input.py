@@ -1,13 +1,13 @@
 class EnvironmentInput:
     def __init__(self):
-        self.request_load = {}
+        self.generated_load = {}
         self.net_delay = {}
         self.net_path = {}
         self.app_queue_size = {}
         self.attached_users = {}
 
-    def get_request_load(self, app_id, node_id):
-        return self.request_load[app_id][node_id]
+    def get_generated_load(self, app_id, node_id):
+        return self.generated_load[app_id][node_id]
 
     def get_net_delay(self, app_id, src_node_id, dst_node_id):
         return self.net_delay[app_id][src_node_id][dst_node_id]
@@ -30,13 +30,13 @@ class EnvironmentInput:
         env = EnvironmentInput()
 
         for app in system.apps:
-            env.request_load[app.id] = {}
+            env.generated_load[app.id] = {}
             env.net_delay[app.id] = {}
             env.net_path[app.id] = {}
             env.app_queue_size[app.id] = {}
 
             for node in system.nodes:
-                env.request_load[app.id][node.id] = 0.0
+                env.generated_load[app.id][node.id] = 0.0
                 env.app_queue_size[app.id][node.id] = 0.0
                 env.net_delay[app.id][node.id] = {}
                 env.net_path[app.id][node.id] = {}

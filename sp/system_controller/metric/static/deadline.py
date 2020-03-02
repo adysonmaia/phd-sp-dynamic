@@ -31,7 +31,7 @@ def _calc_delta_time(system, solution):
             proc_delay = calc_processing_delay(app, dst_node, system, solution)
 
             for src_node in system.nodes:
-                load = system.get_request_load(app.id, src_node.id)
+                load = system.get_generated_load(app.id, src_node.id)
                 ld = solution.load_distribution[app.id][src_node.id][dst_node.id]
                 if load == 0.0 or ld == 0.0:
                     continue

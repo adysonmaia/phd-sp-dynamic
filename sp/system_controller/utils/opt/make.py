@@ -71,7 +71,7 @@ def make_load_distribution_constraint_feasible(system, solution):
                     instances.sort(key=lambda n: system.get_net_delay(app.id, src_node.id, n.id))
                     dst_node = instances[0]
 
-                remaining_load = remaining_ld * system.get_request_load(app.id, src_node.id)
+                remaining_load = remaining_ld * system.get_generated_load(app.id, src_node.id)
                 solution.load_distribution[app.id][src_node.id][dst_node.id] += remaining_ld
                 solution.received_load[app.id][dst_node.id] += remaining_load
 

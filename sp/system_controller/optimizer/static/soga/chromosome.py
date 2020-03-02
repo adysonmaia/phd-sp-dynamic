@@ -1,4 +1,4 @@
-from sp.core.heuristic.brkga import Chromosome
+from sp.core.heuristic.brkga import BRKGAChromosome
 from sp.system_controller.model import OptSolution
 from sp.system_controller.utils.opt import make_solution_feasible, calc_response_time
 from . import individual_generator as indiv_gen
@@ -12,9 +12,9 @@ DEFAULT_STALL_THRESHOLD = 0.0
 DEFAULT_LOAD_CHUNK_PERCENT = 0.1
 
 
-class SOChromosome(Chromosome):
+class SOChromosome(BRKGAChromosome):
     def __init__(self, system, objective, use_heuristic=True):
-        Chromosome.__init__(self)
+        BRKGAChromosome.__init__(self)
         self.system = system
         self.objective = objective
         self.use_heuristic = use_heuristic
@@ -31,7 +31,7 @@ class SOChromosome(Chromosome):
         self._best_values = []
 
     def init_params(self):
-        Chromosome.init_params(self)
+        BRKGAChromosome.init_params(self)
         self._best_values = []
 
     def gen_init_population(self):
@@ -113,7 +113,7 @@ class SOChromosome(Chromosome):
             nodes.sort(key=lambda n: calc_response_time(app, src_node, n, self.system, solution))
             nodes.append(cloud_node)
 
-            total_load = float(self.system.get_request_load(app.id, src_node.id))
+            total_load = float(self.system.get_generated_load(app.id, src_node.id))
             remaining_load = total_load
             chunk = total_load * self.load_chunk_percent
 

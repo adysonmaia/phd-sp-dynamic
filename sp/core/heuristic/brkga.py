@@ -5,7 +5,7 @@ import multiprocessing as mp
 def _init_pool(genetic_algo):
     """Initialize a sub-process to calculate an individual fitness
     Args:
-        genetic_algo (:py:class:`sp.heuristic.BRKGA`): a genetic algorithm object
+        genetic_algo (BRKGA): a genetic algorithm object
     """
     global _ga
     _ga = genetic_algo
@@ -38,7 +38,7 @@ class BRKGA:
                  pool_size=0):
         """Initialize method
         Args:
-            chromosome (:py:class:`sp.heuristic.Chromosome`): chromosome representation
+            chromosome (BRKGAChromosome): chromosome representation
             population_size (int): population size
             nb_generations (int): maximum number of generations
             elite_proportion (float): proportion of the number of elite
@@ -134,7 +134,7 @@ class BRKGA:
             prob_2 (float): value in [0, 1] is the probability of
                             an indiv_2 gene being chosen for the offspring
         Returns:
-            list(list): list of offspring individuals
+            list: list of offspring individuals
         """
         return self.chromosome.crossover(indiv_1, indiv_2, prob_1, prob_2)
 
@@ -155,7 +155,7 @@ class BRKGA:
         Args:
             population (list): population
         Returns:
-            list(list): list of fitnesses of all individuals
+            list: list of fitnesses of all individuals
         """
         fitnesses = list(self._map_func(self._fitness_func, population))
         # cache the fitness value inside the individual
@@ -170,7 +170,7 @@ class BRKGA:
         Args:
             population (list): list of individuals
         Returns:
-            list(list): list of sorted individuals
+            list: list of sorted individuals
         """
         self._get_fitnesses(population)
         population.sort(key=lambda indiv: indiv[-1])
@@ -197,7 +197,7 @@ class BRKGA:
         Args:
             current_ranked_pop (list): current sorted population
         Returns:
-            list(list): list of individuals of the next population
+            list: list of individuals of the next population
         """
         next_population = []
 
@@ -243,7 +243,7 @@ class BRKGA:
             return pop
 
 
-class Chromosome:
+class BRKGAChromosome:
     """Abstract chromosome class
     It is used to implement the decoding algorithm of BRKGA
     for a specific problem
@@ -286,7 +286,7 @@ class Chromosome:
             prob_2 (float): value in [0, 1] is the probability of
                             an indiv_2 gene being chosen for the offspring
         Returns:
-            list(list): list of offspring
+            list: list of offspring
         """
         if prob_1 < prob_2:
             indiv_1, indiv_2 = indiv_2, indiv_1

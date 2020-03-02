@@ -3,14 +3,14 @@ class SystemState:
         self.time = 0
         self.scenario = None
         self.environment = None
-        self.allocation = None
+        self.control = None
 
     def __copy__(self):
         cp = SystemState()
         cp.time = self.time
         cp.scenario = self.scenario
         cp.environment = self.environment
-        cp.allocation = self.allocation
+        cp.control = self.control
         return cp
 
     @property
@@ -75,8 +75,8 @@ class SystemState:
     def get_nb_users(self, app_id=None, node_id=None):
         return self.environment.get_nb_users(app_id, node_id)
 
-    def get_request_load(self, app_id, node_id):
-        return self.environment.get_request_load(app_id, node_id)
+    def get_generated_load(self, app_id, node_id):
+        return self.environment.get_generated_load(app_id, node_id)
 
     def get_net_delay(self, app_id, src_node_id, dst_node_id):
         return self.environment.get_net_delay(app_id, src_node_id, dst_node_id)
@@ -88,10 +88,10 @@ class SystemState:
         return self.environment.get_app_queue_size(app_id, node_id)
 
     def get_app_placement(self, app_id, node_id):
-        return self.allocation.get_app_placement(app_id, node_id)
+        return self.control.get_app_placement(app_id, node_id)
 
     def get_load_distribution(self, app_id, src_node_id, dst_node_id):
-        return self.allocation.get_load_distribution(self, app_id, src_node_id, dst_node_id)
+        return self.control.get_load_distribution(self, app_id, src_node_id, dst_node_id)
 
     def get_allocated_resource(self, app_id, node_id, resource_name):
-        return self.allocation.get_allocated_resource(self, app_id, node_id, resource_name)
+        return self.control.get_allocated_resource(self, app_id, node_id, resource_name)

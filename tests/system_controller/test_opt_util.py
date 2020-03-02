@@ -108,7 +108,7 @@ class OptUtilTestCase(unittest.TestCase):
         app = self.system.apps[0]
         selected_node = None
         for node in self.system.bs_nodes:
-            if self.system.get_request_load(app.id, node.id) == 0.0:
+            if self.system.get_generated_load(app.id, node.id) == 0.0:
                 selected_node = node
                 break
         self.assertIsNotNone(selected_node)

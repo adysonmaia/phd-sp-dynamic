@@ -9,7 +9,7 @@ def alloc_demanded_resources(system, solution):
 
                 for src_node in system.nodes:
                     ld = solution.load_distribution[app.id][src_node.id][dst_node.id]
-                    src_load = system.get_request_load(app.id, src_node.id)
+                    src_load = system.get_generated_load(app.id, src_node.id)
                     dst_load += float(ld * src_load)
 
                 dst_load = round(dst_load, ROUND_PRECISION)

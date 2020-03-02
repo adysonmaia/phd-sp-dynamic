@@ -59,7 +59,7 @@ class Application:
     def cpu_demand(self):
         """Get the CPU demand estimator
         Returns:
-            :py:class:`sp.core.estimator.Estimator`: The demand estimator
+            sp.core.estimator.Estimator: The demand estimator
         Raises:
             KeyError: Resource not found
         """
@@ -70,7 +70,7 @@ class Application:
         Args:
             resource_name (str): name of the resource
         Returns:
-            :py:class:`sp.core.estimator.Estimator`: The demand estimator
+            sp.core.estimator.Estimator: The demand estimator
         Raises:
             KeyError: Resource not found
         """
@@ -83,7 +83,7 @@ class Application:
         Args:
             json_data (dict): data loaded from a json
         Returns:
-            :py:class:`sp.core.model.application.Application`: loaded application
+            Application: loaded application
         """
         return from_json(json_data)
 
@@ -116,7 +116,7 @@ def from_json(json_data):
     Args:
         json_data (dict): data loaded from a json
     Returns:
-        :py:class:`sp.core.model.application.Application`: loaded application
+        Application: loaded application
     Raises:
         KeyError: Application's attributes not found
     """

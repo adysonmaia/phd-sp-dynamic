@@ -68,7 +68,7 @@ def create_individual_cluster_metoids(chromosome, use_sc=False):
                      for src_node in system.nodes]
 
         features = [n_index for (n_index, node) in enumerate(system.nodes)
-                    if system.get_request_load(app.id, node.id) > 0]
+                    if system.get_generated_load(app.id, node.id) > 0]
 
         max_nb_clusters = int(min(len(features), app.max_instances))
         min_nb_clusters = 1 if use_sc else max_nb_clusters
@@ -128,7 +128,7 @@ def create_individual_load(chromosome):
         max_app_load = 0.0
         for (n_index, node) in enumerate(system.nodes):
             key = nb_apps + a_index * nb_nodes + n_index
-            load = system.get_request_load(app.id, node.id)
+            load = system.get_generated_load(app.id, node.id)
             value = load
             indiv[key] = value
             if load > max_app_load:
@@ -144,7 +144,7 @@ def create_individual_load(chromosome):
     for (req_index, req) in enumerate(chromosome.requests):
         app_id, node_id = req
         key = nb_apps * (nb_nodes + 1) + req_index
-        value = system.get_request_load(app_id, node_id)
+        value = system.get_generated_load(app_id, node_id)
         if max_load > 0.0:
             value = value / float(max_load)
         indiv[key] = value

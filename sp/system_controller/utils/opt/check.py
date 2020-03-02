@@ -25,7 +25,7 @@ def is_solution_valid(system, solution):
                 dst_load = 0.0
                 for src_node in system.nodes:
                     ld = solution.load_distribution[app.id][src_node.id][dst_node.id]
-                    src_load = system.get_request_load(app.id, src_node.id)
+                    src_load = system.get_generated_load(app.id, src_node.id)
                     dst_load += float(ld * src_load)
 
                 received_load = solution.received_load[app.id][dst_node.id]

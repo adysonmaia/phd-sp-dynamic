@@ -5,7 +5,7 @@ from sp.physical_system.routing.shortest_path import Routing, ShortestPathRoutin
 from sp.physical_system.coverage import Coverage
 from sp.physical_system.coverage.min_distance import MinDistanceCoverage
 from sp.physical_system.estimator import LinkDelayEstimator, DefaultLinkDelayEstimator
-from sp.physical_system.estimator import RequestLoadEstimator, DefaultRequestLoadEstimator
+from sp.physical_system.estimator import GeneratedLoadEstimator, DefaultGeneratedLoadEstimator
 from sp.physical_system.estimator import AppQueueSizeEstimator, DefaultAppQueueSizeEstimator
 import json
 import unittest
@@ -39,7 +39,7 @@ class EnvControlTestCase(unittest.TestCase):
         self.assertIsInstance(control.routing, Routing)
         self.assertIsInstance(control.coverage, Coverage)
         self.assertIsInstance(control.link_delay_estimator, LinkDelayEstimator)
-        self.assertIsInstance(control.req_load_estimator, RequestLoadEstimator)
+        self.assertIsInstance(control.gen_load_estimator, GeneratedLoadEstimator)
         self.assertIsInstance(control.app_queue_size_estimator, AppQueueSizeEstimator)
 
     def test_env_update(self):
@@ -47,7 +47,7 @@ class EnvControlTestCase(unittest.TestCase):
         control.routing = ShortestPathRouting()
         control.coverage = MinDistanceCoverage()
         control.link_delay_estimator = DefaultLinkDelayEstimator()
-        control.req_load_estimator = DefaultRequestLoadEstimator()
+        control.gen_load_estimator = DefaultGeneratedLoadEstimator()
         control.queue_size_estimator = DefaultAppQueueSizeEstimator()
 
         control.start()
@@ -57,7 +57,7 @@ class EnvControlTestCase(unittest.TestCase):
             self.system.environment = env_input
 
             self.assertIsInstance(env_input, EnvironmentInput)
-            self.assertIsNotNone(env_input.request_load)
+            self.assertIsNotNone(env_input.generated_load)
             self.assertIsNotNone(env_input.net_delay)
             self.assertIsNotNone(env_input.net_path)
             self.assertIsNotNone(env_input.app_queue_size)
@@ -68,7 +68,7 @@ class EnvControlTestCase(unittest.TestCase):
                     queue_size = env_input.get_app_queue_size(app.id, src_node.id)
                     self.assertEqual(queue_size, 0.0)
 
-                    load = env_input.get_request_load(app.id, src_node.id)
+                    load = env_input.get_generated_load(app.id, src_node.id)
                     nb_users = env_input.get_nb_users(app.id, src_node.id)
                     if src_node.is_base_station():
                         self.assertGreater(load, 0.0)

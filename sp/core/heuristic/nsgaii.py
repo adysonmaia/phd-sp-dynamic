@@ -1,5 +1,5 @@
 from functools import cmp_to_key
-from sp.core.heuristic.brkga import BRKGA, Chromosome
+from sp.core.heuristic.brkga import BRKGA, BRKGAChromosome
 
 
 INF = float("inf")
@@ -170,7 +170,7 @@ class NSGAII(BRKGA):
         return distances
 
 
-class NSGAIIChromosome(Chromosome):
+class NSGAIIChromosome(BRKGAChromosome):
     def stopping_criteria(self, population):
         return False
 
