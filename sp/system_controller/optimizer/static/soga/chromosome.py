@@ -1,6 +1,6 @@
 from sp.core.heuristic.brkga import BRKGAChromosome
 from sp.system_controller.model import OptSolution
-from sp.system_controller.utils.opt import make_solution_feasible, calc_response_time
+from sp.system_controller.utils import make_solution_feasible, calc_response_time, calc_load_before_distribution
 from . import individual_generator as indiv_gen
 import math
 import numpy
@@ -13,9 +13,10 @@ DEFAULT_LOAD_CHUNK_PERCENT = 0.1
 
 
 class SOChromosome(BRKGAChromosome):
-    def __init__(self, system, objective, use_heuristic=True):
+    def __init__(self, objective, system, environment_input, use_heuristic=True):
         BRKGAChromosome.__init__(self)
         self.system = system
+        self.environment_input = environment_input
         self.objective = objective
         self.use_heuristic = use_heuristic
 
@@ -74,7 +75,7 @@ class SOChromosome(BRKGAChromosome):
 
     def fitness(self, individual):
         solution = self.decode(individual)
-        return self.objective(self.system, solution)
+        return self.objective(self.system, solution, self.environment_input)
 
     def decode(self, individual):
         nb_apps = len(self.system.apps)
@@ -110,10 +111,11 @@ class SOChromosome(BRKGAChromosome):
             src_node = self.system.get_node(src_node_id)
 
             nodes = selected_nodes[app.id]
-            nodes.sort(key=lambda n: calc_response_time(app, src_node, n, self.system, solution))
+            nodes.sort(key=lambda n: calc_response_time(app.id, src_node.id, n.id,
+                                                        self.system, solution, self.environment_input))
             nodes.append(cloud_node)
 
-            total_load = float(self.system.get_generated_load(app.id, src_node.id))
+            total_load = calc_load_before_distribution(app.id, src_node.id, self.system, self.environment_input)
             remaining_load = total_load
             chunk = total_load * self.load_chunk_percent
 
@@ -126,6 +128,7 @@ class SOChromosome(BRKGAChromosome):
                         solution.app_placement[app.id][dst_node.id] = True
 
                         chunk_ld = chunk / total_load
+
                         solution.load_distribution[app.id][src_node.id][dst_node.id] += chunk_ld
 
                         remaining_load -= chunk
@@ -135,7 +138,7 @@ class SOChromosome(BRKGAChromosome):
                         solution.received_load[app.id][dst_node.id] -= chunk
                         self._update_alloc_resources(app, dst_node, solution)
 
-        return make_solution_feasible(self.system, solution)
+        return make_solution_feasible(self.system, solution, self.environment_input)
 
     def _update_alloc_resources(self, app, node, solution):
         for resource in self.system.resources:

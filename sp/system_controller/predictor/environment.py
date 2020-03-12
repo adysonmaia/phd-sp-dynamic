@@ -1,0 +1,86 @@
+from sp.core.predictor import Predictor, abstractmethod
+from sp.core.predictor.arima import ARIMAPredictor
+from sp.core.predictor.exp_smoothing import ExpSmoothingPredictor
+from sp.core.model import EnvironmentInput
+from collections import defaultdict
+
+
+class EnvironmentPredictor(Predictor):
+    @abstractmethod
+    def update(self, system, environment_input):
+        pass
+
+    @abstractmethod
+    def predict(self, steps=1):
+        pass
+
+
+class DefaultEnvironmentPredictor(EnvironmentPredictor):
+    def __init__(self):
+        EnvironmentPredictor.__init__(self)
+        self.system = None
+        self.load_predictor = None
+        self.net_predictor = None
+
+        self.init_params()
+
+    def init_params(self):
+        self.system = None
+        self.load_predictor = defaultdict(lambda: defaultdict(lambda: None))
+        self.net_predictor = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: None)))
+
+    def update(self, system, environment_input):
+        self.system = system
+        self._update_load_predictor(system, environment_input)
+        self._update_net_predictor(system, environment_input)
+
+    def _update_load_predictor(self, system, environment_input):
+        for app in system.apps:
+            for node in system.nodes:
+                value = environment_input.get_generated_load(app.id, node.id)
+
+                # TODO: each application can specify its own predictor
+                if self.load_predictor[app.id][node.id] is None:
+                    self.load_predictor[app.id][node.id] = ARIMAPredictor()
+
+                predictor = self.load_predictor[app.id][node.id]
+                predictor.update(value)
+
+    def _update_net_predictor(self, system, environment_input):
+        for app in system.apps:
+            for src_node in system.nodes:
+                for dst_node in system.nodes:
+                    value = environment_input.get_net_delay(app.id, src_node.id, dst_node.id)
+
+                    if self.net_predictor[app.id][src_node.id][dst_node.id] is None:
+                        self.net_predictor[app.id][src_node.id][dst_node.id] = ExpSmoothingPredictor()
+
+                    predictor = self.net_predictor[app.id][src_node.id][dst_node.id]
+                    predictor.update(value)
+
+    def predict(self, steps=1):
+        envs = [EnvironmentInput.create_empty(self.system) for _ in range(steps)]
+        envs = self._predict_load(envs, steps)
+        envs = self._predict_net(envs, steps)
+        return envs
+
+    def _predict_load(self, env_inputs, steps):
+        for app in self.system.apps:
+            for src_node in self.system.nodes:
+                predictor = self.load_predictor[app.id][src_node.id]
+                values = predictor.predict(steps)
+                for index in range(steps):
+                    env_inputs[index].generated_load[app.id][src_node.id] = values[index]
+
+        return env_inputs
+
+    def _predict_net(self, env_inputs, steps):
+        for app in self.system.apps:
+            for src_node in self.system.nodes:
+                for dst_node in self.system.nodes:
+                    predictor = self.net_predictor[app.id][src_node.id][dst_node.id]
+                    values = predictor.predict(steps)
+                    for index in range(steps):
+                        env_inputs[index].net_delay[app.id][src_node.id][dst_node.id] = values[index]
+
+        return env_inputs

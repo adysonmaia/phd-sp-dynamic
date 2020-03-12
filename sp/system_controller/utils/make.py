@@ -1,15 +1,17 @@
+from sp.system_controller.utils.calc import calc_load_before_distribution
+
+
 ROUND_PRECISION = 5
 
 
-def make_solution_feasible(system, solution):
-    solution = _round_values(system, solution)
-    solution = make_max_instances_constraint_feasible(system, solution)
-    solution = make_load_distribution_constraint_feasible(system, solution)
-
+def make_solution_feasible(system, solution, environment_input):
+    solution = _round_values(system, solution, environment_input)
+    solution = make_max_instances_constraint_feasible(system, solution, environment_input)
+    solution = make_load_distribution_constraint_feasible(system, solution, environment_input)
     return solution
 
 
-def make_max_instances_constraint_feasible(system, solution):
+def make_max_instances_constraint_feasible(system, solution, environment_input):
     cloud_node = system.cloud_node
     for app in system.apps:
         instances = []
@@ -49,7 +51,7 @@ def make_max_instances_constraint_feasible(system, solution):
     return solution
 
 
-def make_load_distribution_constraint_feasible(system, solution):
+def make_load_distribution_constraint_feasible(system, solution, environment_input):
     cloud_node = system.cloud_node
     for app in system.apps:
         instances = []
@@ -68,10 +70,11 @@ def make_load_distribution_constraint_feasible(system, solution):
                 if solution.app_placement[app.id][cloud_node.id]:
                     dst_node = cloud_node
                 else:
-                    instances.sort(key=lambda n: system.get_net_delay(app.id, src_node.id, n.id))
+                    instances.sort(key=lambda n: environment_input.get_net_delay(app.id, src_node.id, n.id))
                     dst_node = instances[0]
 
-                remaining_load = remaining_ld * system.get_generated_load(app.id, src_node.id)
+                total_load = calc_load_before_distribution(app.id, src_node.id, system, environment_input)
+                remaining_load = remaining_ld * total_load
                 solution.load_distribution[app.id][src_node.id][dst_node.id] += remaining_ld
                 solution.received_load[app.id][dst_node.id] += remaining_load
 
@@ -84,7 +87,7 @@ def make_load_distribution_constraint_feasible(system, solution):
     return solution
 
 
-def _round_values(system, solution):
+def _round_values(system, solution, environment_input=None):
     for app in system.apps:
         for dst_node in system.nodes:
             value = solution.received_load[app.id][dst_node.id]

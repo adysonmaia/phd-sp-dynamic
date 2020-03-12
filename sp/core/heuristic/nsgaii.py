@@ -35,7 +35,7 @@ class NSGAII(BRKGA):
         self._mgbm_count = 0
 
     def _stopping_criteria(self, population):
-        return (self.chromossome.stopping_criteria(population)
+        return (self.chromosome.stopping_criteria(population)
                 or self._stopping_criteria_mgbm())
 
     def _stopping_criteria_mgbm(self):
@@ -96,78 +96,13 @@ class NSGAII(BRKGA):
         return sorted(population, key=cmp_to_key(sort_cmp))
 
     def _dominates(self, fitness_1, fitness_2):
-        dominates = False
-        for i in range(len(fitness_1)):
-            if fitness_1[i] > fitness_2[i]:
-                return False
-            elif fitness_1[i] < fitness_2[i]:
-                dominates = True
-
-        return dominates
+        return pareto_dominates(fitness_1, fitness_2)
 
     def _fast_non_dominated_sort(self, fitnesses):
-        pop_size = len(fitnesses)
-        r_pop_size = range(pop_size)
-        S = [[] for _ in r_pop_size]
-        n = [0 for _ in r_pop_size]
-        rank = [0 for _ in r_pop_size]
-        fronts = [[]]
-
-        for p in r_pop_size:
-            S[p] = []
-            n[p] = 0
-            for q in r_pop_size:
-                if self._dominates(fitnesses[p], fitnesses[q]):
-                    if q not in S[p]:
-                        S[p].append(q)
-                elif self._dominates(fitnesses[q], fitnesses[p]):
-                    n[p] = n[p] + 1
-            if n[p] == 0:
-                rank[p] = 0
-                if p not in fronts[0]:
-                    fronts[0].append(p)
-
-        i = 0
-        while(fronts[i] != []):
-            Q = []
-            for p in fronts[i]:
-                for q in S[p]:
-                    n[q] = n[q] - 1
-                    if n[q] == 0:
-                        rank[q] = i + 1
-                        if q not in Q:
-                            Q.append(q)
-            i = i + 1
-            fronts.append(Q)
-
-        del fronts[len(fronts) - 1]
-        return fronts, rank
+        return fast_non_dominated_sort(fitnesses, self._dominates)
 
     def _crowding_distance(self, fitnesses, fronts):
-        nb_obj = len(fitnesses[0])
-        distances = [0 for _ in range(len(fitnesses))]
-
-        normalize = []
-        for m in range(nb_obj):
-            values = [value[m] for value in fitnesses]
-            min_value = min(values)
-            max_value = max(values)
-            normalize.append(float(max_value - min_value))
-
-        for front in fronts:
-            for m in range(nb_obj):
-                sorted = list(front)
-                sorted.sort(key=lambda p: fitnesses[p][m])
-                distances[sorted[0]] = distances[sorted[-1]] = MAX_CRWD_DIST
-
-                if normalize[m] > 0.0:
-                    for i in range(1, len(sorted) - 1):
-                        value_previous = fitnesses[sorted[i - 1]][m]
-                        value_next = fitnesses[sorted[i + 1]][m]
-                        value_diff = value_next - value_previous
-                        distances[sorted[i]] += value_diff / normalize[m]
-
-        return distances
+        return crowding_distance(fitnesses, fronts)
 
 
 class NSGAIIChromosome(BRKGAChromosome):
@@ -176,3 +111,80 @@ class NSGAIIChromosome(BRKGAChromosome):
 
     def fitness(self, individual):
         return [0.0]
+
+
+def pareto_dominates(fitness_1, fitness_2):
+    dominates = False
+    for i in range(len(fitness_1)):
+        if fitness_1[i] > fitness_2[i]:
+            return False
+        elif fitness_1[i] < fitness_2[i]:
+            dominates = True
+
+    return dominates
+
+
+def fast_non_dominated_sort(fitnesses, dominance_operator=pareto_dominates):
+    pop_size = len(fitnesses)
+    r_pop_size = range(pop_size)
+    S = [[] for _ in r_pop_size]
+    n = [0 for _ in r_pop_size]
+    rank = [0 for _ in r_pop_size]
+    fronts = [[]]
+
+    for p in r_pop_size:
+        S[p] = []
+        n[p] = 0
+        for q in r_pop_size:
+            if dominance_operator(fitnesses[p], fitnesses[q]):
+                if q not in S[p]:
+                    S[p].append(q)
+            elif dominance_operator(fitnesses[q], fitnesses[p]):
+                n[p] = n[p] + 1
+        if n[p] == 0:
+            rank[p] = 0
+            if p not in fronts[0]:
+                fronts[0].append(p)
+
+    i = 0
+    while len(fronts[i]) > 0:
+        Q = []
+        for p in fronts[i]:
+            for q in S[p]:
+                n[q] = n[q] - 1
+                if n[q] == 0:
+                    rank[q] = i + 1
+                    if q not in Q:
+                        Q.append(q)
+        i = i + 1
+        fronts.append(Q)
+
+    del fronts[len(fronts) - 1]
+    return fronts, rank
+
+
+def crowding_distance(fitnesses, fronts):
+    nb_obj = len(fitnesses[0])
+    distances = [0 for _ in range(len(fitnesses))]
+
+    normalize = []
+    for m in range(nb_obj):
+        values = [value[m] for value in fitnesses]
+        min_value = min(values)
+        max_value = max(values)
+        normalize.append(float(max_value - min_value))
+
+    for front in fronts:
+        for m in range(nb_obj):
+            sorted = list(front)
+            sorted.sort(key=lambda p: fitnesses[p][m])
+            distances[sorted[0]] = distances[sorted[-1]] = MAX_CRWD_DIST
+
+            if normalize[m] > 0.0:
+                for i in range(1, len(sorted) - 1):
+                    value_previous = fitnesses[sorted[i - 1]][m]
+                    value_next = fitnesses[sorted[i + 1]][m]
+                    value_diff = value_next - value_previous
+                    distances[sorted[i]] += value_diff / normalize[m]
+
+    return distances

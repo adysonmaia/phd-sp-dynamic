@@ -12,12 +12,12 @@ class MOGAOptimizer(Optimizer):
         self.elite_proportion = 0.1
         self.mutant_proportion = 0.1
         self.elite_probability = 0.6
-        self.dominance_error = 0.01
+        self.dominance_tolerance = 0.01
         self.stop_threshold = 0.10
         self.use_heuristic = True
         self.pool_size = 4
 
-    def solve(self, system):
+    def solve(self, system, environment_input):
         if self.objective is None:
             self.objective = [
                 deadline.max_deadline_violation,
@@ -25,8 +25,9 @@ class MOGAOptimizer(Optimizer):
                 availability.avg_unavailability,
             ]
 
-        mo_chromosome = MOChromosome(system,
-                                     objective=self.objective,
+        mo_chromosome = MOChromosome(objective=self.objective,
+                                     system=system,
+                                     environment_input=environment_input,
                                      use_heuristic=self.use_heuristic)
         mo_ga = MOGA(mo_chromosome,
                      nb_generations=self.nb_generations,
@@ -35,7 +36,7 @@ class MOGAOptimizer(Optimizer):
                      mutant_proportion=self.mutant_proportion,
                      elite_probability=self.elite_probability,
                      stop_threshold=self.stop_threshold,
-                     dominance_error=self.dominance_error,
+                     dominance_tolerance=self.dominance_tolerance,
                      pool_size=self.pool_size)
 
         population = mo_ga.solve()

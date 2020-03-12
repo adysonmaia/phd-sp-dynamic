@@ -1,16 +1,27 @@
-class SystemState:
+from collections import defaultdict
+
+
+class System:
     def __init__(self):
-        self.time = 0
         self.scenario = None
-        self.environment = None
-        self.control = None
+        self.environment_input = None
+        self.control_input = None
+
+        self.time = 0
+        self.sampling_time = 1
+        self.app_queue_size = defaultdict(lambda: defaultdict(int))
+        self.processing_delay = defaultdict(lambda: defaultdict(lambda: float("inf")))
 
     def __copy__(self):
-        cp = SystemState()
-        cp.time = self.time
+        cp = System()
         cp.scenario = self.scenario
-        cp.environment = self.environment
-        cp.control = self.control
+        cp.environment_input = self.environment_input
+        cp.control_input = self.control_input
+
+        cp.time = self.time
+        cp.sampling_time = self.sampling_time
+        cp.app_queue_size = self.app_queue_size
+        cp.processing_delay = self.processing_delay
         return cp
 
     @property
@@ -73,25 +84,31 @@ class SystemState:
         return self.scenario.get_user(user_id)
 
     def get_nb_users(self, app_id=None, node_id=None):
-        return self.environment.get_nb_users(app_id, node_id)
+        return self.environment_input.get_nb_users(app_id, node_id)
 
     def get_generated_load(self, app_id, node_id):
-        return self.environment.get_generated_load(app_id, node_id)
+        return self.environment_input.get_generated_load(app_id, node_id)
 
     def get_net_delay(self, app_id, src_node_id, dst_node_id):
-        return self.environment.get_net_delay(app_id, src_node_id, dst_node_id)
+        return self.environment_input.get_net_delay(app_id, src_node_id, dst_node_id)
 
     def get_net_path(self, app_id, src_node_id, dst_node_id):
-        return self.environment.get_net_path(app_id, src_node_id, dst_node_id)
+        return self.environment_input.get_net_path(app_id, src_node_id, dst_node_id)
+
+    def get_processing_delay(self, app_id, node_id):
+        return self.processing_delay[app_id][node_id]
 
     def get_app_queue_size(self, app_id, node_id):
-        return self.environment.get_app_queue_size(app_id, node_id)
+        return self.app_queue_size[app_id][node_id]
 
     def get_app_placement(self, app_id, node_id):
-        return self.control.get_app_placement(app_id, node_id)
+        return self.control_input.get_app_placement(app_id, node_id)
 
     def get_load_distribution(self, app_id, src_node_id, dst_node_id):
-        return self.control.get_load_distribution(self, app_id, src_node_id, dst_node_id)
+        return self.control_input.get_load_distribution(app_id, src_node_id, dst_node_id)
 
     def get_allocated_resource(self, app_id, node_id, resource_name):
-        return self.control.get_allocated_resource(self, app_id, node_id, resource_name)
+        return self.control_input.get_allocated_resource(app_id, node_id, resource_name)
+
+    def get_allocated_cpu(self, app_id, node_id):
+        return self.control_input.get_allocated_cpu(app_id, node_id)

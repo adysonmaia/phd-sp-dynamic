@@ -1,3 +1,2 @@
 from .link_delay import LinkDelayEstimator, DefaultLinkDelayEstimator
-from .app_queue_size import AppQueueSizeEstimator, DefaultAppQueueSizeEstimator
 from .generated_load import GeneratedLoadEstimator, DefaultGeneratedLoadEstimator

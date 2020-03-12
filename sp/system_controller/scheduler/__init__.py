@@ -7,11 +7,11 @@ class Scheduler(ABC):
         pass
 
     @abstractmethod
-    def needs_update(self, system):
+    def needs_update(self, system, environment_input):
         pass
 
     @abstractmethod
-    def update(self, system):
+    def update(self, system, environment_input):
         pass
 
     @abstractmethod

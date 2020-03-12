@@ -1,8 +1,7 @@
 from sp.physical_system.coverage.min_distance import MinDistanceCoverage
 from sp.physical_system.routing.shortest_path import ShortestPathRouting
 from sp.physical_system.estimator import DefaultLinkDelayEstimator, DefaultGeneratedLoadEstimator
-from sp.physical_system.estimator import DefaultAppQueueSizeEstimator
-from sp.physical_system.model import EnvironmentInput
+from sp.core.model import EnvironmentInput
 import copy
 
 
@@ -12,7 +11,6 @@ class EnvironmentController:
         self.coverage = None
         self.link_delay_estimator = None
         self.gen_load_estimator = None
-        self.app_queue_size_estimator = None
 
     def start(self):
         if self.coverage is None:
@@ -29,17 +27,13 @@ class EnvironmentController:
         if self.gen_load_estimator is None:
             self.gen_load_estimator = DefaultGeneratedLoadEstimator()
 
-        if self.app_queue_size_estimator is None:
-            self.app_queue_size_estimator = DefaultAppQueueSizeEstimator()
-
     def update(self, system):
         env = EnvironmentInput()
         system = copy.copy(system)
-        system.environment = env
+        system.environment_input = env
 
         env.attached_users = self.coverage.update(system)
         env.generated_load = self.gen_load_estimator.calc_all_loads(system)
-        env.app_queue_size = self.app_queue_size_estimator.calc_all_queue_sizes(system)
 
         self.routing.update(system)
         env.net_delay = self.routing.get_all_paths_length()

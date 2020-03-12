@@ -3,8 +3,15 @@ class EnvironmentInput:
         self.generated_load = {}
         self.net_delay = {}
         self.net_path = {}
-        self.app_queue_size = {}
         self.attached_users = {}
+
+    def __copy__(self):
+        cp = EnvironmentInput()
+        cp.generated_load = self.generated_load
+        cp.net_delay = self.net_delay
+        cp.net_path = self.net_path
+        cp.attached_users = self.attached_users
+        return cp
 
     def get_generated_load(self, app_id, node_id):
         return self.generated_load[app_id][node_id]
@@ -14,9 +21,6 @@ class EnvironmentInput:
 
     def get_net_path(self, app_id, src_node_id, dst_node_id):
         return self.net_path[app_id][src_node_id][dst_node_id]
-
-    def get_app_queue_size(self, app_id, node_id):
-        return self.app_queue_size[app_id][node_id]
 
     def get_nb_users(self, app_id=None, node_id=None):
         count = 0
@@ -33,11 +37,9 @@ class EnvironmentInput:
             env.generated_load[app.id] = {}
             env.net_delay[app.id] = {}
             env.net_path[app.id] = {}
-            env.app_queue_size[app.id] = {}
 
             for node in system.nodes:
                 env.generated_load[app.id][node.id] = 0.0
-                env.app_queue_size[app.id][node.id] = 0.0
                 env.net_delay[app.id][node.id] = {}
                 env.net_path[app.id][node.id] = {}
 

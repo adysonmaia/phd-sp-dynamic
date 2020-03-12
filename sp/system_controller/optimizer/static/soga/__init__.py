@@ -18,11 +18,12 @@ class SOGAOptimizer(Optimizer):
         self.use_heuristic = True
         self.pool_size = 4
 
-    def solve(self, system):
+    def solve(self, system, environment_input):
         if self.objective is None:
             self.objective = deadline.max_deadline_violation
 
-        so_chromosome = SOChromosome(system,
+        so_chromosome = SOChromosome(system=system,
+                                     environment_input=environment_input,
                                      objective=self.objective,
                                      use_heuristic=self.use_heuristic)
         so_ga = BRKGA(so_chromosome,

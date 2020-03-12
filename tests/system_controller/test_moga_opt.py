@@ -1,9 +1,8 @@
-from sp.core.model import Scenario, Node
-from sp.physical_system.model import SystemState
+from sp.core.model import Scenario, System, EnvironmentInput
 from sp.physical_system.environment_controller import EnvironmentController
 from sp.system_controller.model import OptSolution
 from sp.system_controller.metric.static import deadline, availability, cost, power
-from sp.system_controller.utils import opt as opt_utils
+from sp.system_controller.utils import is_solution_valid
 from sp.system_controller.optimizer.static.moga import MOGAOptimizer
 from sp.system_controller.optimizer.static.cloud import CloudOptimizer
 import json
@@ -17,7 +16,7 @@ class MOGAOptTestCase(unittest.TestCase):
         system = None
         with open(filename) as json_file:
             data = json.load(json_file)
-            system = SystemState()
+            system = System()
             system.scenario = Scenario.from_json(data)
         cls.system = system
         cls.env_ctl = EnvironmentController()
@@ -32,8 +31,8 @@ class MOGAOptTestCase(unittest.TestCase):
         time = 0
         self.system.time = time
         self.env_ctl.start()
-        self.system.environment = self.env_ctl.update(self.system)
-        self.assertIsNotNone(self.system.environment)
+        self.environment_input = self.env_ctl.update(self.system)
+        self.assertIsInstance(self.environment_input, EnvironmentInput)
 
     def test_solver(self):
         solver = MOGAOptimizer()
@@ -42,21 +41,21 @@ class MOGAOptTestCase(unittest.TestCase):
             availability.avg_availability,
             cost.overall_cost
         ]
-        solution = solver.solve(self.system)
-        cloud_solution = CloudOptimizer().solve(self.system)
+        solution = solver.solve(self.system, self.environment_input)
+        cloud_solution = CloudOptimizer().solve(self.system, self.environment_input)
 
         self.assertIsInstance(solution, OptSolution)
         self.assertIsNotNone(solution.app_placement)
         self.assertIsNotNone(solution.allocated_resource)
         self.assertIsNotNone(solution.load_distribution)
-        self.assertTrue(opt_utils.is_solution_valid(self.system, solution))
+        self.assertTrue(is_solution_valid(self.system, solution, self.environment_input))
 
         for metric in self.metrics:
-            value = metric(self.system, solution)
+            value = metric(self.system, solution, self.environment_input)
             self.assertGreater(value, 0.0)
 
-        soga_value = deadline.max_deadline_violation(self.system, solution)
-        cloud_value = deadline.max_deadline_violation(self.system, cloud_solution)
+        soga_value = deadline.max_deadline_violation(self.system, solution, self.environment_input)
+        cloud_value = deadline.max_deadline_violation(self.system, cloud_solution, self.environment_input)
         self.assertLessEqual(soga_value, cloud_value)
 
 

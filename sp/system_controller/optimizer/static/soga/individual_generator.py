@@ -1,16 +1,26 @@
 from sp.core.heuristic.kmedoids import KMedoids
+from sp.system_controller.utils import calc_load_before_distribution
+# from .chromosome import SOChromosome
 
 INF = float("inf")
 
 
 def create_individual_empty(chromosome):
     """Create a default individual
+    Args:
+        chromosome (SOChromosome): chromosome's data
+    Returns:
+        list: encoded chromosome
     """
     return [0.0] * chromosome.nb_genes
 
 
 def create_individual_cloud(chromosome):
     """Create an individual that prioritizes the cloud node
+    Args:
+        chromosome (SOChromosome): chromosome's data
+    Returns:
+        list: encoded chromosome
     """
     return [0.0] * chromosome.nb_genes
 
@@ -18,8 +28,13 @@ def create_individual_cloud(chromosome):
 def create_individual_net_delay(chromosome):
     """Create an individual that prioritizes nodes having shorter avg. net delays to other nodes
     and requests with strict deadlines
+    Args:
+        chromosome (SOChromosome): chromosome's data
+    Returns:
+        list: encoded chromosome
     """
     system = chromosome.system
+    env_input = chromosome.environment_input
     nb_apps = len(system.apps)
     nb_nodes = len(system.nodes)
 
@@ -33,7 +48,7 @@ def create_individual_net_delay(chromosome):
             avg_delay = 0.0
             count = 0
             for (src_index, src_node) in enumerate(system.nodes):
-                avg_delay += system.get_net_delay(app.id, src_node.id, dst_node.id)
+                avg_delay += env_input.get_net_delay(app.id, src_node.id, dst_node.id)
                 count += 1
             if count > 0:
                 avg_delay = avg_delay / float(count)
@@ -53,8 +68,14 @@ def create_individual_cluster_metoids(chromosome, use_sc=False):
     """Create an individual based on k-medoids clustering.
     The idea is the users of an application are grouped and central nodes of each group are prioritized.
     It also prioritizes requests with strict deadlines
+    Args:
+        chromosome (SOChromosome): chromosome's data
+        use_sc (bool): whether to use the silhouette score method to find the number of clusters
+    Returns:
+        list: encoded chromosome
     """
     system = chromosome.system
+    env_input = chromosome.environment_input
     nb_apps = len(system.apps)
     nb_nodes = len(system.nodes)
     kmedoids = KMedoids()
@@ -63,12 +84,12 @@ def create_individual_cluster_metoids(chromosome, use_sc=False):
     for (a_index, app) in enumerate(system.apps):
         indiv[a_index] = 1.0
 
-        distances = [[float(system.get_net_delay(app.id, src_node.id, dst_node.id))
+        distances = [[float(env_input.get_net_delay(app.id, src_node.id, dst_node.id))
                       for dst_node in system.nodes]
                      for src_node in system.nodes]
 
         features = [n_index for (n_index, node) in enumerate(system.nodes)
-                    if system.get_generated_load(app.id, node.id) > 0]
+                    if calc_load_before_distribution(app.id, node.id, system, env_input) > 0]
 
         max_nb_clusters = int(min(len(features), app.max_instances))
         min_nb_clusters = 1 if use_sc else max_nb_clusters
@@ -104,14 +125,23 @@ def create_individual_cluster_metoids_sc(chromosome):
     """Create an individual based on k-medoids clustering with silhouette score.
     The idea is the users of an application are grouped and central nodes of each group are prioritized.
     It also prioritizes requests with strict deadlines
+    Args:
+        chromosome (SOChromosome): chromosome's data
+    Returns:
+        list: encoded chromosome
     """
     return create_individual_cluster_metoids(chromosome, use_sc=True)
 
 
 def create_individual_load(chromosome):
     """Create an individual that prioritizes nodes with large load
+    Args:
+        chromosome (SOChromosome): chromosome's data
+    Returns:
+        list: encoded chromosome
     """
     system = chromosome.system
+    env_input = chromosome.environment_input
     nb_apps = len(system.apps)
     nb_nodes = len(system.nodes)
 
@@ -128,7 +158,7 @@ def create_individual_load(chromosome):
         max_app_load = 0.0
         for (n_index, node) in enumerate(system.nodes):
             key = nb_apps + a_index * nb_nodes + n_index
-            load = system.get_generated_load(app.id, node.id)
+            load = calc_load_before_distribution(app.id, node.id, system, env_input)
             value = load
             indiv[key] = value
             if load > max_app_load:
@@ -144,7 +174,7 @@ def create_individual_load(chromosome):
     for (req_index, req) in enumerate(chromosome.requests):
         app_id, node_id = req
         key = nb_apps * (nb_nodes + 1) + req_index
-        value = system.get_generated_load(app_id, node_id)
+        value = calc_load_before_distribution(app.id, node.id, system, env_input)
         if max_load > 0.0:
             value = value / float(max_load)
         indiv[key] = value
@@ -154,6 +184,10 @@ def create_individual_load(chromosome):
 
 def create_individual_capacity(chromosome):
     """Create an individual that prioritizes nodes with high capacity of resources
+    Args:
+        chromosome (SOChromosome): chromosome's data
+    Returns:
+        list: encoded chromosome
     """
     system = chromosome.system
     nb_apps = len(system.apps)
@@ -192,6 +226,10 @@ def create_individual_capacity(chromosome):
 
 def create_individual_deadline(chromosome):
     """Create an individual that prioritizes request with strict response deadline
+    Args:
+        chromosome (SOChromosome): chromosome's data
+    Returns:
+        list: encoded chromosome
     """
     system = chromosome.system
     nb_apps = len(system.apps)
@@ -218,6 +256,11 @@ def create_individual_deadline(chromosome):
 
 def invert_individual(chromosome, individual):
     """Invert a individual representation
+    Args:
+        chromosome (SOChromosome): chromosome's data
+        individual (list): encoded chromosome
+    Returns:
+        list: encoded chromosome
     """
     indiv = individual[:chromosome.nb_genes]
     return list(map(lambda i: 1.0 - i, indiv))
@@ -225,6 +268,12 @@ def invert_individual(chromosome, individual):
 
 def merge_population(chromosome, population, weights=None):
     """Merge a list of individuals into a single one
+    Args:
+        chromosome (SOChromosome): chromosome's data
+        population (list): list of individuals
+        weights (list): weight for each individual in the population
+    Returns:
+        list: resulted individual
     """
     nb_genes = chromosome.nb_genes
     pop_size = len(population)
@@ -243,6 +292,12 @@ def merge_population(chromosome, population, weights=None):
 
 def merge_creation_functions(chromosome, functions, weights=None):
     """Create an individual by merging the results of a list of creation functions
+    Args:
+        chromosome (SOChromosome): chromosome's data
+        functions (list): list of functions
+        weights (list): weight for the individuals created by each function
+    Returns:
+        list: resulted individual
     """
     population = [f(chromosome) for f in functions]
     if len(population) > 1:

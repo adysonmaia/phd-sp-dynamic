@@ -1,8 +1,8 @@
-from sp.core.model import Scenario, Node
-from sp.physical_system.model import SystemState
+from sp.core.model import Scenario, Node, System, EnvironmentInput
 from sp.physical_system.environment_controller import EnvironmentController
 from sp.system_controller.model import OptSolution
 from sp.system_controller.optimizer.static.cloud import CloudOptimizer
+from sp.system_controller.utils import is_solution_valid
 import json
 import unittest
 
@@ -14,13 +14,13 @@ class CloudOptTestCase(unittest.TestCase):
         system = None
         with open(filename) as json_file:
             data = json.load(json_file)
-            system = SystemState()
+            system = System()
             system.scenario = Scenario.from_json(data)
         cls.system = system
         cls.env_ctl = EnvironmentController()
 
     def setUp(self):
-        self.assertIsInstance(self.system, SystemState)
+        self.assertIsInstance(self.system, System)
         self.assertIsInstance(self.env_ctl, EnvironmentController)
         self.assertEqual(len(self.system.nodes), 4)
         self.assertEqual(len(self.system.bs_nodes), 2)
@@ -31,17 +31,18 @@ class CloudOptTestCase(unittest.TestCase):
         time = 0
         self.system.time = time
         self.env_ctl.start()
-        self.system.environment = self.env_ctl.update(self.system)
-        self.assertIsNotNone(self.system.environment)
+        self.environment_input = self.env_ctl.update(self.system)
+        self.assertIsInstance(self.environment_input, EnvironmentInput)
 
     def test_solver(self):
         solver = CloudOptimizer()
-        solution = solver.solve(self.system)
+        solution = solver.solve(self.system, self.environment_input)
 
         self.assertIsInstance(solution, OptSolution)
         self.assertIsNotNone(solution.app_placement)
         self.assertIsNotNone(solution.allocated_resource)
         self.assertIsNotNone(solution.load_distribution)
+        self.assertTrue(is_solution_valid(self.system, solution, self.environment_input))
 
         for app in self.system.apps:
             for dst_node in self.system.nodes:

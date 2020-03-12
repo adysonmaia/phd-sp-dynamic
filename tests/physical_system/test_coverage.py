@@ -1,5 +1,4 @@
-from sp.core.model import Scenario
-from sp.physical_system.model import SystemState, EnvironmentInput
+from sp.core.model import Scenario, System, EnvironmentInput
 from sp.physical_system.coverage.circle import CircleCoverage
 from sp.physical_system.coverage.min_distance import MinDistanceCoverage
 import json
@@ -13,19 +12,19 @@ class CoverageTestCase(unittest.TestCase):
         system = None
         with open(filename) as json_file:
             data = json.load(json_file)
-            system = SystemState()
+            system = System()
             system.scenario = Scenario.from_json(data)
         cls.system = system
 
     def setUp(self):
-        self.assertIsInstance(self.system, SystemState)
+        self.assertIsInstance(self.system, System)
         self.assertEqual(len(self.system.nodes), 4)
         self.assertEqual(len(self.system.bs_nodes), 2)
         self.assertEqual(len(self.system.users), 10)
 
         time = 0
         self.system.time = time
-        self.system.environment = EnvironmentInput.create_empty(self.system)
+        self.system.environment_input = EnvironmentInput.create_empty(self.system)
 
     def test_circle_coverage(self):
         radius = 1000
@@ -33,7 +32,7 @@ class CoverageTestCase(unittest.TestCase):
         self.assertEqual(cov.radius, radius)
 
         attached_users = cov.update(self.system)
-        self.system.environment.attached_users = attached_users
+        self.system.environment_input.attached_users = attached_users
         count = {None: 0}
         for node in self.system.nodes:
             count[node.id] = 0
@@ -60,7 +59,7 @@ class CoverageTestCase(unittest.TestCase):
         cov = MinDistanceCoverage()
 
         attached_users = cov.update(self.system)
-        self.system.environment.attached_users = attached_users
+        self.system.environment_input.attached_users = attached_users
         count = {None: 0}
         for node in self.system.nodes:
             count[node.id] = 0

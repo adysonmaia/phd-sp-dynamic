@@ -17,7 +17,7 @@ class SOHeuristicOptimizer(Optimizer):
             "cluster_metoids_sc": indiv_gen.create_individual_cluster_metoids_sc
         }
 
-    def solve(self, system):
+    def solve(self, system, environment_input):
         if self.version is None:
             self.version = ["net_delay", "deadline"]
 
@@ -32,7 +32,9 @@ class SOHeuristicOptimizer(Optimizer):
         else:
             OptimizerError("Version not found")
 
-        chromosome = SOChromosome(system, objective=self.objective)
+        chromosome = SOChromosome(system=system,
+                                  environment_input=environment_input,
+                                  objective=self.objective)
         individual = indiv_gen.merge_creation_functions(chromosome, functions)
 
         solution = chromosome.decode(individual)

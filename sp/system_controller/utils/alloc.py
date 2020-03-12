@@ -1,7 +1,9 @@
+from sp.system_controller.utils.calc import calc_load_before_distribution
+
 ROUND_PRECISION = 5
 
 
-def alloc_demanded_resources(system, solution):
+def alloc_demanded_resources(system, solution, environment_input):
     for app in system.apps:
         for dst_node in system.nodes:
             if solution.app_placement[app.id][dst_node.id]:
@@ -9,7 +11,7 @@ def alloc_demanded_resources(system, solution):
 
                 for src_node in system.nodes:
                     ld = solution.load_distribution[app.id][src_node.id][dst_node.id]
-                    src_load = system.get_generated_load(app.id, src_node.id)
+                    src_load = calc_load_before_distribution(app.id, src_node.id, system, environment_input)
                     dst_load += float(ld * src_load)
 
                 dst_load = round(dst_load, ROUND_PRECISION)

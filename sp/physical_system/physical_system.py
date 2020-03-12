@@ -1,28 +1,40 @@
-from sp.physical_system.model import SystemState
+from sp.core.model import System
+from sp.system_controller.estimator.system import DefaultSystemEstimator
 
 
 class PhysicalSystem:
     def __init__(self, scenario):
+        self.system_estimator = None
         self._scenario = scenario
-        self._state = None
+        self._system = None
+        self._last_update = 0
 
     @property
     def state(self):
-        return self._state
+        return self._system
 
     def start(self):
-        self._state = SystemState()
-        self._state.scenario = self._scenario
+        if self.system_estimator is None:
+            self.system_estimator = DefaultSystemEstimator()
+
+        self._last_update = 0
+        self._system = System()
+        self._system.scenario = self._scenario
 
     def stop(self):
         pass
 
     def update(self, time):
-        self._state.time = time
-        return self._state
+        self._system.time = time
+        self._system.sampling_time = time - self._last_update
+        self._last_update = time
+        return self._system
 
-    def apply_control_input(self, control_input):
-        pass
+    def apply_inputs(self, control_input=None, environment_input=None):
+        # TODO: implement the None cases
+        if control_input is None or environment_input is None:
+            return self._system
 
-    def apply_environment_input(self, env_input):
-        self._state.environment = env_input
+        self._system = self.system_estimator(self._system, control_input, environment_input)
+        self._system.time = self._last_update
+        return self._system

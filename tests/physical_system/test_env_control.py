@@ -1,12 +1,10 @@
-from sp.core.model import Scenario
-from sp.physical_system.model import SystemState, EnvironmentInput
+from sp.core.model import Scenario, System, EnvironmentInput
 from sp.physical_system import EnvironmentController
 from sp.physical_system.routing.shortest_path import Routing, ShortestPathRouting
 from sp.physical_system.coverage import Coverage
 from sp.physical_system.coverage.min_distance import MinDistanceCoverage
 from sp.physical_system.estimator import LinkDelayEstimator, DefaultLinkDelayEstimator
 from sp.physical_system.estimator import GeneratedLoadEstimator, DefaultGeneratedLoadEstimator
-from sp.physical_system.estimator import AppQueueSizeEstimator, DefaultAppQueueSizeEstimator
 import json
 import unittest
 
@@ -18,12 +16,12 @@ class EnvControlTestCase(unittest.TestCase):
         system = None
         with open(filename) as json_file:
             data = json.load(json_file)
-            system = SystemState()
+            system = System()
             system.scenario = Scenario.from_json(data)
         cls.system = system
 
     def setUp(self):
-        self.assertIsInstance(self.system, SystemState)
+        self.assertIsInstance(self.system, System)
         self.assertEqual(len(self.system.nodes), 4)
         self.assertEqual(len(self.system.bs_nodes), 2)
         self.assertEqual(len(self.system.users), 10)
@@ -40,7 +38,6 @@ class EnvControlTestCase(unittest.TestCase):
         self.assertIsInstance(control.coverage, Coverage)
         self.assertIsInstance(control.link_delay_estimator, LinkDelayEstimator)
         self.assertIsInstance(control.gen_load_estimator, GeneratedLoadEstimator)
-        self.assertIsInstance(control.app_queue_size_estimator, AppQueueSizeEstimator)
 
     def test_env_update(self):
         control = EnvironmentController()
@@ -48,26 +45,21 @@ class EnvControlTestCase(unittest.TestCase):
         control.coverage = MinDistanceCoverage()
         control.link_delay_estimator = DefaultLinkDelayEstimator()
         control.gen_load_estimator = DefaultGeneratedLoadEstimator()
-        control.queue_size_estimator = DefaultAppQueueSizeEstimator()
 
         control.start()
         for time in [0, 1]:
             self.system.time = time
             env_input = control.update(self.system)
-            self.system.environment = env_input
+            self.system.environment_input = env_input
 
             self.assertIsInstance(env_input, EnvironmentInput)
             self.assertIsNotNone(env_input.generated_load)
             self.assertIsNotNone(env_input.net_delay)
             self.assertIsNotNone(env_input.net_path)
-            self.assertIsNotNone(env_input.app_queue_size)
             self.assertIsNotNone(env_input.attached_users)
 
             for app in self.system.apps:
                 for src_node in self.system.nodes:
-                    queue_size = env_input.get_app_queue_size(app.id, src_node.id)
-                    self.assertEqual(queue_size, 0.0)
-
                     load = env_input.get_generated_load(app.id, src_node.id)
                     nb_users = env_input.get_nb_users(app.id, src_node.id)
                     if src_node.is_base_station():

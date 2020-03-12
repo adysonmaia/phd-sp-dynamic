@@ -1,3 +1,6 @@
+from sp.core.model.resource import Resource
+
+
 class ControlInput:
     def __init__(self):
         self.app_placement = {}
@@ -13,10 +16,5 @@ class ControlInput:
     def get_allocated_resource(self, app_id, node_id, resource_name):
         return self.allocated_resource[app_id][node_id][resource_name]
 
-    @staticmethod
-    def from_opt_solution(solution):
-        control = ControlInput()
-        control.app_placement = solution.app_placement
-        control.allocated_resource = solution.allocated_resource
-        control.load_distribution = solution.load_distribution
-        return control
+    def get_allocated_cpu(self, app_id, node_id):
+        return self.allocated_resource[app_id][node_id][Resource.CPU]

@@ -47,12 +47,8 @@ class Simulator:
             system_state = self._physical_system.update(current_time)
 
             env_input = self._environment_controller.update(system_state)
-            if env_input is not None:
-                system_state = self._physical_system.apply_environment_input(env_input)
-
-            control_input = self._system_controller.update(system_state)
-            if control_input is not None:
-                system_state = self._physical_system.apply_control_input(control_input)
+            control_input = self._system_controller.update(system_state, env_input)
+            system_state = self._physical_system.apply_inputs(control_input, env_input)
 
             current_time += self._step_time
 

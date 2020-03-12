@@ -1,5 +1,4 @@
-from sp.core.model import Scenario
-from sp.physical_system.model import SystemState
+from sp.core.model import Scenario, System
 from sp.physical_system.routing.shortest_path import ShortestPathRouting
 from sp.physical_system.estimator import DefaultLinkDelayEstimator
 import json
@@ -13,12 +12,12 @@ class RoutingTestCase(unittest.TestCase):
         system = None
         with open(filename) as json_file:
             data = json.load(json_file)
-            system = SystemState()
+            system = System()
             system.scenario = Scenario.from_json(data)
         cls.system = system
 
     def setUp(self):
-        self.assertIsInstance(self.system, SystemState)
+        self.assertIsInstance(self.system, System)
         self.assertEqual(len(self.system.nodes), 11)
         self.assertEqual(len(self.system.bs_nodes), 9)
         self.assertEqual(len(self.system.users), 1)
