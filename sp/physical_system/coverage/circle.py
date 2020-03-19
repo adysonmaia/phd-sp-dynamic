@@ -9,7 +9,7 @@ class CircleCoverage(Coverage):
         Coverage.__init__(self)
         self.radius = radius
 
-    def update(self, system):
+    def update(self, system, environment):
         time = system.time
         attachments = {}
 

@@ -19,5 +19,5 @@ class Routing(ABC):
         return None
 
     @abstractmethod
-    def update(self, system):
+    def update(self, system, environment):
         pass

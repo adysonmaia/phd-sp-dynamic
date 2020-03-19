@@ -3,9 +3,9 @@ from sp.system_controller.estimator.system import DefaultSystemEstimator
 
 
 class PhysicalSystem:
-    def __init__(self, scenario):
+    def __init__(self):
         self.system_estimator = None
-        self._scenario = scenario
+        self._scenario = None
         self._system = None
         self._last_update = 0
 
@@ -13,10 +13,11 @@ class PhysicalSystem:
     def state(self):
         return self._system
 
-    def start(self):
+    def start(self, scenario):
         if self.system_estimator is None:
             self.system_estimator = DefaultSystemEstimator()
 
+        self._scenario = scenario
         self._last_update = 0
         self._system = System()
         self._system.scenario = self._scenario

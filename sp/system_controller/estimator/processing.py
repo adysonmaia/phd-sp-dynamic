@@ -41,6 +41,7 @@ class DefaultProcessingEstimator(ProcessingEstimator):
 
         alloc_cpu = control_input.get_allocated_cpu(app.id, dst_node.id)
         service_rate = alloc_cpu / float(app.work_size)
+
         return DefaultProcessingResult(arrival_rate, service_rate)
 
 

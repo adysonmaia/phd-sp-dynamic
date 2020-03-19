@@ -3,7 +3,7 @@ from sp.system_controller.estimator.system import DefaultSystemEstimator
 from sp.physical_system.environment_controller import EnvironmentController
 from sp.system_controller.optimizer.dynamic.llc import LLCOptimizer
 from sp.system_controller.model import OptSolution
-from sp.system_controller.utils import opt as opt_utils
+from sp.system_controller.utils import is_solution_valid
 from sp.system_controller.metric.static import deadline, cost, availability
 from sp.system_controller.metric.dynamic import migration
 import json
@@ -26,7 +26,7 @@ class LLCOptTestCase(unittest.TestCase):
 
     def test_solver(self):
         solver = LLCOptimizer()
-        solver.prediction_window = 2
+        solver.prediction_window = 4
         solver.max_iterations = 3
         solver.objective = [
             deadline.max_deadline_violation,
@@ -36,7 +36,7 @@ class LLCOptTestCase(unittest.TestCase):
         ]
 
         time_start = 0
-        time_end = 3
+        time_end = 50
 
         system = copy.copy(self.system)
         self.environment_controller.start()
@@ -44,15 +44,18 @@ class LLCOptTestCase(unittest.TestCase):
             system.time = time
             system.sampling_time = 1
             env_input = self.environment_controller.update(system)
-            system.environment_input = env_input
 
-            control_input = solver.solve(system)
-            print("\n {}".format(time))
-            print(control_input.app_placement)
+            control_input = solver.solve(system, env_input)
             self.assertIsInstance(control_input, OptSolution)
-            self.assertTrue(opt_utils.is_solution_valid(system, control_input))
+            self.assertTrue(is_solution_valid(system, control_input, env_input))
 
-            system = self.system_estimator(system, control_input)
+            result = {"time": time, "prediction_window": solver.prediction_window}
+            for func in solver.objective:
+                value = func(system, control_input, env_input)
+                result[func.__name__] = value
+            print(result)
+
+            system = self.system_estimator(system, control_input, env_input)
 
 
 if __name__ == '__main__':

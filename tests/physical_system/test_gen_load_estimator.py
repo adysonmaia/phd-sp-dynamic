@@ -27,8 +27,8 @@ class GeneratedLoadEstimatorTestCase(unittest.TestCase):
 
         time = 0
         self.system.time = time
-        self.system.environment_input = EnvironmentInput.create_empty(self.system)
-        self.system.environment_input.attached_users = self.coverage.update(self.system)
+        self.environment_input = EnvironmentInput.create_empty(self.system)
+        self.environment_input.attached_users = self.coverage.update(self.system, self.environment_input)
 
     def test_calc(self):
         estimator = DefaultGeneratedLoadEstimator()
@@ -40,12 +40,12 @@ class GeneratedLoadEstimatorTestCase(unittest.TestCase):
             (2, 0): 0.0, (2, 1): 0.0, (2, 2): 1.0,   (2, 3): 2.0,
         }
         for ids, load in iteritems(values):
-            self.assertEqual(estimator.calc(self.system, *ids), load)
-            self.assertEqual(estimator(self.system, *ids), load)
+            self.assertEqual(estimator.calc(*ids, self.system, self.environment_input), load)
+            self.assertEqual(estimator(*ids, self.system, self.environment_input), load)
 
     def test_calc_all_loads(self):
         estimator = DefaultGeneratedLoadEstimator()
-        all_loads = estimator.calc_all_loads(self.system)
+        all_loads = estimator.calc_all_loads(self.system, self.environment_input)
 
         self.assertIsNotNone(all_loads)
         for app in self.system.apps:
@@ -57,7 +57,7 @@ class GeneratedLoadEstimatorTestCase(unittest.TestCase):
     def test_calc_node_loads(self):
         estimator = DefaultGeneratedLoadEstimator()
         node_id = 0
-        node_loads = estimator.calc_node_loads(self.system, node_id)
+        node_loads = estimator.calc_node_loads(node_id, self.system, self.environment_input)
 
         self.assertIsNotNone(node_loads)
         for app in self.system.apps:
@@ -66,7 +66,7 @@ class GeneratedLoadEstimatorTestCase(unittest.TestCase):
     def test_calc_app_loads(self):
         estimator = DefaultGeneratedLoadEstimator()
         app_id = 0
-        app_loads = estimator.calc_app_loads(self.system, app_id)
+        app_loads = estimator.calc_app_loads(app_id, self.system, self.environment_input)
 
         self.assertIsNotNone(app_loads)
         for node in self.system.nodes:

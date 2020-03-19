@@ -29,13 +29,11 @@ class EnvironmentController:
 
     def update(self, system):
         env = EnvironmentInput()
-        system = copy.copy(system)
-        system.environment_input = env
 
-        env.attached_users = self.coverage.update(system)
-        env.generated_load = self.gen_load_estimator.calc_all_loads(system)
+        env.attached_users = self.coverage.update(system, env)
+        env.generated_load = self.gen_load_estimator.calc_all_loads(system, env)
 
-        self.routing.update(system)
+        self.routing.update(system, env)
         env.net_delay = self.routing.get_all_paths_length()
         env.net_path = self.routing.get_all_paths()
 

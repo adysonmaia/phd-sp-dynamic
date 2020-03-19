@@ -1,5 +1,5 @@
 from sp.system_controller.optimizer.static.soga import SOChromosome
-from sp.core.heuristic.nsgaii import NSGAII
+from sp.core.heuristic.nsgaii import NSGAII, pareto_dominates
 
 DEFAULT_DOMINANCE_TOLERANCE = 0.01
 
@@ -28,10 +28,7 @@ class MOGA(NSGAII):
         self.dominance_tolerance = dominance_tolerance
 
     def _dominates(self, fitness_1, fitness_2):
-        if len(fitness_1) > 1 and abs(fitness_1[0] - fitness_2[0]) <= self.dominance_tolerance:
-            return NSGAII._dominates(self, fitness_1[1:], fitness_2[1:])
-        else:
-            return fitness_1[0] < fitness_2[0]
+        return dominates(fitness_1, fitness_2, self.dominance_tolerance)
 
 
 class MOChromosome(SOChromosome):
@@ -50,3 +47,10 @@ class MOChromosome(SOChromosome):
     def fitness(self, individual):
         solution = self.decode(individual)
         return [f(self.system, solution, self.environment_input) for f in self.objective]
+
+
+def dominates(fitness_1, fitness_2, dominance_tolerance=DEFAULT_DOMINANCE_TOLERANCE):
+    if len(fitness_1) > 1 and abs(fitness_1[0] - fitness_2[0]) <= dominance_tolerance:
+        return pareto_dominates(fitness_1[1:], fitness_2[1:])
+    else:
+        return fitness_1[0] < fitness_2[0]

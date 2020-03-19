@@ -1,7 +1,5 @@
 from sp.system_controller.utils.calc import calc_load_before_distribution
 
-ROUND_PRECISION = 5
-
 
 def alloc_demanded_resources(system, solution, environment_input):
     for app in system.apps:
@@ -14,12 +12,10 @@ def alloc_demanded_resources(system, solution, environment_input):
                     src_load = calc_load_before_distribution(app.id, src_node.id, system, environment_input)
                     dst_load += float(ld * src_load)
 
-                dst_load = round(dst_load, ROUND_PRECISION)
                 solution.received_load[app.id][dst_node.id] = dst_load
 
                 for resource in system.resources:
                     demand = app.demand[resource.name](dst_load)
-                    demand = round(demand, ROUND_PRECISION)
                     solution.allocated_resource[app.id][dst_node.id][resource.name] = demand
             else:
                 solution.received_load[app.id][dst_node.id] = 0.0

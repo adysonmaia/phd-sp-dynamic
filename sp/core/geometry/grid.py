@@ -3,7 +3,7 @@ import copy
 import math
 
 
-def create_point_grid(bbox, cell_side):
+def create_grid_points(bbox, cell_side):
     x_fraction = cell_side / bbox.x_distance
     cell_width = x_fraction * bbox.width
 

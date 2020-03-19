@@ -19,16 +19,21 @@ class Application:
         max_instances (int): Max. number of nodes allowed to host the application, value >= 1
         availability (float): Probability that an application instance is working without failure, 0 <= value <= 1
         demand (dict): For each resource, it specifies a function to calculate the amount of resources required
-            by an application instance with a certain workload.
+            by an application instance with a certain workload. The dictionary's keys are the resource names
+            and the values are estimator :py:class:`sp.core.estimator.Estimator` objects.
 
-            The dictionary's keys are the resource names and the values are
-            estimator :py:class:`sp.core.estimator.Estimator` objects.
-            Call :py:meth:`sp.core.estimator.Estimator.calc` to obtain the required amount of resource.
-            E.g. code-block:: python
+            Use :py:meth:`sp.core.estimator.Estimator.calc` or :py:meth:`sp.core.estimator.Estimator.__call__`
+            to obtain the required amount of resource. E.g.:
 
+            .. code-block:: python
+
+                # Using the __call__ method
                 resource_name = 'CPU'
                 workload = 1
                 app.demand[resource_name](workload)
+
+                # Or using the calc method
+                app.demand[resource_name].calc(workload)
 
     """
 
@@ -89,11 +94,13 @@ class Application:
 
 
 def from_json(json_data):
-    """Create an application object from a json data.
+    """ Create an application object from a json data.
     The resource demands are loaded as a polynomial, linear or constant function
-    using the :py:module:`sp.core.estimator.polynomial` module
+    using the :py:mod:`sp.core.estimator.polynomial` module
 
-    E.g. code-block:: python
+    E.g.:
+
+    .. code-block:: python
 
         json_data = {
             'id': 0,
@@ -105,13 +112,18 @@ def from_json(json_data):
             'avail': 0.99,
             'max_inst': 100,
             'demand': {
-                'CPU': [3, 10, 5],  # Polynomial demand: f(x) = 3x^2 + 10x + 5
-                'RAM': [2, 30],     # Linear demand: f(x) = 2x + 30
-                'DISK': 20          # Constant demand f(x) = 20
+                # Polynomial demand: f(x) = 3x^2 + 10x + 5
+                'CPU': [3, 10, 5],
+
+                # Linear demand: f(x) = 2x + 30
+                'RAM': [2, 30],
+
+                # Constant demand f(x) = 20
+                'DISK': 20
             }
         }
-
         app = sp.core.model.application.from_json(json_data)
+
 
     Args:
         json_data (dict): data loaded from a json
@@ -130,7 +142,7 @@ def from_json(json_data):
     app.request_rate = float(json_data["rate"])
     app.availability = float(json_data["avail"])
     app.max_instances = int(json_data["max_inst"])
-    for resource, value in iteritems(json_data["demand"]):
+    for (resource, value) in iteritems(json_data["demand"]):
         resource = str(resource).upper()
         estimator = polynomial.from_json(value)
         app.demand[resource] = estimator

@@ -23,7 +23,7 @@ class DefaultSystemEstimator(SystemEstimator):
         proc_estimator = DefaultProcessingEstimator()
         for app in next_system.apps:
             for dst_node in next_system.nodes:
-                if not next_system.get_app_placement(app.id, dst_node.id):
+                if not control_input.get_app_placement(app.id, dst_node.id):
                     continue
 
                 proc_result = proc_estimator(app.id, dst_node.id,

@@ -50,7 +50,6 @@ class EnvControlTestCase(unittest.TestCase):
         for time in [0, 1]:
             self.system.time = time
             env_input = control.update(self.system)
-            self.system.environment_input = env_input
 
             self.assertIsInstance(env_input, EnvironmentInput)
             self.assertIsNotNone(env_input.generated_load)

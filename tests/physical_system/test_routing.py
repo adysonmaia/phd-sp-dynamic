@@ -1,4 +1,4 @@
-from sp.core.model import Scenario, System
+from sp.core.model import Scenario, System, EnvironmentInput
 from sp.physical_system.routing.shortest_path import ShortestPathRouting
 from sp.physical_system.estimator import DefaultLinkDelayEstimator
 import json
@@ -26,6 +26,7 @@ class RoutingTestCase(unittest.TestCase):
 
         time = 0
         self.system.time = time
+        self.environment = EnvironmentInput.create_empty(self.system)
 
     def test_shortest_path(self):
         app_id = 0
@@ -33,7 +34,7 @@ class RoutingTestCase(unittest.TestCase):
         routing = ShortestPathRouting()
         routing.static_routing = True
         routing.link_delay_estimator = DefaultLinkDelayEstimator()
-        routing.update(self.system)
+        routing.update(self.system, self.environment)
 
         for link in self.system.links:
             l_nodes = list(link.nodes_id)

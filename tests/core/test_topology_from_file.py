@@ -1,6 +1,6 @@
 from sp.core.model import Topology, Node, Link
 from sp.core.estimator.polynomial import LinearFunc
-from sp.core.estimator.power_consumption import LinearPowerEstimator
+from sp.core.estimator.power import LinearPowerEstimator
 import json
 import unittest
 

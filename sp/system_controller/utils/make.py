@@ -5,20 +5,37 @@ ROUND_PRECISION = 5
 
 
 def make_solution_feasible(system, solution, environment_input):
-    solution = _round_values(system, solution, environment_input)
+    # solution = _round_values(system, solution, environment_input)
+    solution = make_min_instances_constraint_feasible(system, solution, environment_input)
     solution = make_max_instances_constraint_feasible(system, solution, environment_input)
     solution = make_load_distribution_constraint_feasible(system, solution, environment_input)
+    return solution
+
+
+def make_min_instances_constraint_feasible(system, solution, environment_input):
+    cloud_node = system.cloud_node
+    for app in system.apps:
+        instances = [n for n in system.nodes if solution.app_placement[app.id][n.id]]
+        if len(instances) > 0:
+            continue
+
+        load = 0.0
+        solution.app_placement[app.id][cloud_node.id] = True
+        solution.received_load[app.id][cloud_node.id] = load
+        for resource in system.resources:
+            demand = app.demand[resource.name](load)
+            solution.allocated_resource[app.id][cloud_node.id][resource.name] = demand
+
+        for node in system.nodes:
+            solution.load_distribution[app.id][node.id][cloud_node.id] = 1.0
+
     return solution
 
 
 def make_max_instances_constraint_feasible(system, solution, environment_input):
     cloud_node = system.cloud_node
     for app in system.apps:
-        instances = []
-        for dst_node in system.nodes:
-            if solution.app_placement[app.id][dst_node.id]:
-                instances.append(dst_node)
-
+        instances = [n for n in system.nodes if solution.app_placement[app.id][n.id]]
         if len(instances) <= app.max_instances:
             continue
 
@@ -54,10 +71,9 @@ def make_max_instances_constraint_feasible(system, solution, environment_input):
 def make_load_distribution_constraint_feasible(system, solution, environment_input):
     cloud_node = system.cloud_node
     for app in system.apps:
-        instances = []
-        for dst_node in system.nodes:
-            if solution.app_placement[app.id][dst_node.id]:
-                instances.append(dst_node)
+        instances = [n for n in system.nodes if solution.app_placement[app.id][n.id]]
+        if len(instances) == 0:
+            continue
 
         for src_node in system.nodes:
             src_ld = 0.0
@@ -78,11 +94,10 @@ def make_load_distribution_constraint_feasible(system, solution, environment_inp
                 solution.load_distribution[app.id][src_node.id][dst_node.id] += remaining_ld
                 solution.received_load[app.id][dst_node.id] += remaining_load
 
-                if remaining_load > 0.0:
-                    load = solution.received_load[app.id][dst_node.id]
-                    for resource in system.resources:
-                        demand = app.demand[resource.name](load)
-                        solution.allocated_resource[app.id][dst_node.id][resource.name] = demand
+                received_load = solution.received_load[app.id][dst_node.id]
+                for resource in system.resources:
+                    demand = app.demand[resource.name](received_load)
+                    solution.allocated_resource[app.id][dst_node.id][resource.name] = demand
 
     return solution
 

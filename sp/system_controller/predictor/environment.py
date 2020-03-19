@@ -1,5 +1,6 @@
 from sp.core.predictor import Predictor, abstractmethod
-from sp.core.predictor.arima import ARIMAPredictor
+# from sp.core.predictor.arima import ARIMAPredictor
+from sp.core.predictor.auto_arima import AutoARIMAPredictor
 from sp.core.predictor.exp_smoothing import ExpSmoothingPredictor
 from sp.core.model import EnvironmentInput
 from collections import defaultdict
@@ -41,7 +42,7 @@ class DefaultEnvironmentPredictor(EnvironmentPredictor):
 
                 # TODO: each application can specify its own predictor
                 if self.load_predictor[app.id][node.id] is None:
-                    self.load_predictor[app.id][node.id] = ARIMAPredictor()
+                    self.load_predictor[app.id][node.id] = AutoARIMAPredictor()
 
                 predictor = self.load_predictor[app.id][node.id]
                 predictor.update(value)

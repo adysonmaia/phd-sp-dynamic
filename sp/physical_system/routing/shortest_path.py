@@ -24,7 +24,7 @@ class ShortestPathRouting(Routing):
     def get_all_paths_length(self):
         return self.distances
 
-    def update(self, system):
+    def update(self, system, environment):
         if self.static_routing and self.paths is not None:
             return
 
@@ -37,7 +37,7 @@ class ShortestPathRouting(Routing):
             delay_estimator = self.link_delay_estimator
 
             def app_weight_func(graph, src_node_id, dst_node_id):
-                return delay_estimator(graph, app.id, src_node_id, dst_node_id)
+                return delay_estimator(app.id, src_node_id, dst_node_id, system, environment)
 
             # TODO: improve this part because the shortest paths are (maybe) the same for all applications
             succ, dist = floyd_warshall.run(system, app_weight_func)

@@ -24,15 +24,15 @@ class CoverageTestCase(unittest.TestCase):
 
         time = 0
         self.system.time = time
-        self.system.environment_input = EnvironmentInput.create_empty(self.system)
+        self.environment_input = EnvironmentInput.create_empty(self.system)
 
     def test_circle_coverage(self):
         radius = 1000
         cov = CircleCoverage(radius=radius)
         self.assertEqual(cov.radius, radius)
 
-        attached_users = cov.update(self.system)
-        self.system.environment_input.attached_users = attached_users
+        attached_users = cov.update(self.system, self.environment_input)
+        self.environment_input.attached_users = attached_users
         count = {None: 0}
         for node in self.system.nodes:
             count[node.id] = 0
@@ -45,7 +45,7 @@ class CoverageTestCase(unittest.TestCase):
         self.assertEqual(count[2], 2)  # 1st BS node
         self.assertEqual(count[3], 5)  # 2nd BS node
         for node in self.system.nodes:
-            self.assertEqual(self.system.get_nb_users(node_id=node.id), count[node.id])
+            self.assertEqual(self.environment_input.get_nb_users(node_id=node.id), count[node.id])
 
         count = {-1: 0}
         for app in self.system.apps:
@@ -53,13 +53,13 @@ class CoverageTestCase(unittest.TestCase):
         for user in self.system.users:
             count[user.app_id] += 1
         for app in self.system.apps:
-            self.assertEqual(self.system.get_nb_users(app_id=app.id), count[app.id])
+            self.assertEqual(self.environment_input.get_nb_users(app_id=app.id), count[app.id])
 
     def test_min_dist_coverage(self):
         cov = MinDistanceCoverage()
 
-        attached_users = cov.update(self.system)
-        self.system.environment_input.attached_users = attached_users
+        attached_users = cov.update(self.system, self.environment_input)
+        self.environment_input.attached_users = attached_users
         count = {None: 0}
         for node in self.system.nodes:
             count[node.id] = 0
@@ -73,7 +73,7 @@ class CoverageTestCase(unittest.TestCase):
         self.assertEqual(count[2], 4)  # 1st BS node
         self.assertEqual(count[3], 6)  # 2nd BS node
         for node in self.system.nodes:
-            self.assertEqual(self.system.get_nb_users(node_id=node.id), count[node.id])
+            self.assertEqual(self.environment_input.get_nb_users(node_id=node.id), count[node.id])
 
         count = {-1: 0}
         for app in self.system.apps:
@@ -81,7 +81,7 @@ class CoverageTestCase(unittest.TestCase):
         for user in self.system.users:
             count[user.app_id] += 1
         for app in self.system.apps:
-            self.assertEqual(self.system.get_nb_users(app_id=app.id), count[app.id])
+            self.assertEqual(self.environment_input.get_nb_users(app_id=app.id), count[app.id])
 
 
 if __name__ == '__main__':

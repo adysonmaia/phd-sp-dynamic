@@ -1,5 +1,6 @@
 from .stage_ga import StageGA, StageChromosome
 from .plan_finder.ga import GAPlanFinder
+from .plan_finder.beam import BeamPlanFinder
 import time
 
 INF = float("inf")
@@ -13,15 +14,20 @@ _SGA_PARAMS = {
     "stop_threshold": 0.10,
     "use_heuristic": True
 }
-_PFGA_PARAMS = {
+_GAPF_PARAMS = {
     "nb_generations": 100,
     "population_size": 100,
     "elite_proportion": 0.1,
     "mutant_proportion": 0.1,
     "elite_probability": 0.6,
     "dominance_tolerance": 0.01,
-    "pool_size": 0,
+    "pool_size": 6,
     "stop_threshold": 0.10,
+}
+_BPF_PARAMS = {
+    "beam_width": 10,
+    "prune": True,
+    "pool_size": 6
 }
 
 
@@ -31,7 +37,7 @@ class MultiStage:
                  environment_input,
                  objective,
                  nb_stages=1,
-                 max_iterations=100,
+                 max_iterations=10,
                  system_estimator=None,
                  environment_predictor=None,
                  objective_aggregator=None):
@@ -69,41 +75,38 @@ class MultiStage:
                                    objective_aggregator=self.objective_aggregator,
                                    control_decoder=_decode_control_input,
                                    system_estimator=self.system_estimator,
-                                   ga_params=_PFGA_PARAMS)
+                                   ga_params=_GAPF_PARAMS)
+
+        # plan_finder = BeamPlanFinder(system=self.system,
+        #                              environment_inputs=env_inputs,
+        #                              objective=self.objective,
+        #                              objective_aggregator=self.objective_aggregator,
+        #                              control_decoder=_decode_control_input,
+        #                              system_estimator=self.system_estimator,
+        #                              **_BPF_PARAMS)
 
         iteration = 0
         stop = False
         while not stop:
-            print(iteration)
             stages_control = []
-
-            start_time = time.time()
             for stage in range(self.nb_stages):
                 ga = stages_ga[stage]
                 population = ga.next_population()
 
                 for indiv in population:
                     fitness = None
-                    fitness = [INF] * len(self.objective)
 
-                    # if stage > 0:
-                    #     fitness = [INF] * len(self.objective)
-                    # else:
-                    #     trajectory = [indiv] * self.nb_stages
-                    #     plan = plan_finder.create_plan(trajectory)
-                    #     fitness = plan.fitness
+                    if stage > 0:
+                        fitness = [INF] * len(self.objective)
+                    else:
+                        trajectory = [indiv] * self.nb_stages
+                        plan = plan_finder.create_plan(trajectory)
+                        fitness = plan.fitness
 
                     ga.set_fitness(indiv, fitness)
-
                 stages_control.append(population)
-            elapsed_time = time.time() - start_time
-            print("Stage GA : {}s".format(elapsed_time))
 
-            start_time = time.time()
             plans = plan_finder.solve(stages_control)
-            elapsed_time = time.time() - start_time
-            print("Plan Finder : {}s".format(elapsed_time))
-
             for plan in plans:
                 for stage in range(self.nb_stages):
                     control_input = plan[stage]

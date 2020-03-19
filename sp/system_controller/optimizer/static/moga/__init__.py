@@ -1,6 +1,6 @@
 from sp.system_controller.optimizer import Optimizer
 from sp.system_controller.metric.static import deadline, availability, cost
-from .ga import MOGA, MOChromosome
+from .ga import MOGA, MOChromosome, dominates
 
 
 class MOGAOptimizer(Optimizer):

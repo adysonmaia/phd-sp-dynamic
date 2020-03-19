@@ -1,4 +1,7 @@
 from collections import defaultdict
+import math
+
+ERROR_TOLERANCE = 0.01
 
 
 class System:
@@ -10,7 +13,7 @@ class System:
         self.time = 0
         self.sampling_time = 1
         self.app_queue_size = defaultdict(lambda: defaultdict(int))
-        self.processing_delay = defaultdict(lambda: defaultdict(lambda: float("inf")))
+        self.processing_delay = defaultdict(lambda: defaultdict(lambda: math.inf))
 
     def __copy__(self):
         cp = System()
@@ -23,6 +26,34 @@ class System:
         cp.app_queue_size = self.app_queue_size
         cp.processing_delay = self.processing_delay
         return cp
+
+    def __eq__(self, other):
+        if self.time != other.time or self.sampling_time != other.sampling_time:
+            return False
+
+        for app in self.apps:
+            for node in self.nodes:
+                queue_size_1 = self.get_app_queue_size(app.id, node.id)
+                queue_size_2 = other.get_app_queue_size(app.id, node.id)
+
+                if math.isinf(queue_size_1) and not math.isinf(queue_size_2):
+                    return False
+                elif not math.isinf(queue_size_1) and math.isinf(queue_size_2):
+                    return False
+                elif abs(queue_size_1 - queue_size_2) > ERROR_TOLERANCE:
+                    return False
+
+                proc_1 = self.get_processing_delay(app.id, node.id)
+                proc_2 = other.get_processing_delay(app.id, node.id)
+
+                if math.isinf(proc_1) and not math.isinf(proc_2):
+                    return False
+                elif not math.isinf(proc_1) and math.isinf(proc_2):
+                    return False
+                elif abs(proc_1 - proc_2) > ERROR_TOLERANCE:
+                    return False
+
+        return True
 
     @property
     def nodes(self):
@@ -83,32 +114,8 @@ class System:
     def get_user(self, user_id):
         return self.scenario.get_user(user_id)
 
-    def get_nb_users(self, app_id=None, node_id=None):
-        return self.environment_input.get_nb_users(app_id, node_id)
-
-    def get_generated_load(self, app_id, node_id):
-        return self.environment_input.get_generated_load(app_id, node_id)
-
-    def get_net_delay(self, app_id, src_node_id, dst_node_id):
-        return self.environment_input.get_net_delay(app_id, src_node_id, dst_node_id)
-
-    def get_net_path(self, app_id, src_node_id, dst_node_id):
-        return self.environment_input.get_net_path(app_id, src_node_id, dst_node_id)
-
     def get_processing_delay(self, app_id, node_id):
         return self.processing_delay[app_id][node_id]
 
     def get_app_queue_size(self, app_id, node_id):
         return self.app_queue_size[app_id][node_id]
-
-    def get_app_placement(self, app_id, node_id):
-        return self.control_input.get_app_placement(app_id, node_id)
-
-    def get_load_distribution(self, app_id, src_node_id, dst_node_id):
-        return self.control_input.get_load_distribution(app_id, src_node_id, dst_node_id)
-
-    def get_allocated_resource(self, app_id, node_id, resource_name):
-        return self.control_input.get_allocated_resource(app_id, node_id, resource_name)
-
-    def get_allocated_cpu(self, app_id, node_id):
-        return self.control_input.get_allocated_cpu(app_id, node_id)
