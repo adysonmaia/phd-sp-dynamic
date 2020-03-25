@@ -1,9 +1,10 @@
-from sp.core.predictor import Predictor, abstractmethod
+from sp.core.predictor import Predictor
 from sp.core.predictor.arima import ARIMAPredictor
 from sp.core.predictor.auto_arima import AutoARIMAPredictor
 from sp.core.predictor.exp_smoothing import ExpSmoothingPredictor
 from sp.core.model import EnvironmentInput
 from collections import defaultdict
+from abc import abstractmethod
 
 
 class EnvironmentPredictor(Predictor):

@@ -1,4 +1,4 @@
-from . import Coverage
+from .coverage import Coverage
 from sp.physical_system.model.attached_user import AttachedUser
 import math
 

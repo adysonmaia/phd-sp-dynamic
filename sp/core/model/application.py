@@ -6,8 +6,8 @@ from functools import total_ordering
 
 @total_ordering
 class Application:
-    """ Application Model Class
-    it is used to store requirements and properties of an application
+    """Application Model Class
+    It is used to store requirements and properties of an application
 
     Attributes:
         id (int): Unique identification of the application
@@ -38,7 +38,7 @@ class Application:
     """
 
     def __init__(self):
-        """ Initialization
+        """Initialization
         """
         self.id = -1
         self.type = ""
@@ -51,12 +51,20 @@ class Application:
         self.demand = {}
 
     def __eq__(self, other):
-        """ Compare if two applications are equals by their ids
+        """Compare if two applications are equals by their ids
+        Args:
+            other (Application): other application
+        Returns:
+            bool: whether two objects are equals or not
         """
         return self.id == other.id
 
     def __lt__(self, other):
-        """ Use the id attribute in the < operator
+        """Use the id attribute in the < operator
+        Args:
+            other (Application): other application
+        Returns:
+            bool: whether the application has the id less than the other application or not
         """
         return self.id < other.id
 
@@ -94,7 +102,7 @@ class Application:
 
 
 def from_json(json_data):
-    """ Create an application object from a json data.
+    """Create an application object from a json data.
     The resource demands are loaded as a polynomial, linear or constant function
     using the :py:mod:`sp.core.estimator.polynomial` module
 

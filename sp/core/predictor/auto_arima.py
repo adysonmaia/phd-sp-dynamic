@@ -1,4 +1,4 @@
-from . import Predictor
+from .predictor import Predictor
 import pmdarima as pm
 import warnings
 

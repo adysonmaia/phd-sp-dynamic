@@ -1,8 +1,6 @@
 from sp.core.heuristic.kmedoids import KMedoids
 from sp.system_controller.utils import calc_load_before_distribution
-# from .chromosome import SOChromosome
-
-INF = float("inf")
+import math
 
 
 def create_individual_empty(chromosome):
@@ -200,15 +198,15 @@ def create_individual_capacity(chromosome):
     for (n_index, node) in enumerate(system.nodes):
         for resource in system.resources:
             capacity = node.capacity[resource.name]
-            if capacity > max_capacity[resource.name] and capacity != INF:
+            if capacity > max_capacity[resource.name] and not math.isinf(capacity):
                 max_capacity[resource.name] = float(capacity)
 
-    node_priority = [0 for _ in system.nodes]
+    node_priority = [0.0 for _ in system.nodes]
     for (n_index, node) in enumerate(system.nodes):
         value = 0.0
         for resource in system.resources:
             capacity = node.capacity[resource.name]
-            if capacity == INF:
+            if math.isinf(capacity):
                 value += 1.0
             else:
                 value += capacity / max_capacity[resource.name]

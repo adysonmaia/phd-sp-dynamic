@@ -90,7 +90,7 @@ def data_analysis(scenario, load_filename, users_filename):
 
 
 def plot_load(scenario, df):
-    bs_nodes_id = [node.id for node in scenario.topology.bs_nodes]
+    bs_nodes_id = [node.id for node in scenario.network.bs_nodes]
     df = df.tz_convert(SF_TZ_STR)
     df = df[df['node'].isin(bs_nodes_id)]
 
@@ -136,7 +136,7 @@ def plot_load(scenario, df):
     # # map_gdf = map_gdf.simplify(0.05, preserve_topology=False)
     # map_gdf.plot(ax=map_ax, color='lightgray', zorder=0)
     # legend_handles_labels = axes[0, 0].get_legend_handles_labels()
-    # for node in scenario.topology.bs_nodes:
+    # for node in scenario.network.bs_nodes:
     #     try:
     #         handle_index = legend_handles_labels[1].index(str(node.id))
     #         handle = legend_handles_labels[0][handle_index]
@@ -152,7 +152,7 @@ def plot_load(scenario, df):
 
 def plot_map(scenario, ax=None, legend_handles_labels=None):
     nodes_data = []
-    for node in scenario.topology.bs_nodes:
+    for node in scenario.network.bs_nodes:
         item = {'node': node.id, 'lat': node.position.lat, 'lon': node.position.lon}
         nodes_data.append(item)
     nodes_df = pd.DataFrame.from_records(nodes_data)
@@ -189,7 +189,7 @@ def plot_map(scenario, ax=None, legend_handles_labels=None):
     # map_gdf.centroid.plot(ax=ax, color='blue', zorder=1, label='centroid')
     # # nodes_gdf.plot(ax=ax, color='red', zorder=1, label='edge node')
     #
-    # for node in scenario.topology.bs_nodes:
+    # for node in scenario.network.bs_nodes:
     #     try:
     #         color = 'red'
     #         if legend_handles_labels is not None:
@@ -211,7 +211,7 @@ def plot_users(scenario, load_df, users_df):
     crs = "EPSG:4326"
 
     nodes_data = []
-    for node in scenario.topology.bs_nodes:
+    for node in scenario.network.bs_nodes:
         item = {'node': node.id, 'lat': node.position.lat, 'lon': node.position.lon}
         nodes_data.append(item)
     nodes_df = pd.DataFrame.from_records(nodes_data)

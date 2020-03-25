@@ -1,4 +1,4 @@
-from sp.core.estimator.polynomial import LinearFunc
+from sp.core.estimator.polynomial import LinearEstimator
 from sp.core.model.application import Application
 import json
 import unittest
@@ -39,7 +39,7 @@ class AppsFromFileCase(unittest.TestCase):
         self.assertEqual(app.availability, 0.99)
         self.assertEqual(app.max_instances, 1000)
         for resource in ["CPU", "RAM", "DISK"]:
-            self.assertIsInstance(app.demand[resource], LinearFunc)
+            self.assertIsInstance(app.demand[resource], LinearEstimator)
         self.assertEqual(app.demand["CPU"].coefficients, (10.0, 1.0))
         self.assertEqual(app.demand["RAM"].coefficients, (1.0, 50.0))
         self.assertEqual(app.demand["DISK"].coefficients, (1.0, 50.0))
@@ -60,7 +60,7 @@ class AppsFromFileCase(unittest.TestCase):
         self.assertEqual(app.availability, 0.999)
         self.assertEqual(app.max_instances, 1000)
         for resource in ["CPU", "RAM", "DISK"]:
-            self.assertIsInstance(app.demand[resource], LinearFunc)
+            self.assertIsInstance(app.demand[resource], LinearEstimator)
         self.assertEqual(app.demand["CPU"].coefficients, (5.0, 0.5))
         self.assertEqual(app.demand["RAM"].coefficients, (1.0, 10.0))
         self.assertEqual(app.demand["DISK"].coefficients, (1.0, 10.0))
@@ -81,7 +81,7 @@ class AppsFromFileCase(unittest.TestCase):
         self.assertEqual(app.availability, 0.9)
         self.assertEqual(app.max_instances, 1000)
         for resource in ["CPU", "RAM", "DISK"]:
-            self.assertIsInstance(app.demand[resource], LinearFunc)
+            self.assertIsInstance(app.demand[resource], LinearEstimator)
         self.assertEqual(app.demand["CPU"].coefficients, (5.0, 0.005))
         self.assertEqual(app.demand["RAM"].coefficients, (1.0, 10.0))
         self.assertEqual(app.demand["DISK"].coefficients, (1.0, 10.0))

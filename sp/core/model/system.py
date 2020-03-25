@@ -57,23 +57,23 @@ class System:
 
     @property
     def nodes(self):
-        return self.scenario.topology.nodes
+        return self.scenario.network.nodes
 
     @property
     def nodes_id(self):
-        return self.scenario.topology.nodes_id
+        return self.scenario.network.nodes_id
 
     @property
     def cloud_node(self):
-        return self.scenario.topology.cloud_node
+        return self.scenario.network.cloud_node
 
     @property
     def bs_nodes(self):
-        return self.scenario.topology.bs_nodes
+        return self.scenario.network.bs_nodes
 
     @property
     def links(self):
-        return self.scenario.topology.links
+        return self.scenario.network.links
 
     @property
     def apps(self):
@@ -100,13 +100,13 @@ class System:
         return self.scenario.resources_name
 
     def get_node(self, node_id):
-        return self.scenario.topology.get_node(node_id)
+        return self.scenario.network.get_node(node_id)
 
     def get_link(self, src_node_id, dst_node_id):
-        return self.scenario.topology.get_link(src_node_id, dst_node_id)
+        return self.scenario.network.get_link(src_node_id, dst_node_id)
 
     def link_exists(self, src_node_id, dst_node_id):
-        return self.scenario.topology.link_exists(src_node_id, dst_node_id)
+        return self.scenario.network.link_exists(src_node_id, dst_node_id)
 
     def get_app(self, app_id):
         return self.scenario.get_app(app_id)

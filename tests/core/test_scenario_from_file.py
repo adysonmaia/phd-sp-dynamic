@@ -1,4 +1,4 @@
-from sp.core.model import Scenario, Application, Topology, Node, Link, User, Resource
+from sp.core.model import Scenario, Application, Network, Node, Link, User, Resource
 import json
 import unittest
 
@@ -26,9 +26,9 @@ class ScenarioFromFileCase(unittest.TestCase):
         self.assertGreater(len(self.scenario.resources), 0)
         self.assertIsInstance(self.scenario.resources[0], Resource)
 
-        self.assertIsInstance(self.scenario.topology, Topology)
-        self.assertGreater(len(self.scenario.topology.nodes), 0)
-        self.assertIsInstance(self.scenario.topology.nodes[0], Node)
+        self.assertIsInstance(self.scenario.network, Network)
+        self.assertGreater(len(self.scenario.network.nodes), 0)
+        self.assertIsInstance(self.scenario.network.nodes[0], Node)
 
-        self.assertGreater(len(self.scenario.topology.links), 0)
-        self.assertIsInstance(self.scenario.topology.links[0], Link)
+        self.assertGreater(len(self.scenario.network.links), 0)
+        self.assertIsInstance(self.scenario.network.links[0], Link)

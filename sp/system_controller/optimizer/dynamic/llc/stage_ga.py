@@ -1,7 +1,6 @@
 from sp.core.heuristic.nsgaii import NSGAII
 from sp.system_controller.optimizer.static.moga import MOGA, MOChromosome
-
-INF = float("inf")
+import math
 
 
 class StageGA(MOGA):
@@ -44,7 +43,7 @@ class StageGA(MOGA):
         self._init_pop_fitness()
 
     def _init_pop_fitness(self):
-        fitness = [INF] * self._nb_objectives
+        fitness = [math.inf] * self._nb_objectives
         self._pop_fitness = [fitness for _ in range(self.population_size)]
 
     def _get_fitness(self, individual):

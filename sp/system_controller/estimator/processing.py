@@ -1,8 +1,7 @@
 from sp.core.estimator import Estimator
 from sp.system_controller.utils.calc import calc_load_before_distribution
 from abc import ABC, abstractmethod
-
-INF = float("inf")
+import math
 
 
 class ProcessingEstimator(Estimator):
@@ -48,14 +47,14 @@ class DefaultProcessingEstimator(ProcessingEstimator):
 class DefaultProcessingResult(ProcessingResult):
     @property
     def delay(self):
-        delay = INF
+        delay = math.inf
         if self.service_rate > self.arrival_rate:
             delay = 1.0 / float(self.service_rate - self.arrival_rate)
         return delay
 
     @property
     def queue_size(self):
-        size = INF
+        size = math.inf
         if self.service_rate > self.arrival_rate:
             size = self.arrival_rate / float(self.service_rate - self.arrival_rate)
         return size

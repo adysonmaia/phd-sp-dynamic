@@ -1,6 +1,6 @@
 from sp.core.heuristic.nsgaii import NSGAIIChromosome
 from sp.system_controller.optimizer.static.moga import MOGA
-from . import PlanFinder
+from .plan_finder import PlanFinder
 import random
 
 

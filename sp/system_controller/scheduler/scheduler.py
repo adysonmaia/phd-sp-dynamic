@@ -1,15 +1,19 @@
-from .scheduler import Scheduler
+from abc import ABC, abstractmethod
 
 
-class AlwaysScheduler(Scheduler):
+class Scheduler(ABC):
+    @abstractmethod
     def start(self):
         pass
 
+    @abstractmethod
     def needs_update(self, system, environment_input):
-        return True
+        pass
 
+    @abstractmethod
     def update(self, system, environment_input):
-        return system, environment_input
+        pass
 
+    @abstractmethod
     def stop(self):
         pass

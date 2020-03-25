@@ -1,9 +1,7 @@
 from .stage_ga import StageGA, StageChromosome
-from .plan_finder.ga import GAPlanFinder
-from .plan_finder.beam import BeamPlanFinder
-import time
+from .plan_finder import GAPlanFinder, BeamPlanFinder
+import math
 
-INF = float("inf")
 _SGA_PARAMS = {
     "population_size": 100,
     "elite_proportion": 0.1,
@@ -97,7 +95,7 @@ class MultiStage:
                     fitness = None
 
                     if stage > 0:
-                        fitness = [INF] * len(self.objective)
+                        fitness = [math.inf] * len(self.objective)
                     else:
                         trajectory = [indiv] * self.nb_stages
                         plan = plan_finder.create_plan(trajectory)

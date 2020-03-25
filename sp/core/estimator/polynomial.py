@@ -1,8 +1,8 @@
-from . import Estimator
+from .estimator import Estimator
 import math
 
 
-class PolyFunc(Estimator):
+class PolynomialEstimator(Estimator):
     def __init__(self, coefficients=None):
         Estimator.__init__(self)
         self.coefficients = []
@@ -16,7 +16,7 @@ class PolyFunc(Estimator):
         return value
 
 
-class LinearFunc(Estimator):
+class LinearEstimator(Estimator):
     K1 = "a"  # Slope constant of a linear function f(x) = ax + b
     K2 = "b"  # Intercept constant of a linear function f(x) = ax + b
 
@@ -56,7 +56,7 @@ class LinearFunc(Estimator):
         return self._coefficients[0] * float(x) + self._coefficients[1]
 
 
-class ConstFunc(Estimator):
+class ConstEstimator(Estimator):
     def __init__(self, const=0.0):
         Estimator.__init__(self)
         self.const = const
@@ -68,12 +68,12 @@ class ConstFunc(Estimator):
 def from_json(json_data):
     if isinstance(json_data, list) or isinstance(json_data, tuple):
         if len(json_data) == 1:
-            return ConstFunc(json_data[0])
+            return ConstEstimator(json_data[0])
         elif len(json_data) == 2:
-            return LinearFunc(json_data)
+            return LinearEstimator(json_data)
         else:
-            return PolyFunc(list(json_data))
+            return PolynomialEstimator(list(json_data))
     elif isinstance(json_data, dict):
-        return LinearFunc(json_data)
+        return LinearEstimator(json_data)
     else:
-        return ConstFunc(float(json_data))
+        return ConstEstimator(float(json_data))

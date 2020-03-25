@@ -24,12 +24,12 @@ def main():
     bbox_points = [GpsPoint(**pos) for pos in bbox_pos]
     bbox = BoundBox(*bbox_points)
 
-    # Generate network topology
-    topology_format = 'zipcode'
-    topology_json = gen_topology(topology_format, bbox)
-    topology_filename = DATA_PATH + 'topology_{}.json'.format(topology_format)
-    with open(topology_filename, 'w') as outfile:
-        json.dump(topology_json, outfile, indent=2)
+    # Generate the network
+    topology = 'zipcode'
+    network_json = gen_network(topology, bbox)
+    network_filename = DATA_PATH + 'network_{}.json'.format(topology)
+    with open(network_filename, 'w') as outfile:
+        json.dump(network_json, outfile, indent=2)
 
     # Generate applications
     apps_json = gen_apps()
@@ -45,7 +45,7 @@ def main():
 
     # Create scenario composed of net topology, applications, and users
     scenario_json = {
-        'topology': topology_filename,
+        'network': network_filename,
         'apps': apps_filename,
         'users': users_filename
     }
@@ -54,13 +54,13 @@ def main():
         json.dump(scenario_json, outfile, indent=2)
 
 
-def gen_topology(topology_format, bbox):
-    """Generate the network topology/graph composed of nodes and links
+def gen_network(topology, bbox):
+    """Generate the network graph with a specific topology
     Args:
-        topology_format (str): topology, values: 'grid', 'zipcode'
+        topology (str): network's topology, values: 'grid', 'zipcode'
         bbox (BoundBox): bound box of positions
     Returns:
-         dict: topology in json format
+         dict: network in json format
     """
     distance = 2000.0
     dist_tol = 200.0
@@ -131,7 +131,7 @@ def gen_topology(topology_format, bbox):
     }
 
     # Generate base stations' positions in a bound box grid
-    json_data = gen_bs_network(bbox, topology=topology_format)
+    json_data = gen_bs_network(bbox, topology=topology)
 
     # Set the base station's properties
     for bs in json_data['nodes']:
@@ -186,7 +186,7 @@ def gen_bs_network(bbox, topology='grid', **kwargs):
 
 
 def gen_grid_bs_network(bbox, distance=2000.0, tol=200.0):
-    """Generate base stations in a grid format
+    """Generate base stations in a grid topology
     Args:
         bbox (BoundBox): bound box of the grid
         distance (float): distance between base stations

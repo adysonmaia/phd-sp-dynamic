@@ -1,5 +1,4 @@
-from . import Estimator
-from abc import abstractmethod
+from .estimator import Estimator, abstractmethod
 
 
 class PowerEstimator(Estimator):

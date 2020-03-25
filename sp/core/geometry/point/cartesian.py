@@ -1,4 +1,4 @@
-from . import Point
+from .point import Point
 from scipy.spatial import distance
 import numpy as np
 

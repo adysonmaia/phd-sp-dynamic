@@ -5,7 +5,6 @@ from . import individual_generator as indiv_gen
 import math
 import numpy
 
-INF = float("inf")
 POOL_SIZE = 4
 DEFAULT_STALL_WINDOW = 30
 DEFAULT_STALL_THRESHOLD = 0.0

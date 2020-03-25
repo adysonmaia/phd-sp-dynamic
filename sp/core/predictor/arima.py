@@ -1,4 +1,4 @@
-from . import Predictor
+from .predictor import Predictor
 from statsmodels.tsa.arima_model import ARIMA
 import warnings
 

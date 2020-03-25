@@ -1,11 +1,4 @@
-from abc import ABC, abstractmethod
-
-
-class Predictor(ABC):
-    @abstractmethod
-    def update(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
-    def predict(self, steps=1):
-        pass
+from .predictor import Predictor
+from .arima import ARIMAPredictor
+from .auto_arima import AutoARIMAPredictor
+from .exp_smoothing import ExpSmoothingPredictor

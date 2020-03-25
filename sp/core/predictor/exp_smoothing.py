@@ -1,4 +1,4 @@
-from . import Predictor
+from .predictor import Predictor
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import warnings
 

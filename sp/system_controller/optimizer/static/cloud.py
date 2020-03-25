@@ -1,4 +1,4 @@
-from sp.system_controller.optimizer import Optimizer
+from sp.system_controller.optimizer.optimizer import Optimizer
 from sp.system_controller.model import OptSolution
 from sp.system_controller.utils import alloc_demanded_resources
 

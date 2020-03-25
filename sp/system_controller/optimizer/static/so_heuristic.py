@@ -1,4 +1,4 @@
-from sp.system_controller.optimizer import Optimizer, OptimizerError
+from sp.system_controller.optimizer.optimizer import Optimizer, OptimizerError
 from sp.system_controller.optimizer.static.soga import SOChromosome, indiv_gen
 from sp.system_controller.metric.static import deadline
 

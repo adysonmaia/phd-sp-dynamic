@@ -1,8 +1,3 @@
-from abc import ABC, abstractmethod
-
-
-class Coverage(ABC):
-    @abstractmethod
-    def update(self, system, environment, time_tolerance=None, distance_tolerance=None):
-        pass
-
+from .coverage import Coverage
+from .circle import CircleCoverage
+from .min_distance import MinDistanceCoverage

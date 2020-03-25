@@ -1,7 +1,6 @@
 from sp.core.estimator import Estimator
 from abc import abstractmethod
-
-INF = float("inf")
+import math
 
 
 class LinkDelayEstimator(Estimator):
@@ -18,4 +17,4 @@ class DefaultLinkDelayEstimator(LinkDelayEstimator):
 
             return link.propagation_delay + app.data_size / float(link.bandwidth)
         else:
-            return INF
+            return math.inf

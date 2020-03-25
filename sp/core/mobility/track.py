@@ -1,4 +1,4 @@
-from . import Mobility
+from .mobility import Mobility
 from sp.core.geometry import point
 import copy
 import math

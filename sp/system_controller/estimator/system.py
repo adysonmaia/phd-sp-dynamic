@@ -1,8 +1,7 @@
-from sp.core.estimator import Estimator, abstractmethod
+from sp.core.estimator import Estimator
 from sp.core.model import System
 from sp.system_controller.estimator.processing import DefaultProcessingEstimator
-
-INF = float("inf")
+from abc import abstractmethod
 
 
 class SystemEstimator(Estimator):

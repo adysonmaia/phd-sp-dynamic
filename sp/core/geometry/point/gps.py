@@ -1,4 +1,4 @@
-from . import Point
+from .point import Point
 import warnings
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=DeprecationWarning)
@@ -9,9 +9,9 @@ class GpsPoint(Point):
     LON_INDEX = 0
     LAT_INDEX = 1
 
-    def __init__(self, lon=0, lat=0):
+    def __init__(self, lon=0.0, lat=0.0):
         Point.__init__(self)
-        self._values = [0, 0]
+        self._values = [0.0, 0.0]
         self.lat = lat
         self.lon = lon
 

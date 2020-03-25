@@ -1,6 +1,6 @@
 from sp.core.heuristic import nsgaii
 from sp.system_controller.optimizer.static import moga
-from . import PlanFinder, Plan
+from .plan_finder import PlanFinder, Plan
 from functools import cmp_to_key
 import multiprocessing as mp
 

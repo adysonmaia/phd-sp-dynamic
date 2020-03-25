@@ -1,5 +1,5 @@
 from .resource import Resource
-from .topology import Topology
+from .network import Network
 from .application import Application
 from .user import User
 from sp.core.utils import json_util
@@ -8,7 +8,7 @@ from sp.core.libs.cached_property import cached_property
 
 class Scenario:
     def __init__(self):
-        self._topology = None
+        self._network = None
         self._apps = {}
         self._users = {}
         self._resources = {}
@@ -34,12 +34,12 @@ class Scenario:
         return list(self._resources.values())
 
     @property
-    def topology(self):
-        return self._topology
+    def network(self):
+        return self._network
 
-    @topology.setter
-    def topology(self, value):
-        self._topology = value
+    @network.setter
+    def network(self, value):
+        self._network = value
         self._clean_cache()
 
     @property
@@ -83,17 +83,17 @@ class Scenario:
 def from_json(json_data):
     s = Scenario()
 
-    topology_data = json_data
-    if "topology" in json_data:
-        topology_data = json_util.load_key_content(json_data, "topology")
-    s.topology = Topology.from_json(topology_data)
+    network_data = json_data
+    if "network" in json_data:
+        network_data = json_util.load_key_content(json_data, "network")
+    s.network = Network.from_json(network_data)
 
     if "resources" in json_data:
         for item in json_util.load_key_content(json_data, "resources"):
             r = Resource.from_json(item)
             s.add_resource(r)
     else:
-        for resource_name in s.topology.cloud_node.capacity.keys():
+        for resource_name in s.network.cloud_node.capacity.keys():
             r = Resource()
             r.name = resource_name
             s.add_resource(r)

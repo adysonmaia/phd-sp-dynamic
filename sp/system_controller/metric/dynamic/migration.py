@@ -1,7 +1,5 @@
 from statistics import mean
-
-
-INF = float("inf")
+import math
 
 
 def overall_migration_cost(current_system, next_control, next_environment):
@@ -32,7 +30,7 @@ def _calc_migration_cost(current_system, next_control, next_environment):
                 if not next_place:
                     continue
 
-                min_delay = INF
+                min_delay = math.inf
                 for src_node in current_system.nodes:
                     if not current_control.get_app_placement(app.id, src_node.id):
                         continue
