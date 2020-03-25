@@ -1,6 +1,7 @@
 from . import Mobility
 from sp.core.geometry import point
 import copy
+import math
 
 
 class TrackMobility(Mobility):
@@ -10,10 +11,11 @@ class TrackMobility(Mobility):
         if tracks is not None:
             self.tracks = tracks
 
-    def position(self, time):
+    def position(self, time, tolerance=None):
         start = 0
         tracks_len = len(self.tracks)
         position = None
+        tolerance = tolerance if tolerance is not None else math.inf
 
         if tracks_len > 0:
             prev_tf = None
@@ -26,7 +28,9 @@ class TrackMobility(Mobility):
                     next_tf = self.tracks[next_i]
                     break
 
-            if prev_tf is not None and next_tf is not None:
+            interpolate = prev_tf is not None and next_tf is not None
+            interpolate = interpolate and (time - prev_tf.time <= tolerance or next_tf.time - time <= tolerance)
+            if interpolate:
                 position = prev_tf.position
                 if prev_tf.time != time:
                     position = prev_tf.intermediate(next_tf, time).position

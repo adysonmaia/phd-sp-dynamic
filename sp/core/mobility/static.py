@@ -7,7 +7,7 @@ class StaticMobility(Mobility):
         Mobility.__init__(self)
         self._position = pos
 
-    def position(self, time):
+    def position(self, time, tolerance=None):
         return self._position
 
     @staticmethod

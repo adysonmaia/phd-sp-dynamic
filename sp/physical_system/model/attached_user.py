@@ -7,7 +7,7 @@ class AttachedUser(User):
         self.node_id = None
         self.position = None
 
-    def get_position(self, time):
+    def get_current_position(self):
         return self.position
 
     @staticmethod

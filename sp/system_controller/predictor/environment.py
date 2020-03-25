@@ -1,5 +1,5 @@
 from sp.core.predictor import Predictor, abstractmethod
-# from sp.core.predictor.arima import ARIMAPredictor
+from sp.core.predictor.arima import ARIMAPredictor
 from sp.core.predictor.auto_arima import AutoARIMAPredictor
 from sp.core.predictor.exp_smoothing import ExpSmoothingPredictor
 from sp.core.model import EnvironmentInput
@@ -42,7 +42,8 @@ class DefaultEnvironmentPredictor(EnvironmentPredictor):
 
                 # TODO: each application can specify its own predictor
                 if self.load_predictor[app.id][node.id] is None:
-                    self.load_predictor[app.id][node.id] = AutoARIMAPredictor()
+                    # self.load_predictor[app.id][node.id] = AutoARIMAPredictor()
+                    self.load_predictor[app.id][node.id] = ARIMAPredictor()
 
                 predictor = self.load_predictor[app.id][node.id]
                 predictor.update(value)
@@ -70,6 +71,7 @@ class DefaultEnvironmentPredictor(EnvironmentPredictor):
             for src_node in self.system.nodes:
                 predictor = self.load_predictor[app.id][src_node.id]
                 values = predictor.predict(steps)
+                values = list(map(lambda v: max(0.0, v), values))
                 for index in range(steps):
                     env_inputs[index].generated_load[app.id][src_node.id] = values[index]
 
@@ -81,6 +83,7 @@ class DefaultEnvironmentPredictor(EnvironmentPredictor):
                 for dst_node in self.system.nodes:
                     predictor = self.net_predictor[app.id][src_node.id][dst_node.id]
                     values = predictor.predict(steps)
+                    values = list(map(lambda v: max(0.0, v), values))
                     for index in range(steps):
                         env_inputs[index].net_delay[app.id][src_node.id][dst_node.id] = values[index]
 

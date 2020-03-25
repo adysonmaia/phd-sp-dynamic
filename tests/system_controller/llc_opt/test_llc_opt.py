@@ -36,7 +36,8 @@ class LLCOptTestCase(unittest.TestCase):
         ]
 
         time_start = 0
-        time_end = 50
+        # time_end = 50
+        time_end = 5
 
         system = copy.copy(self.system)
         self.environment_controller.start()

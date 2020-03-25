@@ -22,9 +22,12 @@ class EnvironmentInput:
     def get_net_path(self, app_id, src_node_id, dst_node_id):
         return self.net_path[app_id][src_node_id][dst_node_id]
 
+    def get_attached_users(self):
+        return self.attached_users.values()
+
     def get_nb_users(self, app_id=None, node_id=None):
         count = 0
-        for user in self.attached_users.values():
+        for user in self.get_attached_users():
             if (app_id is None or user.app_id == app_id) and (node_id is None or user.node_id == node_id):
                 count += 1
         return count

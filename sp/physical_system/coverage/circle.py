@@ -1,22 +1,21 @@
 from . import Coverage
 from sp.physical_system.model.attached_user import AttachedUser
-
-INF = float("inf")
+import math
 
 
 class CircleCoverage(Coverage):
     def __init__(self, radius=1000.0):
-        Coverage.__init__(self)
         self.radius = radius
 
-    def update(self, system, environment):
+    def update(self, system, environment, time_tolerance=None, distance_tolerance=None):
         time = system.time
+        distance_tolerance = distance_tolerance if distance_tolerance is not None else 0.0
         attachments = {}
 
         for user in system.users:
             attached_node_id = None
-            min_dist = INF
-            user_pos = user.get_position(time)
+            min_dist = math.inf
+            user_pos = user.get_position(time, time_tolerance)
 
             if user_pos is not None:
                 for node in system.bs_nodes:
@@ -26,7 +25,7 @@ class CircleCoverage(Coverage):
                         continue
 
                     dist = user_pos.distance(node_pos)
-                    if dist < min_dist and dist <= self.radius:
+                    if dist < min_dist + distance_tolerance and dist <= self.radius + distance_tolerance:
                         min_dist = dist
                         attached_node_id = node.id
 

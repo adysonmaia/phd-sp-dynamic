@@ -7,18 +7,20 @@ class PhysicalSystem:
         self.system_estimator = None
         self._scenario = None
         self._system = None
-        self._last_update = 0
+        self._sampling_time = 1
+        self._last_update = None
 
     @property
     def state(self):
         return self._system
 
-    def start(self, scenario):
+    def start(self, scenario, sampling_time):
         if self.system_estimator is None:
             self.system_estimator = DefaultSystemEstimator()
 
         self._scenario = scenario
-        self._last_update = 0
+        self._sampling_time = sampling_time
+        self._last_update = None
         self._system = System()
         self._system.scenario = self._scenario
 
@@ -26,8 +28,9 @@ class PhysicalSystem:
         pass
 
     def update(self, time):
+        sampling_time = (time - self._last_update) if self._last_update is not None else self._sampling_time
         self._system.time = time
-        self._system.sampling_time = time - self._last_update
+        self._system.sampling_time = sampling_time
         self._last_update = time
         return self._system
 

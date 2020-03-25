@@ -2,8 +2,11 @@ from sp.core.geometry import grid
 from sp.core.geometry.bound_box import BoundBox
 from sp.core.geometry.point.gps import GpsPoint
 from glob import glob
+from collections import defaultdict
 from future.utils import iteritems
 from datetime import datetime
+from pytz import timezone
+import geopandas as gpd
 import json
 import csv
 import copy
@@ -16,10 +19,15 @@ DATA_PATH = 'input/san_francisco/'
 def main():
     """ Main function. It generates the simulation scenario
     """
+    # Bound Box of San Francisco, CA, US
+    bbox_pos = [{'lon': -122.5160063624, 'lat': 37.7093}, {'lon': -122.3754337591, 'lat': 37.8112472822}]
+    bbox_points = [GpsPoint(**pos) for pos in bbox_pos]
+    bbox = BoundBox(*bbox_points)
 
     # Generate network topology
-    topology_json = gen_topology()
-    topology_filename = DATA_PATH + 'topology.json'
+    topology_format = 'zipcode'
+    topology_json = gen_topology(topology_format, bbox)
+    topology_filename = DATA_PATH + 'topology_{}.json'.format(topology_format)
     with open(topology_filename, 'w') as outfile:
         json.dump(topology_json, outfile, indent=2)
 
@@ -30,7 +38,7 @@ def main():
         json.dump(apps_json, outfile, indent=2)
 
     # Generate users
-    users_json = gen_users(apps_json)
+    users_json = gen_users(apps_json, bbox)
     users_filename = DATA_PATH + 'users.json'
     with open(users_filename, 'w') as outfile:
         json.dump(users_json, outfile, indent=2)
@@ -46,15 +54,18 @@ def main():
         json.dump(scenario_json, outfile, indent=2)
 
 
-def gen_topology():
+def gen_topology(topology_format, bbox):
     """Generate the network topology/graph composed of nodes and links
+    Args:
+        topology_format (str): topology, values: 'grid', 'zipcode'
+        bbox (BoundBox): bound box of positions
     Returns:
          dict: topology in json format
     """
     distance = 2000.0
     dist_tol = 200.0
     # Bound Box of San Francisco, CA, US
-    bbox_pos = [{'lon': -122.5160063624, 'lat': 37.7072272217}, {'lon': -122.3754337591, 'lat': 37.8112472822}]
+
     bs_properties = {
         'type': 'BS',
         'avail': 0.99,  # 99 %
@@ -120,27 +131,19 @@ def gen_topology():
     }
 
     # Generate base stations' positions in a bound box grid
-    bbox_points = [GpsPoint(**pos) for pos in bbox_pos]
-    bbox = BoundBox(*bbox_points)
-    bs_points = grid.create_grid_points(bbox, distance)
+    json_data = gen_bs_network(bbox, topology=topology_format)
 
     # Set the base station's properties
-    json_data = {'nodes': [], 'links': []}
-    for (i_1, p_1) in enumerate(bs_points):
-        bs_node = copy.copy(bs_properties)
-        bs_node['id'] = i_1
-        bs_node['position'] = {'lat': p_1.lat, 'lon': p_1.lon}
-        json_data['nodes'].append(bs_node)
+    for bs in json_data['nodes']:
+        bs.update(bs_properties)
 
-        # Connect nearby base stations
-        for i_2 in range(i_1 + 1, len(bs_points)):
-            p_2 = bs_points[i_2]
-            p_dist = p_1.distance(p_2)
-            if p_1 != p_2 and p_dist <= distance + dist_tol:
-                link = copy.copy(bs_bs_link_properties)
-                # delay = p_dist / float(light_speed_glass)
-                link['nodes'] = [i_1, i_2]
-                json_data['links'].append(link)
+    # Set the properties of links between base stations
+    for link in json_data['links']:
+        link.update(bs_bs_link_properties)
+        if 'distance' in link and 'delay' in link:
+            extra_delay = link['distance'] / float(light_speed_glass)
+            link['delay'] += extra_delay
+            del link['distance']
 
     # Create the core node
     core_node = copy.copy(core_properties)
@@ -150,7 +153,7 @@ def gen_topology():
     for node in json_data['nodes']:
         node_id = node['id']
         link = copy.copy(bs_core_link_properties)
-        link['nodes'] = [node_id, core_id]
+        link['nodes'] = (node_id, core_id)
         json_data['links'].append(link)
     json_data['nodes'].append(core_node)
 
@@ -160,8 +163,107 @@ def gen_topology():
     cloud_node['id'] = cloud_id
     json_data['nodes'].append(cloud_node)
     link = copy.copy(core_cloud_link_properties)
-    link['nodes'] = [core_id, cloud_id]
+    link['nodes'] = (core_id, cloud_id)
     json_data['links'].append(link)
+
+    return json_data
+
+
+def gen_bs_network(bbox, topology='grid', **kwargs):
+    """Generate base stations in a specific format (topology)
+    Args:
+        bbox (BoundBox): limits where base stations' positions will be placed
+        topology (str): format / topology of the network
+    Returns:
+        dict: network in json format
+    """
+    if topology == 'grid':
+        return gen_grid_bs_network(bbox, **kwargs)
+    elif topology == 'zipcode':
+        return gen_zipcode_bs_network(bbox)
+    else:
+        raise TypeError('Invalid topology format {}'.format(topology))
+
+
+def gen_grid_bs_network(bbox, distance=2000.0, tol=200.0):
+    """Generate base stations in a grid format
+    Args:
+        bbox (BoundBox): bound box of the grid
+        distance (float): distance between base stations
+        tol (float): distance tolerance to connect two base stations
+    Returns:
+        dict: network in json format
+    """
+    # Generate base stations' positions in a bound box grid
+    bs_points = grid.create_grid_points(bbox, distance)
+
+    # Set the base station's properties
+    json_data = {'nodes': [], 'links': []}
+    for (i_1, p_1) in enumerate(bs_points):
+        pos = {'lat': p_1.lat, 'lon': p_1.lon}
+        bs_node = {'id': i_1, 'position': pos}
+        json_data['nodes'].append(bs_node)
+
+        # Connect nearby base stations
+        for i_2 in range(i_1 + 1, len(bs_points)):
+            p_2 = bs_points[i_2]
+            p_dist = p_1.distance(p_2)
+            if p_1 != p_2 and p_dist <= distance + tol:
+                link = {'nodes': (i_1, i_2), 'distance': p_dist}
+                json_data['links'].append(link)
+
+    return json_data
+
+
+def gen_zipcode_bs_network(bbox):
+    """Generate base stations in the centroid of each zip code area of San Francisco
+    Args:
+       bbox (BoundBox): bound box of the grid
+    Returns:
+       dict: network in json format
+    """
+    # Load zip code map as a geopanda DataFrame
+    crs = 'EPSG:4326'
+    shape_file = 'input/san_francisco/shapefile/bay_area_zip_codes/geo_export_2defef9a-b2e1-4ddd-84f6-1a131dd80410.shp'
+    map_gdf = gpd.read_file(shape_file)
+    map_gdf = map_gdf.to_crs(crs)
+    map_gdf = map_gdf.cx[bbox.x_min:bbox.x_max, bbox.y_min:bbox.y_max]
+    map_gdf.sort_values('zip', inplace=True)
+    map_gdf.reset_index(drop=True, inplace=True)
+
+    # print(map_gdf)
+    # import matplotlib.pyplot as plt
+    # fig, ax = plt.subplots()
+    # map_gdf.plot(ax=ax, color='white', edgecolor='black', zorder=0)
+    # map_gdf.centroid.plot(ax=ax, color='red', zorder=1, label='BS')
+    # plt.show()
+
+    link_exists = defaultdict(lambda: defaultdict(bool))
+    json_data = {'nodes': [], 'links': []}
+    # Create a base station for each zip code area
+    for (index, row) in map_gdf.iterrows():
+        centroid = row.geometry.centroid
+        pos = GpsPoint(lon=centroid.x, lat=centroid.y)
+        bs_node = {'id': index, 'position': {'lon': pos.lon, 'lat': pos.lat}}
+        json_data['nodes'].append(bs_node)
+
+        # Find neighbors areas and create a link between the neighbors
+        neighbors_gdf = map_gdf[map_gdf.touches(row.geometry)]
+        for (neighbor_index, neighbor) in neighbors_gdf.iterrows():
+            # Check if the link is already created
+            if not link_exists[index][neighbor_index]:
+                # Transform centroid point to GpsPoint to correctly calculate the distance
+                neighbor_centroid = neighbor.geometry.centroid
+                neighbor_pos = GpsPoint(lon=neighbor_centroid.x, lat=neighbor_centroid.y)
+                dist = pos.distance(neighbor_pos)
+
+                # Set link's properties
+                link = {'nodes': (index, neighbor_index), 'distance': dist}
+                json_data['links'].append(link)
+
+                # Create undirected graph
+                link_exists[index][neighbor_index] = True
+                link_exists[neighbor_index][index] = True
 
     return json_data
 
@@ -228,18 +330,20 @@ def gen_apps():
     return json_data
 
 
-def gen_users(apps_data):
+def gen_users(apps_data, bbox):
     """Generate users
     Args:
         apps_data (dict): applications data in json format
+        bbox (BoundBox): bound box of the users' positions
     Returns:
         dict: users in json format
     """
     cabs_pathname = DATA_PATH + 'cabs/new_*.txt'
     cabs_filename = glob(cabs_pathname)
     pos_pathname = DATA_PATH + 'users_position/'
-    start_time = datetime(2008, 5, 24, 0, 0, 0).timestamp()
-    stop_time = datetime(2008, 5, 24, 23, 59, 59).timestamp()
+    sf_tz = timezone('America/Los_Angeles')  # San Francisco timezone
+    start_time = sf_tz.localize(datetime(2008, 5, 24, 0, 0, 0)).timestamp()
+    stop_time = sf_tz.localize(datetime(2008, 5, 24, 23, 59, 59)).timestamp()
     apps_distribution = {'EMBB': 0.3, 'MMTC': 0.65, 'URLLC': 0.05}
 
     # Each taxi has its own GPS trace file and it will be a user if the trace is not empty
@@ -253,8 +357,12 @@ def gen_users(apps_data):
                 lat = float(row[0])
                 lon = float(row[1])
                 time = int(row[3])
-                # Filter positions in a time interval
-                if start_time <= time <= stop_time:
+
+                # Filter positions in a time and position interval
+                in_interval = start_time <= time <= stop_time
+                in_interval = in_interval and (bbox.x_min <= lon <= bbox.x_max)
+                in_interval = in_interval and (bbox.y_min <= lat <= bbox.y_max)
+                if in_interval:
                     pos = {'lat': lat, 'lon': lon, 't': time}
                     positions.append(pos)
 

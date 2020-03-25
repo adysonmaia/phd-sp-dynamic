@@ -3,7 +3,7 @@ import pmdarima as pm
 import warnings
 
 
-DEFAULT_ARIMA_PARAMS = {"suppress_warnings": True, 'error_action': 'ignore'}
+DEFAULT_ARIMA_PARAMS = {"suppress_warnings": True, 'error_action': 'ignore', 'stepwise': True}
 DEFAULT_PREDICT_PARAMS = {}
 DEFAULT_MAX_DATA_SIZE = 10000
 

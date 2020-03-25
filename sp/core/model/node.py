@@ -44,6 +44,8 @@ class Node:
     CLOUD_TYPE = "CLOUD"
 
     def __init__(self):
+        """Initialization
+        """
         self.id = -1
         self.type = ""
         self.availability = 0.0

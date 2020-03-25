@@ -7,9 +7,9 @@ class User:
         self.app_id = -1
         self.mobility = None
 
-    def get_position(self, time):
+    def get_position(self, time, tolerance=None):
         if self.mobility is not None:
-            return self.mobility.position(time)
+            return self.mobility.position(time, tolerance)
         else:
             return None
 

@@ -82,15 +82,26 @@ class UsersFromFileTestCase(unittest.TestCase):
         user = self.users[2]
 
         # Saved values
-        for i in [0, 2, 5]:
+        for i in [0, 2, 6]:
             pos = user.get_position(i)
             self.assertIsInstance(pos, Point)
             self.assertEqual(pos[0], float(i))
             self.assertEqual(pos[1], float(i))
 
         # Interpolated values
-        for i in [1, 3, 4]:
+        for i in [1, 3, 4, 5]:
             pos = user.get_position(i)
+            self.assertIsInstance(pos, Point)
+            self.assertEqual(pos[0], float(i))
+            self.assertEqual(pos[1], float(i))
+
+        # Interpolated values with time tolerance
+        tolerance = 1
+        for i in [4, 8]:
+            pos = user.get_position(i, tolerance=tolerance)
+            self.assertIsNone(pos)
+        for i in [1, 3, 5]:
+            pos = user.get_position(i, tolerance=tolerance)
             self.assertIsInstance(pos, Point)
             self.assertEqual(pos[0], float(i))
             self.assertEqual(pos[1], float(i))

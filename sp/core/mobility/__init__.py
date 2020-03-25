@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 class Mobility(ABC):
     @abstractmethod
-    def position(self, time):
+    def position(self, time, tolerance=None):
         pass
 
 
