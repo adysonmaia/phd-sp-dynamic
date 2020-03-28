@@ -3,6 +3,7 @@ from sp.physical_system.environment_controller import EnvironmentController
 from sp.system_controller.optimizer.static.cloud import CloudOptimizer
 from sp.system_controller.metric.static import availability, cost, deadline, power
 import json
+import math
 import unittest
 
 
@@ -37,8 +38,8 @@ class StaticMetricTestCase(unittest.TestCase):
         self.assertGreaterEqual(max_value, avg_value)
         self.assertGreaterEqual(sat_rate, 0.0)
         self.assertLessEqual(sat_rate, 1.0)
-        self.assertLess(avg_value, float("inf"))
-        self.assertLess(max_value, float("inf"))
+        self.assertLess(avg_value, math.inf)
+        self.assertLess(max_value, math.inf)
 
     def test_availability(self):
         max_unavail = availability.max_unavailability(self.system, self.solution, self.environment_input)
@@ -67,9 +68,9 @@ class StaticMetricTestCase(unittest.TestCase):
         self.assertGreaterEqual(overall_value, max_value)
         self.assertGreaterEqual(max_value, avg_value)
         self.assertGreater(avg_value, 0.0)
-        self.assertLess(overall_value, float("inf"))
-        self.assertLess(avg_value, float("inf"))
-        self.assertLess(max_value, float("inf"))
+        self.assertLess(overall_value, math.inf)
+        self.assertLess(avg_value, math.inf)
+        self.assertLess(max_value, math.inf)
 
     def test_power(self):
         overall_value = power.overall_power_consumption(self.system, self.solution, self.environment_input)
@@ -79,9 +80,9 @@ class StaticMetricTestCase(unittest.TestCase):
         self.assertGreaterEqual(overall_value, max_value)
         self.assertGreaterEqual(max_value, avg_value)
         self.assertGreater(avg_value, 0.0)
-        self.assertLess(overall_value, float("inf"))
-        self.assertLess(avg_value, float("inf"))
-        self.assertLess(max_value, float("inf"))
+        self.assertLess(overall_value, math.inf)
+        self.assertLess(avg_value, math.inf)
+        self.assertLess(max_value, math.inf)
 
 
 if __name__ == '__main__':

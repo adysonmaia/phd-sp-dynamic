@@ -5,6 +5,7 @@ from sp.system_controller.utils import is_solution_valid
 from sp.system_controller.metric.static import deadline, availability, cost, power
 from sp.system_controller.optimizer.static.so_heuristic import SOHeuristicOptimizer
 import json
+import math
 import unittest
 
 
@@ -45,6 +46,8 @@ class SOHeuristicOptTestCase(unittest.TestCase):
             for metric in self.metrics:
                 value = metric(self.system, solution, self.environment_input)
                 self.assertGreater(value, 0.0)
+                self.assertLess(value, math.inf)
+                self.assertFalse(math.isnan(value))
 
     def test_merged_versions(self):
         versions = ["cloud", "net_delay", "cluster_metoids", "deadline", "cluster_metoids_sc"]

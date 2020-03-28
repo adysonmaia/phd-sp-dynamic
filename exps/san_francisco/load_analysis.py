@@ -84,12 +84,13 @@ def data_analysis(scenario, load_filename, users_filename):
 
     load_df, users_df = data_frames
 
-    plot_load(scenario, load_df)
-    # plot_map(scenario)
+    # plot_load_by_app(scenario, load_df)
+    # plot_load_by_node(scenario, load_df)
     # plot_users(scenario, load_df, users_df)
+    plot_map(scenario)
 
 
-def plot_load(scenario, df):
+def plot_load_by_app(scenario, df):
     bs_nodes_id = [node.id for node in scenario.network.bs_nodes]
     df = df.tz_convert(SF_TZ_STR)
     df = df[df['node'].isin(bs_nodes_id)]
@@ -114,13 +115,6 @@ def plot_load(scenario, df):
         grouped_df = df[df['app'] == app.id].groupby('node')
         grouped_df['load'].plot(ax=plot_ax)
 
-    # legend_pos = axes[1, 1].get_position()
-    # axes[1, 1].remove()
-    # legend = axes[0, 0].get_legend_handles_labels()
-    # fig.legend(*legend, loc='upper left', ncol=6, bbox_to_anchor=legend_pos)
-    # fig.tight_layout(pad=1.0)
-    # plt.show()
-
     legend = axes[0, 0].legend(ncol=5, loc='upper right', handlelength=0.5, columnspacing=1.0)
     for line in legend.get_lines():
         line.set_linewidth(5.0)
@@ -129,23 +123,68 @@ def plot_load(scenario, df):
     map_ax = axes[1, 1]
     plot_map(scenario, map_ax, legend_handles_labels)
 
-    # map_ax = axes[1, 1]
-    # map_ax.set_aspect('equal')
-    # map_gdf = gpd.read_file('input/san_francisco/shapefile/tl_2019_06075_roads/tl_2019_06075_roads.shp')
-    # map_gdf = map_gdf.to_crs("EPSG:4326")
-    # # map_gdf = map_gdf.simplify(0.05, preserve_topology=False)
-    # map_gdf.plot(ax=map_ax, color='lightgray', zorder=0)
-    # legend_handles_labels = axes[0, 0].get_legend_handles_labels()
-    # for node in scenario.network.bs_nodes:
-    #     try:
-    #         handle_index = legend_handles_labels[1].index(str(node.id))
-    #         handle = legend_handles_labels[0][handle_index]
-    #         pos = node.position.lon_lat
-    #         map_ax.scatter(*pos, c=handle.get_color(), zorder=1)
-    #         map_ax.text(*pos, str(node.id), zorder=2)
-    #     except ValueError:
-    #         pass
+    fig.tight_layout()
+    plt.show()
 
+
+def plot_load_by_node(scenario, df):
+    bs_nodes = scenario.network.bs_nodes
+    bs_nodes_id = [node.id for node in bs_nodes]
+    df = df.tz_convert(SF_TZ_STR)
+    df = df[df['node'].isin(bs_nodes_id)]
+
+    cm = plt.cm.get_cmap('gist_rainbow')
+    colors = cm(np.linspace(0, 1, len(bs_nodes_id)))
+    colors = [to_hex(color, keep_alpha=True) for color in colors]
+
+    colors = ['red', 'blue', 'green', 'pink',
+              '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+              '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
+              'dimgray', 'darkred', 'darkolivegreen', 'darkgoldenrod',
+              'darkcyan', 'midnightblue', 'darkviolet', 'tan',
+              'lightcoral', 'lightgreen', 'lightblue'] + colors
+
+    # nb_axes = len(bs_nodes) + 1
+    nb_axes = len(bs_nodes)
+    nb_cols = 5
+    nb_rows = nb_axes // nb_cols
+    if nb_rows * nb_cols < nb_axes:
+        nb_rows += 1
+    fig, axes = plt.subplots(nrows=nb_rows, ncols=nb_cols, squeeze=False, figsize=(16, 9))
+
+    load_min, load_max = df['load'].min(), df['load'].max()
+
+    for (node_index, node) in enumerate(bs_nodes):
+        ax_row = node_index // nb_cols
+        ax_col = node_index % nb_cols
+        ax = axes[ax_row, ax_col]
+        ax.set_ylabel('Load')
+        ax.set_prop_cycle(cycler('color', colors))
+        ax.set_title('Node {}'.format(node.id))
+        ax.set_ylim(load_min, load_max)
+
+        grouped_df = df[df['node'] == node.id].groupby('app')
+        grouped_df['load'].plot(ax=ax)
+
+        # ax_df = df.loc[(df['node'] == node.id) & (df['app'] == 2)]
+        # ax_df['load'].plot(ax=ax)
+
+    legend = axes[0, 0].legend(ncol=3)
+
+    # map_index = nb_axes - 1
+    # ax_row = map_index // nb_cols
+    # ax_col = map_index % nb_cols
+    # map_ax = axes[ax_row, ax_col]
+    # plot_map(scenario, map_ax)
+
+    for row in range(nb_rows):
+        for col in range(nb_cols):
+            index = row * nb_cols + col
+            if index >= nb_axes:
+                axes[row, col].remove()
+
+    for ax in fig.get_axes():
+        ax.label_outer()
     fig.tight_layout()
     plt.show()
 
@@ -173,42 +212,30 @@ def plot_map(scenario, ax=None, legend_handles_labels=None):
     for (node_index, node) in nodes_gdf.iterrows():
         try:
             color = 'white'
+            edge_color = 'black'
             node_id = node['node']
             if legend_handles_labels is not None:
                 handle_index = legend_handles_labels[1].index(str(node_id))
                 handle = legend_handles_labels[0][handle_index]
                 color = handle.get_color()
+                edge_color = 'lightgray'
             pos = node.geometry
             region = map_gdf[map_gdf.contains(pos)]
-            region.plot(ax=ax, color=color, edgecolor='lightgray', zorder=0)
+            region.plot(ax=ax, color=color, edgecolor=edge_color, zorder=0)
             ax.text(pos.x-0.001, pos.y-0.001, str(node_id), zorder=1)
         except ValueError:
             pass
 
-    # map_gdf.plot(ax=ax, color='white', edgecolor='lightgray', zorder=0)
-    # map_gdf.centroid.plot(ax=ax, color='blue', zorder=1, label='centroid')
-    # # nodes_gdf.plot(ax=ax, color='red', zorder=1, label='edge node')
-    #
-    # for node in scenario.network.bs_nodes:
-    #     try:
-    #         color = 'red'
-    #         if legend_handles_labels is not None:
-    #             handle_index = legend_handles_labels[1].index(str(node.id))
-    #             handle = legend_handles_labels[0][handle_index]
-    #             color = handle.get_color()
-    #         pos = node.position.lon_lat
-    #         ax.scatter(*pos, c=color, zorder=1)
-    #         ax.text(*pos, str(node.id), zorder=2)
-    #     except ValueError:
-    #         pass
-
     if show_plot:
-        plt.legend()
+        # plt.legend()
         plt.show()
 
 
 def plot_users(scenario, load_df, users_df):
     crs = "EPSG:4326"
+
+    load_df = load_df.tz_convert(SF_TZ_STR)
+    users_df = users_df.tz_convert(SF_TZ_STR)
 
     nodes_data = []
     for node in scenario.network.bs_nodes:

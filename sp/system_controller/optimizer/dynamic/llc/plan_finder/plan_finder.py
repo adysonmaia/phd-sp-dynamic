@@ -1,5 +1,7 @@
 from sp.system_controller.estimator.system import DefaultSystemEstimator
 from abc import ABC, abstractmethod
+from collections import UserList
+import multiprocessing as mp
 
 
 class PlanFinder(ABC):
@@ -9,7 +11,8 @@ class PlanFinder(ABC):
                  objective,
                  objective_aggregator=None,
                  control_decoder=None,
-                 system_estimator=None):
+                 system_estimator=None,
+                 pool_size=0):
 
         self.system = system
         self.environment_inputs = environment_inputs
@@ -23,6 +26,45 @@ class PlanFinder(ABC):
 
         if self.system_estimator is None:
             self.system_estimator = DefaultSystemEstimator()
+
+        self.pool_size = pool_size
+        self.__pool = None
+        self.__map_func = None
+        self.__pool_func = None
+
+    def __del__(self):
+        self._clear_pool()
+
+    def _init_pool(self):
+        """Initialize the multiprocessing pool
+        """
+        if self.__pool is not None:
+            return
+
+        self.__pool = None
+        self.__map_func = map
+        self.__pool_func = self.create_plan
+        if self.pool_size > 0:
+            try:
+                # Require UNIX fork to work
+                mp_ctx = mp.get_context("fork")
+                self.pool_size = min(self.pool_size, mp_ctx.cpu_count())
+                self.__pool = mp_ctx.Pool(processes=self.pool_size,
+                                          initializer=_init_pool,
+                                          initargs=[self])
+                self.__map_func = self.__pool.map
+                self.__pool_func = _create_plan
+            except ValueError:
+                pass
+
+    def _clear_pool(self):
+        """Terminate the multiprocessing pool
+        """
+        if self.__pool is not None:
+            self.__pool.terminate()
+            self.__pool = None
+            self.__map_func = None
+            self.__pool_func = None
 
     def create_plan(self, control_sequence):
         obj_values = [[] for _ in self.objective]
@@ -40,6 +82,11 @@ class PlanFinder(ABC):
         fitness = [self.objective_aggregator(value) for value in obj_values]
         return Plan(control_sequence, fitness)
 
+    def create_plans(self, control_sequences):
+        self._init_pool()
+        plans = list(self.__map_func(self.__pool_func, control_sequences))
+        return plans
+
     def get_control_input(self, control_sequence, index, system, env_input):
         control_input = control_sequence[index]
         if self.control_decoder is not None:
@@ -51,10 +98,38 @@ class PlanFinder(ABC):
         pass
 
 
-class Plan:
+class Plan(UserList):
     def __init__(self, control_sequence=None, fitness=None):
-        self.control_sequence = control_sequence
+        UserList.__init__(self, control_sequence)
         self.fitness = fitness
 
-    def __getitem__(self, index):
-        return self.control_sequence[index]
+    @property
+    def control_sequence(self):
+        return self.data
+
+    @control_sequence.setter
+    def control_sequence(self, value):
+        self.data = value
+
+    def is_fitness_valid(self):
+        return self.fitness is not None
+
+
+def _init_pool(plan_finder):
+    """Initialize a sub-process to create a plan
+    Args:
+        plan_finder (PlanFinder): plan finder
+    """
+    global _pf
+    _pf = plan_finder
+
+
+def _create_plan(control_sequence):
+    """Calculate the fitness of an individual
+    Args:
+        control_sequence (list): control input sequence
+    Returns:
+        Plan: plan
+    """
+    global _pf
+    return _pf.create_plan(control_sequence)

@@ -344,7 +344,9 @@ def gen_users(apps_data, bbox):
     sf_tz = timezone('America/Los_Angeles')  # San Francisco timezone
     start_time = sf_tz.localize(datetime(2008, 5, 24, 0, 0, 0)).timestamp()
     stop_time = sf_tz.localize(datetime(2008, 5, 24, 23, 59, 59)).timestamp()
-    apps_distribution = {'EMBB': 0.3, 'MMTC': 0.65, 'URLLC': 0.05}
+    # apps_distribution = {'EMBB': 0.3, 'MMTC': 0.65, 'URLLC': 0.05}
+    apps_distribution = {'EMBB': 0.3, 'MMTC': 0.5, 'URLLC': 0.2}
+    # apps_distribution = {'EMBB': 0.2, 'MMTC': 0.7, 'URLLC': 0.1}
 
     # Each taxi has its own GPS trace file and it will be a user if the trace is not empty
     json_data = {'users': []}

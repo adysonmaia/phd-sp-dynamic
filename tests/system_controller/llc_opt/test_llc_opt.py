@@ -4,10 +4,10 @@ from sp.physical_system.environment_controller import EnvironmentController
 from sp.system_controller.optimizer.dynamic.llc import LLCOptimizer
 from sp.system_controller.model import OptSolution
 from sp.system_controller.utils import is_solution_valid
-from sp.system_controller.metric.static import deadline, cost, availability
-from sp.system_controller.metric.dynamic import migration
+from sp.system_controller.metric import deadline, cost, availability, migration
 import json
 import copy
+import math
 import unittest
 
 
@@ -26,7 +26,7 @@ class LLCOptTestCase(unittest.TestCase):
 
     def test_solver(self):
         solver = LLCOptimizer()
-        solver.prediction_window = 4
+        solver.prediction_window = 2
         solver.max_iterations = 3
         solver.objective = [
             deadline.max_deadline_violation,
@@ -50,11 +50,11 @@ class LLCOptTestCase(unittest.TestCase):
             self.assertIsInstance(control_input, OptSolution)
             self.assertTrue(is_solution_valid(system, control_input, env_input))
 
-            result = {"time": time, "prediction_window": solver.prediction_window}
             for func in solver.objective:
                 value = func(system, control_input, env_input)
-                result[func.__name__] = value
-            print(result)
+                self.assertGreaterEqual(value, 0.0)
+                self.assertLess(value, math.inf)
+                self.assertFalse(math.isnan(value))
 
             system = self.system_estimator(system, control_input, env_input)
 

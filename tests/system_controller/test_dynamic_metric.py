@@ -4,6 +4,7 @@ from sp.physical_system.environment_controller import EnvironmentController
 from sp.system_controller.optimizer.static import CloudOptimizer, SOHeuristicOptimizer
 from sp.system_controller.metric.dynamic import migration
 import json
+import math
 import unittest
 
 
@@ -57,11 +58,15 @@ class DynamicMetricTestCase(unittest.TestCase):
 
                 value = func(system, control_input, env_input)
                 self.assertGreaterEqual(value, 0.0)
+                self.assertLess(value, math.inf)
+                self.assertFalse(math.isnan(value))
                 values[func_index].append(value)
 
         for value in values:
             sum_value = sum(value)
             self.assertGreater(sum_value, 0.0)
+            self.assertLess(sum_value, math.inf)
+            self.assertFalse(math.isnan(sum_value))
 
 
 if __name__ == '__main__':

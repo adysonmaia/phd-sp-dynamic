@@ -1,9 +1,27 @@
 from functools import cmp_to_key
-from sp.core.heuristic.brkga import BRKGA, BRKGAChromosome
+from sp.core.heuristic.brkga import BRKGA, GAIndividual, GAOperator
 
-
-INF = float("inf")
 MAX_CRWD_DIST = 1.0
+
+
+def pareto_dominates(fitness_1, fitness_2):
+    """Check if the first individual dominates the second individual based on their fitness.
+    It uses the classical Pareto dominance operator
+    Args:
+        fitness_1 (list): fitness of the first individual
+        fitness_2 (list): fitness of the second individual
+
+    Returns:
+        bool: True if first individual dominates the second individual
+    """
+    dominates = False
+    for i in range(len(fitness_1)):
+        if fitness_1[i] > fitness_2[i]:
+            return False
+        elif fitness_1[i] < fitness_2[i]:
+            dominates = True
+
+    return dominates
 
 
 class NSGAII(BRKGA):
@@ -11,38 +29,53 @@ class NSGAII(BRKGA):
     See also:
     https://doi.org/10.1109/4235.996017
     """
-
     def __init__(self,
-                 chromosome,
-                 population_size,
-                 nb_generations,
-                 elite_proportion,
-                 mutant_proportion,
-                 elite_probability,
-                 pool_size=0,
-                 stop_threshold=0.0):
-
-        BRKGA.__init__(self, chromosome, population_size, nb_generations,
-                       elite_proportion, mutant_proportion, elite_probability,
-                       pool_size)
+                 dominance_func=pareto_dominates,
+                 stop_threshold=0.0,
+                 **brkga_params):
+        """
+        Args:
+            dominance_func (function): dominance operator
+            stop_threshold (float): MGBM stopping threshold
+            **brkga_params: initialization parameters for :py:class:`sp.core.heuristic.brkga.BRKGA` algorithm
+        """
+        BRKGA.__init__(self, **brkga_params)
         self.stop_threshold = stop_threshold
+        self.dominance_func = dominance_func
 
-    def _init_params(self):
-        BRKGA._init_params(self)
+        # MGBM parameters
         self._previous_nd_fitness = None
         self._current_nd_fitness = None
         self._mgbm_estimation = 1
         self._mgbm_count = 0
 
-    def _stopping_criteria(self, population):
-        return (self.chromosome.stopping_criteria(population)
-                or self._stopping_criteria_mgbm())
+    def init_params(self):
+        """Initialize parameters before starting the genetic algorithm
+        """
+        BRKGA.init_params(self)
+        self._previous_nd_fitness = None
+        self._current_nd_fitness = None
+        self._mgbm_estimation = 1
+        self._mgbm_count = 0
 
-    def _stopping_criteria_mgbm(self):
-        """Calculate the MGBM stopping criteria based on Mutual Domination Rate (MDR) indicator
+    def should_stop(self, population):
+        """Verify whether the GA should stop or not
+        Args:
+            population (list(GAIndividual)): population of the current generation
+        Returns:
+            bool: True if algorithm should stop, False otherwise
+        """
+        stop = self.operator.should_stop(population)
+        stop = stop or self._should_stop_by_mgbm()
+        return stop
+
+    def _should_stop_by_mgbm(self):
+        """Calculate the MGBM stopping criteria based on Mutual Domination Rate (MDR) indicator 
         and a simplified Kalman filter
-        See also:
-        https://doi.org/10.1016/j.ins.2016.07.025
+        See also: https://doi.org/10.1016/j.ins.2016.07.025
+        
+        Returns:
+            bool: True if algorithm should stop according to the MGBM criteria, False otherwise
         """
         self._mgbm_count += 1
         if self._previous_nd_fitness:
@@ -53,13 +86,13 @@ class NSGAII(BRKGA):
             curr_count = 0
             for prev_fit in prev_fitnesses:
                 for curr_fit in curr_fitnesses:
-                    if self._dominates(curr_fit, prev_fit):
+                    if self.dominance_func(curr_fit, prev_fit):
                         prev_count += 1
                         break
 
             for curr_fit in curr_fitnesses:
                 for prev_fit in prev_fitnesses:
-                    if self._dominates(prev_fit, curr_fit):
+                    if self.dominance_func(prev_fit, curr_fit):
                         curr_count += 1
                         break
 
@@ -70,14 +103,19 @@ class NSGAII(BRKGA):
             i = self._mgbm_estimation
             i = (t / float(t + 1)) * i + (1 / float(t + 1)) * mdr
             self._mgbm_estimation = i
-            # print("{}\t{}\t{}".format(t, mdr, i))
 
         return self._mgbm_estimation < self.stop_threshold
 
-    def _classify_population(self, population):
-        fitnesses = self._get_fitnesses(population)
-        fronts, rank = self._fast_non_dominated_sort(fitnesses)
-        crwd_dist = self._crowding_distance(fitnesses, fronts)
+    def sort_population(self, population):
+        """Sorts individuals using fast non dominated and crowding distance sorting algorithm
+        Args:
+            population (list(GAIndividual)): list of individuals
+        Returns:
+            list(GAIndividual): list of sorted individuals
+        """
+        fitnesses = self.evaluate_population(population)
+        fronts, rank = fast_non_dominated_sort(fitnesses, self.dominance_func)
+        crwd_dist = crowding_distance(fitnesses, fronts)
 
         self._previous_nd_fitness = self._current_nd_fitness
         self._current_nd_fitness = list(map(lambda i: fitnesses[i], fronts[0]))
@@ -95,36 +133,15 @@ class NSGAII(BRKGA):
 
         return sorted(population, key=cmp_to_key(sort_cmp))
 
-    def _dominates(self, fitness_1, fitness_2):
-        return pareto_dominates(fitness_1, fitness_2)
 
-    def _fast_non_dominated_sort(self, fitnesses):
-        return fast_non_dominated_sort(fitnesses, self._dominates)
-
-    def _crowding_distance(self, fitnesses, fronts):
-        return crowding_distance(fitnesses, fronts)
-
-
-class NSGAIIChromosome(BRKGAChromosome):
-    def stopping_criteria(self, population):
-        return False
-
-    def fitness(self, individual):
-        return [0.0]
-
-
-def pareto_dominates(fitness_1, fitness_2):
-    dominates = False
-    for i in range(len(fitness_1)):
-        if fitness_1[i] > fitness_2[i]:
-            return False
-        elif fitness_1[i] < fitness_2[i]:
-            dominates = True
-
-    return dominates
-
-
-def fast_non_dominated_sort(fitnesses, dominance_operator=pareto_dominates):
+def fast_non_dominated_sort(fitnesses, dominance_func=pareto_dominates):
+    """Fast non-dominated sorting algorithm
+    Args:
+        fitnesses (list): fitness of each individual in a population
+        dominance_func (function): dominance operator function
+    Returns:
+        (list, list): fronts, rank
+    """
     pop_size = len(fitnesses)
     r_pop_size = range(pop_size)
     S = [[] for _ in r_pop_size]
@@ -136,10 +153,10 @@ def fast_non_dominated_sort(fitnesses, dominance_operator=pareto_dominates):
         S[p] = []
         n[p] = 0
         for q in r_pop_size:
-            if dominance_operator(fitnesses[p], fitnesses[q]):
+            if dominance_func(fitnesses[p], fitnesses[q]):
                 if q not in S[p]:
                     S[p].append(q)
-            elif dominance_operator(fitnesses[q], fitnesses[p]):
+            elif dominance_func(fitnesses[q], fitnesses[p]):
                 n[p] = n[p] + 1
         if n[p] == 0:
             rank[p] = 0
@@ -164,8 +181,16 @@ def fast_non_dominated_sort(fitnesses, dominance_operator=pareto_dominates):
 
 
 def crowding_distance(fitnesses, fronts):
+    """Crowding Distance
+    Args:
+        fitnesses (list): fitness of each individual in a population
+        fronts (list(list)): front of each individual in a population.
+            The fronts are obtained by fast non dominated sorting algorithm
+    Returns:
+        list: crowding distance of each individual
+    """
     nb_obj = len(fitnesses[0])
-    distances = [0 for _ in range(len(fitnesses))]
+    distances = [0.0 for _ in range(len(fitnesses))]
 
     normalize = []
     for m in range(nb_obj):
@@ -176,15 +201,15 @@ def crowding_distance(fitnesses, fronts):
 
     for front in fronts:
         for m in range(nb_obj):
-            sorted = list(front)
-            sorted.sort(key=lambda p: fitnesses[p][m])
-            distances[sorted[0]] = distances[sorted[-1]] = MAX_CRWD_DIST
+            s_front = list(front)
+            s_front.sort(key=lambda p: fitnesses[p][m])
+            distances[s_front[0]] = distances[s_front[-1]] = MAX_CRWD_DIST
 
             if normalize[m] > 0.0:
-                for i in range(1, len(sorted) - 1):
-                    value_previous = fitnesses[sorted[i - 1]][m]
-                    value_next = fitnesses[sorted[i + 1]][m]
+                for i in range(1, len(s_front) - 1):
+                    value_previous = fitnesses[s_front[i - 1]][m]
+                    value_next = fitnesses[s_front[i + 1]][m]
                     value_diff = value_next - value_previous
-                    distances[sorted[i]] += value_diff / normalize[m]
+                    distances[s_front[i]] += value_diff / normalize[m]
 
     return distances

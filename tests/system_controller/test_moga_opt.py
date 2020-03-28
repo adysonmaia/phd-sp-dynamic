@@ -6,6 +6,7 @@ from sp.system_controller.utils import is_solution_valid
 from sp.system_controller.optimizer.static.moga import MOGAOptimizer
 from sp.system_controller.optimizer.static.cloud import CloudOptimizer
 import json
+import math
 import unittest
 
 
@@ -53,6 +54,8 @@ class MOGAOptTestCase(unittest.TestCase):
         for metric in self.metrics:
             value = metric(self.system, solution, self.environment_input)
             self.assertGreater(value, 0.0)
+            self.assertLess(value, math.inf)
+            self.assertFalse(math.isnan(value))
 
         soga_value = deadline.max_deadline_violation(self.system, solution, self.environment_input)
         cloud_value = deadline.max_deadline_violation(self.system, cloud_solution, self.environment_input)

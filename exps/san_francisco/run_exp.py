@@ -111,9 +111,9 @@ class ControlMonitor(Monitor):
             (ld_filename, self.control_data['ld']),
         ]
 
-        for (filename, data) in files_data:
-            with open(filename, 'w') as file:
-                json.dump(data, file, indent=2)
+        # for (filename, data) in files_data:
+        #     with open(filename, 'w') as file:
+        #         json.dump(data, file, indent=2)
 
 
 def main():
@@ -130,7 +130,8 @@ def main():
     # Set simulation time
     start_time = SF_TZ.localize(datetime(2008, 5, 24, 0, 0, 0)).timestamp()
     stop_time = SF_TZ.localize(datetime(2008, 5, 24, 23, 59, 59)).timestamp()
-    step_time = 10 * 60  # seconds or 10 min
+    # step_time = 10 * 60  # seconds or 10 min
+    step_time = 60 * 60  # seconds or 1H
 
     # Set optimizer solution
     objective = [
@@ -140,11 +141,11 @@ def main():
         metric.migration.overall_migration_cost
     ]
     # opt = CloudOptimizer()
-    # opt = LLCOptimizer()
-    # opt.prediction_window = 3
-    # opt.max_iterations = 5
     # opt = SOGAOptimizer()
-    opt = MOGAOptimizer()
+    # opt = MOGAOptimizer()
+    opt = LLCOptimizer()
+    opt.prediction_window = 3
+    opt.max_iterations = 100
     opt.pool_size = 6
     opt.objective = objective
 

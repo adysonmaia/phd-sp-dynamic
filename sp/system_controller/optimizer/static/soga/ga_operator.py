@@ -1,19 +1,28 @@
-from sp.core.heuristic.brkga import BRKGAChromosome
+from sp.core.heuristic.brkga import GAOperator, GAIndividual
 from sp.system_controller.model import OptSolution
 from sp.system_controller.utils import make_solution_feasible, calc_response_time, calc_load_before_distribution
-from . import individual_generator as indiv_gen
+from . import indiv_gen
 import math
 import numpy
 
-POOL_SIZE = 4
 DEFAULT_STALL_WINDOW = 30
 DEFAULT_STALL_THRESHOLD = 0.0
 DEFAULT_LOAD_CHUNK_PERCENT = 0.1
 
 
-class SOChromosome(BRKGAChromosome):
+class SOGAOperator(GAOperator):
+    """ Genetic Operator for SOGA optimizer
+    """
+
     def __init__(self, objective, system, environment_input, use_heuristic=True):
-        BRKGAChromosome.__init__(self)
+        """Initialization
+        Args:
+            objective (function): objective function to be optimized
+            system (sp.core.model.System): system's state
+            environment_input (sp.core.mode.EnvironmentInput): environment input
+            use_heuristic (bool): use heuristic algorithms to generate the first population
+        """
+        GAOperator.__init__(self)
         self.system = system
         self.environment_input = environment_input
         self.objective = objective
@@ -21,7 +30,7 @@ class SOChromosome(BRKGAChromosome):
 
         nb_apps = len(self.system.apps)
         nb_nodes = len(self.system.nodes)
-        self.nb_genes = nb_apps * (2 * nb_nodes + 1)
+        self._nb_genes = nb_apps * (2 * nb_nodes + 1)
         self.requests = [(app.id, node.id) for app in self.system.apps for node in self.system.nodes]
 
         self.load_chunk_percent = DEFAULT_LOAD_CHUNK_PERCENT
@@ -30,11 +39,25 @@ class SOChromosome(BRKGAChromosome):
         self.stall_threshold = DEFAULT_STALL_THRESHOLD
         self._best_values = []
 
+    @property
+    def nb_genes(self):
+        """Number of genes of an individual's chromosome
+        Returns:
+            int: number of genes
+        """
+        return self._nb_genes
+
     def init_params(self):
-        BRKGAChromosome.init_params(self)
+        """Initialize parameters before starting the genetic algorithm
+        """
+        GAOperator.init_params(self)
         self._best_values = []
 
-    def gen_init_population(self):
+    def first_population(self):
+        """Generate some specific individuals for the first population based on heuristic algorithms
+        Returns:
+            individuals (list(GAIndividual)): list of individuals
+        """
         if not self.use_heuristic:
             return []
 
@@ -58,9 +81,15 @@ class SOChromosome(BRKGAChromosome):
 
         return indiv_list
 
-    def stopping_criteria(self, population):
+    def should_stop(self, population):
+        """Verify whether genetic algorithm should stop or not
+        Args:
+           population (list(GAIndividual)): population of the current generation
+        Returns:
+           bool: True if genetic algorithm should stop, False otherwise
+        """
         best_indiv = population[0]
-        best_value = best_indiv[self.nb_genes]
+        best_value = best_indiv.fitness
 
         variance = self.stall_threshold + 1
         self._best_values.append(best_value)
@@ -72,11 +101,23 @@ class SOChromosome(BRKGAChromosome):
 
         return best_value == 0.0 or variance <= self.stall_threshold
 
-    def fitness(self, individual):
+    def evaluate(self, individual):
+        """Evaluate an individual and obtain its fitness
+        Args:
+            individual (GAIndividual): individual
+        Returns:
+            object: fitness value
+        """
         solution = self.decode(individual)
         return self.objective(self.system, solution, self.environment_input)
 
     def decode(self, individual):
+        """Decode the individual's chromosome and obtain a valid solution for the optimization problem
+        Args:
+            individual (GAIndividual): individual
+        Returns:
+            OptSolution: a valid solution
+        """
         nb_apps = len(self.system.apps)
         nb_nodes = len(self.system.nodes)
         cloud_node = self.system.cloud_node

@@ -1,7 +1,7 @@
 from sp.system_controller.optimizer.optimizer import Optimizer
 from sp.system_controller.metric import deadline
 from sp.core.heuristic.brkga import BRKGA
-from .chromosome import SOChromosome
+from .ga_operator import SOGAOperator
 
 
 class SOGAOptimizer(Optimizer):
@@ -20,11 +20,11 @@ class SOGAOptimizer(Optimizer):
         if self.objective is None:
             self.objective = deadline.max_deadline_violation
 
-        so_chromosome = SOChromosome(system=system,
-                                     environment_input=environment_input,
-                                     objective=self.objective,
-                                     use_heuristic=self.use_heuristic)
-        so_ga = BRKGA(so_chromosome,
+        ga_operator = SOGAOperator(system=system,
+                                   environment_input=environment_input,
+                                   objective=self.objective,
+                                   use_heuristic=self.use_heuristic)
+        so_ga = BRKGA(operator=ga_operator,
                       nb_generations=self.nb_generations,
                       population_size=self.population_size,
                       elite_proportion=self.elite_proportion,
@@ -33,5 +33,5 @@ class SOGAOptimizer(Optimizer):
                       pool_size=self.pool_size)
 
         population = so_ga.solve()
-        solution = so_chromosome.decode(population[0])
+        solution = ga_operator.decode(population[0])
         return solution

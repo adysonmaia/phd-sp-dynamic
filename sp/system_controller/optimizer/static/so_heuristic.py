@@ -1,5 +1,5 @@
 from sp.system_controller.optimizer.optimizer import Optimizer, OptimizerError
-from sp.system_controller.optimizer.static.soga import SOChromosome, indiv_gen
+from sp.system_controller.optimizer.static.soga import SOGAOperator, indiv_gen
 from sp.system_controller.metric.static import deadline
 
 
@@ -32,10 +32,9 @@ class SOHeuristicOptimizer(Optimizer):
         else:
             OptimizerError("Version not found")
 
-        chromosome = SOChromosome(system=system,
-                                  environment_input=environment_input,
-                                  objective=self.objective)
-        individual = indiv_gen.merge_creation_functions(chromosome, functions)
-
-        solution = chromosome.decode(individual)
+        ga_operator = SOGAOperator(system=system,
+                                   environment_input=environment_input,
+                                   objective=self.objective)
+        individual = indiv_gen.merge_creation_functions(ga_operator, functions)
+        solution = ga_operator.decode(individual)
         return solution

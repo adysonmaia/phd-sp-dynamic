@@ -2,6 +2,7 @@ from sp.core.model import Network, Node, Link
 from sp.core.estimator.polynomial import LinearEstimator
 from sp.core.estimator.power import LinearPowerEstimator
 import json
+import math
 import unittest
 
 
@@ -39,7 +40,7 @@ class NetworkFromFileTestCase(unittest.TestCase):
         self.assertEqual(node.power_consumption.coefficients, (200.0, 400.0))
 
         for resource in ["CPU", "RAM", "DISK"]:
-            self.assertEqual(node.capacity[resource], float("INF"))
+            self.assertEqual(node.capacity[resource], math.inf)
             self.assertIsInstance(node.cost[resource], LinearEstimator)
             self.assertEqual(node.cost[resource].coefficients, (0.025, 0.025))
 

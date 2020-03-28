@@ -1,5 +1,5 @@
 from sp.core.heuristic import nsgaii
-from sp.system_controller.optimizer.static import moga
+from sp.system_controller.optimizer.static.moga import dominates
 from .plan_finder import PlanFinder, Plan
 from functools import cmp_to_key
 import multiprocessing as mp
@@ -13,6 +13,7 @@ class BeamPlanFinder(PlanFinder):
                  objective_aggregator,
                  control_decoder,
                  system_estimator,
+                 dominance_func=dominates,
                  beam_width=10,
                  prune=True,
                  pool_size=0):
@@ -22,7 +23,9 @@ class BeamPlanFinder(PlanFinder):
                             objective=objective,
                             objective_aggregator=objective_aggregator,
                             control_decoder=control_decoder,
-                            system_estimator=system_estimator)
+                            system_estimator=system_estimator,
+                            pool_size=pool_size)
+        self.dominance_func = dominance_func
         self.beam_width = beam_width
         self.prune = prune
         self.pool_size = pool_size
@@ -91,7 +94,7 @@ class BeamPlanFinder(PlanFinder):
                         next_beam_node.fitness = fitness
                         next_beam_nodes.append(next_beam_node)
 
-            next_beam_nodes = _sort_beam_nodes(next_beam_nodes, self.objective_aggregator, moga.dominates)
+            next_beam_nodes = _sort_beam_nodes(next_beam_nodes, self.objective_aggregator, self.dominance_func)
             beam_nodes = next_beam_nodes[:self.beam_width]
 
         plans = [bn.create_plan(self.objective_aggregator) for bn in beam_nodes]

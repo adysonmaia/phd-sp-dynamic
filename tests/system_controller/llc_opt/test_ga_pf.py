@@ -1,12 +1,12 @@
 from sp.core.model import Scenario, System
 from sp.system_controller.estimator.system import DefaultSystemEstimator
 from sp.physical_system.environment_controller import EnvironmentController
-from sp.system_controller.optimizer.dynamic.llc.plan_finder.ga import GAPlanFinder
-from sp.system_controller.optimizer.dynamic.llc.plan_finder import Plan
+from sp.system_controller.optimizer.dynamic.llc.plan_finder import Plan, GAPlanFinder
+from sp.system_controller.optimizer.static.moga import MOGAOperator, dominates
 from sp.system_controller.optimizer.static.soga import indiv_gen
-from sp.system_controller.optimizer.static.moga import MOChromosome
-from sp.system_controller.metric.static import deadline
+from sp.system_controller.metric import deadline, cost, availability, migration
 import json
+import math
 import unittest
 
 
@@ -40,9 +40,9 @@ class GAPFTestCase(unittest.TestCase):
         system_estimator = DefaultSystemEstimator()
         objective = [
             deadline.max_deadline_violation,
-            # cost.overall_cost,
-            # availability.avg_unavailability,
-            # migration.overall_migration_cost
+            cost.overall_cost,
+            availability.avg_unavailability,
+            migration.overall_migration_cost
         ]
         ga_params = {
             "nb_generations": 100,
@@ -50,25 +50,25 @@ class GAPFTestCase(unittest.TestCase):
             "elite_proportion": 0.1,
             "mutant_proportion": 0.1,
             "elite_probability": 0.6,
-            "dominance_tolerance": 0.01,
             "pool_size": 0,
             "stop_threshold": 0.10,
+            "dominance_func": dominates
         }
 
-        chromosome = MOChromosome(objective=objective,
-                                  system=self.system,
-                                  environment_input=self.environment_inputs[0])
+        moga_operator = MOGAOperator(objective=objective,
+                                     system=self.system,
+                                     environment_input=self.environment_inputs[0])
         control_inputs = [
-            indiv_gen.create_individual_cloud(chromosome),
-            indiv_gen.create_individual_net_delay(chromosome),
-            indiv_gen.create_individual_cluster_metoids(chromosome),
-            indiv_gen.create_individual_deadline(chromosome)
+            indiv_gen.create_individual_cloud(moga_operator),
+            indiv_gen.create_individual_net_delay(moga_operator),
+            indiv_gen.create_individual_cluster_metoids(moga_operator),
+            indiv_gen.create_individual_deadline(moga_operator)
         ]
         nb_stages = 2
         stages_control_input = [control_inputs for _ in range(nb_stages)]
 
         def decode_control_input(system, encoded_control, environment_input):
-            decoder = MOChromosome(objective=objective,
+            decoder = MOGAOperator(objective=objective,
                                    system=system,
                                    environment_input=environment_input)
             return decoder.decode(encoded_control)
@@ -79,7 +79,7 @@ class GAPFTestCase(unittest.TestCase):
                           objective_aggregator=sum,
                           control_decoder=decode_control_input,
                           system_estimator=system_estimator,
-                          ga_params=ga_params)
+                          **ga_params)
 
         plans = pf.solve(stages_control_input)
         self.assertGreater(len(plans), 0)
@@ -90,7 +90,8 @@ class GAPFTestCase(unittest.TestCase):
 
             for value in plan.fitness:
                 self.assertGreaterEqual(value, 0.0)
-                self.assertLess(value, float("inf"))
+                self.assertLess(value, math.inf)
+                self.assertFalse(math.isnan(value))
 
 
 if __name__ == '__main__':

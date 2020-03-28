@@ -1,2 +1,2 @@
 from .optimizer import MOGAOptimizer
-from .ga import MOGA, MOChromosome, dominates
+from .ga_operator import MOGAOperator, dominates

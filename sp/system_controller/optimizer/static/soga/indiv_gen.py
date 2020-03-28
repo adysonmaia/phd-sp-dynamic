@@ -1,42 +1,45 @@
 from sp.core.heuristic.kmedoids import KMedoids
 from sp.system_controller.utils import calc_load_before_distribution
+from sp.core.heuristic.brkga import GAIndividual
 import math
 
 
-def create_individual_empty(chromosome):
+def create_empty_individual(ga_operator):
     """Create a default individual
     Args:
-        chromosome (SOChromosome): chromosome's data
+        ga_operator (SOGAOperator): genetic operator
     Returns:
-        list: encoded chromosome
+        GAIndividual: encoded individual
     """
-    return [0.0] * chromosome.nb_genes
+    chromosome = [0.0] * ga_operator.nb_genes
+    return GAIndividual(chromosome)
 
 
-def create_individual_cloud(chromosome):
+def create_individual_cloud(ga_operator):
     """Create an individual that prioritizes the cloud node
     Args:
-        chromosome (SOChromosome): chromosome's data
+        ga_operator (SOGAOperator): genetic operator
     Returns:
-        list: encoded chromosome
+        GAIndividual: encoded individual
     """
-    return [0.0] * chromosome.nb_genes
+    chromosome = [0.0] * ga_operator.nb_genes
+    return GAIndividual(chromosome)
 
 
-def create_individual_net_delay(chromosome):
+def create_individual_net_delay(ga_operator):
     """Create an individual that prioritizes nodes having shorter avg. net delays to other nodes
     and requests with strict deadlines
     Args:
-        chromosome (SOChromosome): chromosome's data
+        ga_operator (SOGAOperator): genetic operator
     Returns:
-        list: encoded chromosome
+        GAIndividual: encoded individual
     """
-    system = chromosome.system
-    env_input = chromosome.environment_input
+    system = ga_operator.system
+    env_input = ga_operator.environment_input
     nb_apps = len(system.apps)
     nb_nodes = len(system.nodes)
 
-    indiv = create_individual_empty(chromosome)
+    indiv = create_empty_individual(ga_operator)
     for (a_index, app) in enumerate(system.apps):
         indiv[a_index] = 1.0
 
@@ -62,23 +65,23 @@ def create_individual_net_delay(chromosome):
     return indiv
 
 
-def create_individual_cluster_metoids(chromosome, use_sc=False):
+def create_individual_cluster_metoids(ga_operator, use_sc=False):
     """Create an individual based on k-medoids clustering.
     The idea is the users of an application are grouped and central nodes of each group are prioritized.
     It also prioritizes requests with strict deadlines
     Args:
-        chromosome (SOChromosome): chromosome's data
+        ga_operator (SOGAOperator): genetic operator
         use_sc (bool): whether to use the silhouette score method to find the number of clusters
     Returns:
-        list: encoded chromosome
+        GAIndividual: encoded individual
     """
-    system = chromosome.system
-    env_input = chromosome.environment_input
+    system = ga_operator.system
+    env_input = ga_operator.environment_input
     nb_apps = len(system.apps)
     nb_nodes = len(system.nodes)
     kmedoids = KMedoids()
 
-    indiv = create_individual_empty(chromosome)
+    indiv = create_empty_individual(ga_operator)
     for (a_index, app) in enumerate(system.apps):
         indiv[a_index] = 1.0
 
@@ -119,31 +122,31 @@ def create_individual_cluster_metoids(chromosome, use_sc=False):
     return indiv
 
 
-def create_individual_cluster_metoids_sc(chromosome):
+def create_individual_cluster_metoids_sc(ga_operator):
     """Create an individual based on k-medoids clustering with silhouette score.
     The idea is the users of an application are grouped and central nodes of each group are prioritized.
     It also prioritizes requests with strict deadlines
     Args:
-        chromosome (SOChromosome): chromosome's data
+        ga_operator (SOGAOperator): genetic operator
     Returns:
-        list: encoded chromosome
+        GAIndividual: encoded individual
     """
-    return create_individual_cluster_metoids(chromosome, use_sc=True)
+    return create_individual_cluster_metoids(ga_operator, use_sc=True)
 
 
-def create_individual_load(chromosome):
+def create_individual_load(ga_operator):
     """Create an individual that prioritizes nodes with large load
     Args:
-        chromosome (SOChromosome): chromosome's data
+        ga_operator (SOGAOperator): genetic operator
     Returns:
-        list: encoded chromosome
+        GAIndividual: encoded individual
     """
-    system = chromosome.system
-    env_input = chromosome.environment_input
+    system = ga_operator.system
+    env_input = ga_operator.environment_input
     nb_apps = len(system.apps)
     nb_nodes = len(system.nodes)
 
-    indiv = create_individual_empty(chromosome)
+    indiv = create_empty_individual(ga_operator)
     max_deadline = 1.0
     max_load = 0.0
 
@@ -169,10 +172,10 @@ def create_individual_load(chromosome):
                 value = indiv[key] / float(max_app_load)
                 indiv[key] = value
 
-    for (req_index, req) in enumerate(chromosome.requests):
+    for (req_index, req) in enumerate(ga_operator.requests):
         app_id, node_id = req
         key = nb_apps * (nb_nodes + 1) + req_index
-        value = calc_load_before_distribution(app.id, node.id, system, env_input)
+        value = calc_load_before_distribution(app_id, node_id, system, env_input)
         if max_load > 0.0:
             value = value / float(max_load)
         indiv[key] = value
@@ -180,19 +183,19 @@ def create_individual_load(chromosome):
     return indiv
 
 
-def create_individual_capacity(chromosome):
+def create_individual_capacity(ga_operator):
     """Create an individual that prioritizes nodes with high capacity of resources
     Args:
-        chromosome (SOChromosome): chromosome's data
+        ga_operator (SOGAOperator): genetic operator
     Returns:
-        list: encoded chromosome
+        GAIndividual: encoded individual
     """
-    system = chromosome.system
+    system = ga_operator.system
     nb_apps = len(system.apps)
     nb_nodes = len(system.nodes)
     nb_resources = len(system.resources)
 
-    indiv = create_individual_empty(chromosome)
+    indiv = create_empty_individual(ga_operator)
 
     max_capacity = {r.name: 1.0 for r in system.resources}
     for (n_index, node) in enumerate(system.nodes):
@@ -222,18 +225,18 @@ def create_individual_capacity(chromosome):
     return indiv
 
 
-def create_individual_deadline(chromosome):
+def create_individual_deadline(ga_operator):
     """Create an individual that prioritizes request with strict response deadline
     Args:
-        chromosome (SOChromosome): chromosome's data
+        ga_operator (SOGAOperator): genetic operator
     Returns:
-        list: encoded chromosome
+        GAIndividual: encoded individual
     """
-    system = chromosome.system
+    system = ga_operator.system
     nb_apps = len(system.apps)
     nb_nodes = len(system.nodes)
 
-    indiv = create_individual_empty(chromosome)
+    indiv = create_empty_individual(ga_operator)
     max_deadline = 1.0
 
     for (a_index, app) in enumerate(system.apps):
@@ -242,7 +245,7 @@ def create_individual_deadline(chromosome):
         if deadline > max_deadline:
             max_deadline = deadline
 
-    for (req_index, req) in enumerate(chromosome.requests):
+    for (req_index, req) in enumerate(ga_operator.requests):
         app_id, node_id = req
         key = nb_apps * (nb_nodes + 1) + req_index
         deadline = system.get_app(app_id).deadline
@@ -252,54 +255,55 @@ def create_individual_deadline(chromosome):
     return indiv
 
 
-def invert_individual(chromosome, individual):
+def invert_individual(ga_operator, individual):
     """Invert a individual representation
     Args:
-        chromosome (SOChromosome): chromosome's data
-        individual (list): encoded chromosome
+        ga_operator (SOGAOperator): genetic operator
+        individual (GAIndividual): encoded individual
     Returns:
-        list: encoded chromosome
+        GAIndividual: inverted individual
     """
-    indiv = individual[:chromosome.nb_genes]
-    return list(map(lambda i: 1.0 - i, indiv))
+    chromosome = individual.chromosome
+    inverted = list(map(lambda i: 1.0 - i, chromosome))
+    return GAIndividual(chromosome)
 
 
-def merge_population(chromosome, population, weights=None):
+def merge_population(ga_operator, population, weights=None):
     """Merge a list of individuals into a single one
     Args:
-        chromosome (SOChromosome): chromosome's data
-        population (list): list of individuals
+        ga_operator (SOGAOperator): genetic operator
+        population (list(GAIndividual)): list of individuals
         weights (list): weight for each individual in the population
     Returns:
-        list: resulted individual
+        GAIndividual: resulted individual
     """
-    nb_genes = chromosome.nb_genes
+    nb_genes = ga_operator.nb_genes
     pop_size = len(population)
     if weights is None:
         weights = [1.0 / float(pop_size)] * pop_size
 
-    merged_indiv = [0] * nb_genes
+    merged_indiv = create_empty_individual(ga_operator)
     for g in range(nb_genes):
         value = 0.0
-        for i, indiv in enumerate(population):
+        for (i, indiv) in enumerate(population):
             value += weights[i] * indiv[g]
         merged_indiv[g] = value
 
     return merged_indiv
 
 
-def merge_creation_functions(chromosome, functions, weights=None):
+def merge_creation_functions(ga_operator, functions, weights=None):
     """Create an individual by merging the results of a list of creation functions
     Args:
-        chromosome (SOChromosome): chromosome's data
-        functions (list): list of functions
+        ga_operator (SOGAOperator): genetic operator
+        functions (list(function)): list of creation functions
         weights (list): weight for the individuals created by each function
     Returns:
-        list: resulted individual
+        GAIndividual: resulted individual
     """
-    population = [f(chromosome) for f in functions]
+    population = [f(ga_operator) for f in functions]
     if len(population) > 1:
-        return merge_population(chromosome, population, weights)
+        return merge_population(ga_operator, population, weights)
     elif len(population) > 0:
         return population[0]
     else:
