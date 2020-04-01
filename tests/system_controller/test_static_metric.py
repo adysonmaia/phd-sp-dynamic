@@ -19,7 +19,7 @@ class StaticMetricTestCase(unittest.TestCase):
 
         system.time = 0
         env_ctl = EnvironmentController()
-        env_ctl.start()
+        env_ctl.init_params()
         environment_input = env_ctl.update(system)
         opt = CloudOptimizer()
         solution = opt.solve(system, environment_input)

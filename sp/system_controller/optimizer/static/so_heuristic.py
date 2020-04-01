@@ -9,7 +9,7 @@ class SOHeuristicOptimizer(Optimizer):
         self.objective = None
         self.version = version
 
-        self._versions = {
+        self._all_versions = {
             "cloud": indiv_gen.create_individual_cloud,
             "net_delay": indiv_gen.create_individual_net_delay,
             "cluster_metoids": indiv_gen.create_individual_cluster_metoids,
@@ -17,24 +17,22 @@ class SOHeuristicOptimizer(Optimizer):
             "cluster_metoids_sc": indiv_gen.create_individual_cluster_metoids_sc
         }
 
-    def solve(self, system, environment_input):
+    def init_params(self):
         if self.version is None:
             self.version = ["net_delay", "deadline"]
+
+        if not isinstance(self.version, list):
+            self.version = [self.version]
 
         if self.objective is None:
             self.objective = deadline.max_deadline_violation
 
-        functions = []
-        if isinstance(self.version, list) or isinstance(self.version, tuple):
-            functions = [self._versions[v] for v in self.version]
-        elif isinstance(self.version, str):
-            functions = [self._versions[self.version]]
-        else:
-            OptimizerError("Version not found")
-
+    def solve(self, system, environment_input):
+        self.init_params()
         ga_operator = SOGAOperator(system=system,
                                    environment_input=environment_input,
                                    objective=self.objective)
+        functions = [self._all_versions[v] for v in self.version]
         individual = indiv_gen.merge_creation_functions(ga_operator, functions)
         solution = ga_operator.decode(individual)
         return solution

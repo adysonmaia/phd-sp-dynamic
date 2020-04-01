@@ -2,6 +2,7 @@ from sp.core.model import Scenario, Node, System, EnvironmentInput
 from sp.physical_system.environment_controller import EnvironmentController
 from sp.system_controller.predictor.environment import DefaultEnvironmentPredictor
 import json
+import math
 import unittest
 
 
@@ -28,7 +29,7 @@ class EnvPredictorTestCase(unittest.TestCase):
 
     def test_prediction(self):
         predictor = DefaultEnvironmentPredictor()
-        self.env_ctl.start()
+        self.env_ctl.init_params()
         time_start = 0
         time_end = 100
         prediction_steps = 4
@@ -52,12 +53,12 @@ class EnvPredictorTestCase(unittest.TestCase):
                 for src_node in self.system.nodes:
                     pred_load = pred_env.get_generated_load(app.id, src_node.id)
                     self.assertGreaterEqual(pred_load, 0.0)
-                    self.assertLess(pred_load, float("inf"))
+                    self.assertLess(pred_load, math.inf)
 
                     for dst_node in self.system.nodes:
                         pred_net_delay = pred_env.get_net_delay(app.id, src_node.id, dst_node.id)
                         self.assertGreaterEqual(pred_net_delay, 0.0)
-                        self.assertLess(pred_net_delay, float("inf"))
+                        self.assertLess(pred_net_delay, math.inf)
 
 
 if __name__ == '__main__':

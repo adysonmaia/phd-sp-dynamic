@@ -40,7 +40,7 @@ class LLCOptTestCase(unittest.TestCase):
         time_end = 5
 
         system = copy.copy(self.system)
-        self.environment_controller.start()
+        self.environment_controller.init_params()
         for time in range(time_start, time_end + 1):
             system.time = time
             system.sampling_time = 1

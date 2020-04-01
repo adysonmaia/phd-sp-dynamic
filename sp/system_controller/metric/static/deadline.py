@@ -1,4 +1,5 @@
 from sp.system_controller.estimator.processing import DefaultProcessingEstimator
+from sp.system_controller.utils import calc_load_before_distribution
 from statistics import mean
 
 
@@ -37,12 +38,11 @@ def _calc_delta_time(system, control_input, environment_input):
 
             for src_node in system.nodes:
                 ld = control_input.get_load_distribution(app.id, src_node.id, dst_node.id)
-                if ld == 0.0:
-                    continue
-
-                net_delay = environment_input.get_net_delay(app.id, src_node.id, dst_node.id)
-                delay = net_delay + proc_delay
-                delta.append(delay - app.deadline)
-
+                load = calc_load_before_distribution(app.id, src_node.id, system, environment_input)
+                load = load * ld
+                if load > 0.0:
+                    net_delay = environment_input.get_net_delay(app.id, src_node.id, dst_node.id)
+                    delay = net_delay + proc_delay
+                    delta.append(delay - app.deadline)
     return delta
 

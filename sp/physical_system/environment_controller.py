@@ -11,15 +11,18 @@ class EnvironmentController:
         self.link_delay_estimator = DefaultLinkDelayEstimator()
         self.gen_load_estimator = DefaultGeneratedLoadEstimator()
 
-    def start(self):
+    def init_params(self):
         if self.routing is None:
             self.routing.link_delay_estimator = self.link_delay_estimator
             self.routing.static_routing = True
 
+    def clear_params(self):
+        pass
+
     def update(self, system):
         env = EnvironmentInput()
 
-        time_tol = 2 * system.sampling_time
+        time_tol = system.sampling_time
         env.attached_users = self.coverage.update(system, env, time_tolerance=time_tol)
         env.generated_load = self.gen_load_estimator.calc_all_loads(system, env)
 
@@ -28,7 +31,3 @@ class EnvironmentController:
         env.net_path = self.routing.get_all_paths()
 
         return env
-
-    def stop(self):
-        pass
-

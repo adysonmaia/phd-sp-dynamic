@@ -70,7 +70,8 @@ def gen_network(topology, bbox):
         'type': 'BS',
         'avail': 0.99,  # 99 %
         'capacity': {
-            'CPU': 1e+9,  # 1 GIPS (Giga Instructions Per Second),
+            # 'CPU': 2e+9,  # GIPS (Giga Instructions Per Second),
+            'CPU': 300,  # GIPS (Giga Instructions Per Second),
             'RAM': 8e+9,  # 8 GB (Giga Byte)
             'DISK': 500e+9,  # 500 GB (Giga Byte)
         },
@@ -85,7 +86,8 @@ def gen_network(topology, bbox):
         'type': 'CORE',
         'avail': 0.999,  # 99.9 %
         'capacity': {
-            'CPU': 1e+12,  # 1 TIPS (Tera Instructions Per Second)
+            # 'CPU': 1e+12,  # 1 TIPS (Tera Instructions Per Second)
+            'CPU': 400,  # 1 TIPS (Tera Instructions Per Second)
             'RAM': 16e+9,  # 16 GB (Giga Byte)
             'DISK': 1e+12  # 1 TB (Tera Byte)
         },
@@ -127,7 +129,8 @@ def gen_network(topology, bbox):
     }
     core_cloud_link_properties = {
         'bw': 10e+9,  # 10 Gbps (Giga bits per second)
-        'delay': 0.01  # seconds or 10 ms
+        # 'delay': 0.01  # seconds or 10 ms
+        'delay': 0.02  # seconds or 20 ms
     }
 
     # Generate base stations' positions in a bound box grid
@@ -275,12 +278,14 @@ def gen_apps():
     """
     embb = {
         'type': 'EMBB',
-        'deadline': 0.01,  # seconds or 10 ms
-        'work': 100e+6,  # MI (Millions of Instructions)
+        # 'deadline': 0.01,  # seconds or 10 ms
+        # 'deadline': 0.05,  # seconds or 50 ms
+        'deadline': 0.1,  # seconds or 100 ms
+        'work': 10e+6,  # MI (Millions of Instructions)
         'data': 50e+6,  # bits - 50 Mb
         'rate': 1.0,  # requests per second
         'avail': 0.999,  # 99.9 %
-        'max_inst': 1000,
+        'max_inst': 100,
         'demand': {
             'RAM': [50e+6, 50e+6],  # Byte - 50 MB
             'DISK': [50e+6, 50e+6]  # Byte - 50 MB
@@ -289,11 +294,11 @@ def gen_apps():
     mmtc = {
         'type': 'MMTC',
         'deadline': 1.0,  # second
-        'work': 10e+6,  # MI (Millions of Instructions)
+        'work': 1e+6,  # MI (Millions of Instructions)
         'data': 100e+3,  # bits - 100 Kb
         'rate': 1.0,  # requests per second
         'avail': 0.99,  # 99.0 %
-        'max_inst': 1000,
+        'max_inst': 100,
         'demand': {
             'RAM': [100e+3, 100e+3],  # Byte - 100 KB
             'DISK': [100e+3, 100e+3]  # Byte - 100 KB
@@ -301,12 +306,14 @@ def gen_apps():
     }
     urllc = {
         'type': 'URLLC',
-        'deadline': 0.001,  # seconds or 1 ms
-        'work': 10e+6,  # MI (Millions of Instructions)
+        # 'deadline': 0.001,  # seconds or 1 ms
+        'deadline': 0.01,  # seconds or 10 ms
+        # 'work': 1e+6,  # MI (Millions of Instructions)
+        'work': 1,  # Instructions
         'data': 100e+3,  # bits - 100 Kb
         'rate': 1.0,  # requests per second
         'avail': 0.9999,  # 99.99 %
-        'max_inst': 1000,
+        'max_inst': 100,
         'demand': {
             'RAM': [100e+3, 100e+3],  # Byte - 100 KB
             'DISK': [100e+3, 100e+3]  # Byte - 100 KB
@@ -314,7 +321,8 @@ def gen_apps():
     }
 
     # Generate apps' properties
-    apps = [embb, mmtc, urllc]
+    # apps = [embb, mmtc, urllc]
+    apps = [urllc]
     json_data = {'apps': []}
     for (app_id, app) in enumerate(apps):
         app = copy.copy(app)
@@ -323,7 +331,7 @@ def gen_apps():
         # Create linear estimator that satisfies the queue and deadline constraints
         # f(x) = ax + b
         cpu_linear_a = app['work'] + 1.0
-        cpu_linear_b = app['work'] / float(app['deadline']) + 1.0
+        cpu_linear_b = 2.0 * app['work'] / float(app['deadline'])
         app['demand']['CPU'] = [cpu_linear_a, cpu_linear_b]
         json_data['apps'].append(app)
 
@@ -401,13 +409,15 @@ def gen_users(apps_data, bbox):
             json_data['users'][user_id]['app_id'] = app_id
         last_user_id += app_nb_users
 
-    # Remaining users are mapped to a single MMTC application
+    # Remaining users are mapped to a single application, preferably a MMTC application
     if last_user_id < nb_users:
-        app_id = 0
+        app_id = None
         for app in apps_data['apps']:
             if app['type'] == 'MMTC':
                 app_id = app['id']
                 break
+        if app_id is None:
+            app_id = apps_data['apps'][0]['id']
         for user_id in range(last_user_id, nb_users):
             json_data['users'][user_id]['app_id'] = app_id
 

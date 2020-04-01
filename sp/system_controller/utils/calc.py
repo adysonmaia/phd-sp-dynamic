@@ -1,7 +1,6 @@
 from sp.core.model import Resource
 from sp.system_controller.model import OptSolution
-
-INF = float("inf")
+import math
 
 
 def calc_response_time(app_id, src_node_id, dst_node_id, system, control_input, environment_input):
@@ -12,7 +11,7 @@ def calc_response_time(app_id, src_node_id, dst_node_id, system, control_input, 
 
 def calc_processing_delay(app_id, node_id, system, control_input, environment_input):
     from sp.system_controller.estimator.processing import DefaultProcessingEstimator, DefaultProcessingResult
-    proc_delay = INF
+    proc_delay = math.inf
 
     # TODO: make this calculation works with any ProcessingEstimator selected for the simulation
     if control_input.app_placement[app_id][node_id]:

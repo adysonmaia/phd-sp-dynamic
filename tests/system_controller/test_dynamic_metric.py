@@ -21,7 +21,7 @@ class DynamicMetricTestCase(unittest.TestCase):
         optimizers = [CloudOptimizer(), SOHeuristicOptimizer()]
         sys_estimator = DefaultSystemEstimator()
         env_ctl = EnvironmentController()
-        env_ctl.start()
+        env_ctl.init_params()
 
         time_duration = 5
         systems = []

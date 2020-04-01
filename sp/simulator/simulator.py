@@ -37,21 +37,21 @@ class Simulator:
     def scheduler(self, value):
         self.system_controller.scheduler = value
 
-    def _start_sim(self):
+    def _init_params(self):
         if self.scenario is None:
             raise ValueError("Scenario not defined")
 
-        self.physical_system.start(self.scenario, self.step_time)
-        self.environment_controller.start()
-        self.system_controller.start()
+        self.physical_system.init_params(self.scenario, self.step_time)
+        self.environment_controller.init_params()
+        self.system_controller.init_params()
         self.monitor.start(self)
 
-    def _stop_sim(self):
-        self.physical_system.stop()
-        self.system_controller.stop()
+    def _clear_params(self):
+        self.physical_system.clear_params()
+        self.system_controller.clear_params()
 
     def run(self):
-        self._start_sim()
+        self._init_params()
         self.monitor(Monitor.actions.SIM_STARTED, self.start_time)
 
         current_time = self.start_time
@@ -75,5 +75,5 @@ class Simulator:
             self.monitor(Monitor.actions.TIME_SLOT_ENDED, current_time)
             current_time += self.step_time
 
-        self._stop_sim()
         self.monitor(Monitor.actions.SIM_ENDED, self.stop_time)
+        self._clear_params()

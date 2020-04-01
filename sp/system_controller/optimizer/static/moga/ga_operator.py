@@ -1,7 +1,8 @@
 from sp.system_controller.optimizer.static.soga import SOGAOperator
 from sp.core.heuristic.nsgaii import pareto_dominates
 
-DEFAULT_DOMINANCE_TOLERANCE = 0.01
+# DEFAULT_DOMINANCE_TOLERANCE = 0.00001
+DEFAULT_DOMINANCE_TOLERANCE = 0.0
 
 
 class MOGAOperator(SOGAOperator):
@@ -38,7 +39,7 @@ class MOGAOperator(SOGAOperator):
         return [f(self.system, solution, self.environment_input) for f in self.objective]
 
 
-def dominates(fitness_1, fitness_2, dominance_tolerance=DEFAULT_DOMINANCE_TOLERANCE):
+def preferred_dominates(fitness_1, fitness_2, dominance_tolerance=DEFAULT_DOMINANCE_TOLERANCE):
     """ Preferred dominance operator
     Args:
         fitness_1 (list): fitness of the first individual

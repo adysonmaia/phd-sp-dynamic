@@ -8,13 +8,18 @@ class SystemController:
         self.scheduler = None
         self.optimizer = None
 
-    def start(self):
+    def init_params(self):
         if self.scheduler is None:
             self.scheduler = AlwaysScheduler()
         if self.optimizer is None:
             self.optimizer = CloudOptimizer()
 
-        self.scheduler.start()
+        self.scheduler.init_params()
+        self.optimizer.init_params()
+
+    def clear_params(self):
+        self.scheduler.clear_params()
+        self.optimizer.clear_params()
 
     def update(self, system, environment_input):
         control_input = None
@@ -27,6 +32,3 @@ class SystemController:
                 pass
 
         return control_input
-
-    def stop(self):
-        self.scheduler.stop()

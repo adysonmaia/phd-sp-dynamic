@@ -1,7 +1,7 @@
 from sp.system_controller.optimizer import Optimizer
 from sp.system_controller.predictor import DefaultEnvironmentPredictor
 from sp.system_controller.metric import deadline, cost, availability, migration
-from .multi_stage import MultiStage, dominates
+from .multi_stage import MultiStage, preferred_dominates
 
 
 class LLCOptimizer(Optimizer):
@@ -13,13 +13,12 @@ class LLCOptimizer(Optimizer):
         self.max_iterations = 100
         self.environment_predictor = None
         self.system_estimator = None
-        self.dominance_func = dominates
+        self.dominance_func = preferred_dominates
         self.pool_size = 4
 
-    def solve(self, system, environment_input):
+    def init_params(self):
         if self.environment_predictor is None:
             self.environment_predictor = DefaultEnvironmentPredictor()
-        self.environment_predictor.update(system, environment_input)
 
         if self.objective is None:
             self.objective = [
@@ -28,9 +27,16 @@ class LLCOptimizer(Optimizer):
                 availability.avg_unavailability,
                 migration.overall_migration_cost
             ]
+
         if not isinstance(self.objective, list):
             self.objective = [self.objective]
 
+    def clear_params(self):
+        self.environment_predictor.clear()
+
+    def solve(self, system, environment_input):
+        self.init_params()
+        self.environment_predictor.update(system, environment_input)
         ms_heuristic = MultiStage(system=system,
                                   environment_input=environment_input,
                                   objective=self.objective,

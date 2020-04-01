@@ -1,5 +1,6 @@
-from .stage_ga import StageGA, StageGAOperator, dominates
+from .stage_ga import StageGA, StageGAOperator, preferred_dominates
 from .plan_finder import GAPlanFinder, BeamPlanFinder, RandomPlanFinder
+import math
 
 _SGA_PARAMS = {
     "population_size": 100,
@@ -36,7 +37,7 @@ class MultiStage:
                  system_estimator=None,
                  environment_predictor=None,
                  objective_aggregator=None,
-                 dominance_func=dominates,
+                 dominance_func=preferred_dominates,
                  pool_size=0):
 
         self.max_iterations = max_iterations
@@ -82,7 +83,7 @@ class MultiStage:
         #                            system_estimator=self.system_estimator,
         #                            pool_size=self.pool_size,
         #                            **_GAPF_PARAMS)
-        #
+
         # plan_finder = BeamPlanFinder(system=self.system,
         #                              environment_inputs=env_inputs,
         #                              objective=self.objective,
@@ -124,7 +125,9 @@ class MultiStage:
                 for (indiv, plan) in zip(population, plans):
                     indiv.fitness = plan.fitness
 
-            plans = plan_finder.solve(stages_control)
+            plans = []
+            if self.nb_stages > 1:
+                plans = plan_finder.solve(stages_control)
             for plan in plans:
                 for stage in range(self.nb_stages):
                     control_input = plan[stage]
@@ -134,7 +137,15 @@ class MultiStage:
                     elif (not control_input.is_fitness_valid()) and plan.is_fitness_valid():
                         replace_fitness = True
                     if replace_fitness:
+                        # if stage == 0:
+                        #     print(iteration, control_input.fitness, plan.fitness)
                         control_input.fitness = plan.fitness
+
+            default_fitness = [math.inf for _ in self.objective]
+            for population in stages_control:
+                for indiv in population:
+                    if not indiv.is_fitness_valid():
+                        indiv.fitness = default_fitness
 
             iteration += 1
             stop = iteration >= self.max_iterations or first_stage_ga.should_stop()

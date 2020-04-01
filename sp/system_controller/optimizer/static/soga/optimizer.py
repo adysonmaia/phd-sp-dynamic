@@ -16,10 +16,12 @@ class SOGAOptimizer(Optimizer):
         self.use_heuristic = True
         self.pool_size = 4
 
-    def solve(self, system, environment_input):
+    def init_params(self):
         if self.objective is None:
             self.objective = deadline.max_deadline_violation
 
+    def solve(self, system, environment_input):
+        self.init_params()
         ga_operator = SOGAOperator(system=system,
                                    environment_input=environment_input,
                                    objective=self.objective,
@@ -31,7 +33,6 @@ class SOGAOptimizer(Optimizer):
                       mutant_proportion=self.mutant_proportion,
                       elite_probability=self.elite_probability,
                       pool_size=self.pool_size)
-
         population = so_ga.solve()
         solution = ga_operator.decode(population[0])
         return solution

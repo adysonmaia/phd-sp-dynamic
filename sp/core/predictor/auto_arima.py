@@ -22,6 +22,10 @@ class AutoARIMAPredictor(Predictor):
         self._fit_params = fit_params
         self._predict_params = predict_params
 
+    def clear(self):
+        self._data.clear()
+        self._fit_results = None
+
     def update(self, datum):
         self._data.append(datum)
         if len(self._data) > self._max_data_size:

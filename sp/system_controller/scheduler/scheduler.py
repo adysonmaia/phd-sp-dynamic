@@ -3,7 +3,11 @@ from abc import ABC, abstractmethod
 
 class Scheduler(ABC):
     @abstractmethod
-    def start(self):
+    def init_params(self):
+        pass
+
+    @abstractmethod
+    def clear_params(self):
         pass
 
     @abstractmethod
@@ -12,8 +16,4 @@ class Scheduler(ABC):
 
     @abstractmethod
     def update(self, system, environment_input):
-        pass
-
-    @abstractmethod
-    def stop(self):
         pass

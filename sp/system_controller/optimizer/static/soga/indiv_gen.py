@@ -26,6 +26,32 @@ def create_individual_cloud(ga_operator):
     return GAIndividual(chromosome)
 
 
+def create_individual_current(ga_operator):
+    """Create an individual based on current state and control input
+    Args:
+        ga_operator (SOGAOperator): genetic operator
+    Returns:
+        GAIndividual: encoded individual
+    """
+    indiv = create_empty_individual(ga_operator)
+    system = ga_operator.system
+    control_input = system.control_input
+    nb_apps = len(system.apps)
+    nb_nodes = len(system.nodes)
+
+    if control_input is not None:
+        for (a_index, app) in enumerate(system.apps):
+            place_count = 0
+            for (dst_index, dst_node) in enumerate(system.nodes):
+                key = nb_apps + a_index * nb_nodes + dst_index
+                value = int(control_input.get_app_placement(app.id, dst_node.id))
+                place_count += value
+                indiv[key] = value
+
+            indiv[a_index] = place_count / float(nb_nodes) if nb_nodes > 0 else 1.0
+    return indiv
+
+
 def create_individual_net_delay(ga_operator):
     """Create an individual that prioritizes nodes having shorter avg. net delays to other nodes
     and requests with strict deadlines

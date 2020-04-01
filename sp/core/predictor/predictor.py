@@ -9,3 +9,7 @@ class Predictor(ABC):
     @abstractmethod
     def predict(self, steps=1):
         pass
+
+    @abstractmethod
+    def clear(self):
+        pass

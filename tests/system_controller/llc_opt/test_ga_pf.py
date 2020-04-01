@@ -2,7 +2,7 @@ from sp.core.model import Scenario, System
 from sp.system_controller.estimator.system import DefaultSystemEstimator
 from sp.physical_system.environment_controller import EnvironmentController
 from sp.system_controller.optimizer.dynamic.llc.plan_finder import Plan, GAPlanFinder
-from sp.system_controller.optimizer.static.moga import MOGAOperator, dominates
+from sp.system_controller.optimizer.static.moga import MOGAOperator, preferred_dominates
 from sp.system_controller.optimizer.static.soga import indiv_gen
 from sp.system_controller.metric import deadline, cost, availability, migration
 import json
@@ -22,7 +22,7 @@ class GAPFTestCase(unittest.TestCase):
 
         system.time = 0
         env_ctl = EnvironmentController()
-        env_ctl.start()
+        env_ctl.init_params()
 
         env_inputs = []
         for time in range(5):
@@ -52,7 +52,7 @@ class GAPFTestCase(unittest.TestCase):
             "elite_probability": 0.6,
             "pool_size": 0,
             "stop_threshold": 0.10,
-            "dominance_func": dominates
+            "dominance_func": preferred_dominates
         }
 
         moga_operator = MOGAOperator(objective=objective,

@@ -3,6 +3,7 @@ from sp.system_controller.estimator.processing import DefaultProcessingEstimator
 from sp.physical_system.environment_controller import EnvironmentController
 from sp.system_controller.optimizer.static.cloud import CloudOptimizer
 import json
+import math
 import unittest
 
 
@@ -29,7 +30,7 @@ class ProcEstimatorTestCase(unittest.TestCase):
 
         time = 0
         self.system.time = time
-        self.env_ctl.start()
+        self.env_ctl.init_params()
         self.environment_input = self.env_ctl.update(self.system)
         self.assertIsInstance(self.environment_input, EnvironmentInput)
 
@@ -54,7 +55,7 @@ class ProcEstimatorTestCase(unittest.TestCase):
                 self.assertGreater(proc_result.arrival_rate, 0.0)
                 self.assertGreater(proc_result.service_rate, 0.0)
                 self.assertGreater(proc_result.service_rate, proc_result.arrival_rate)
-                self.assertLess(proc_result.service_rate, float("inf"))
+                self.assertLess(proc_result.service_rate, math.inf)
 
 
 if __name__ == '__main__':

@@ -1,13 +1,17 @@
 from sp.core.model import Scenario
 from sp.simulator import Simulator, Monitor
 from sp.system_controller.optimizer.dynamic import LLCOptimizer
-from sp.system_controller.optimizer.static import SOGAOptimizer, MOGAOptimizer, CloudOptimizer
+from sp.system_controller.optimizer.static import SOGAOptimizer, MOGAOptimizer, CloudOptimizer, SOHeuristicOptimizer
 from sp.system_controller import metric
+from sp.system_controller.utils import is_solution_valid, pareto_dominates, preferred_dominates
+from sp.system_controller.utils import calc_load_before_distribution
 from datetime import datetime
 from pytz import timezone
 import json
 import time
 import os
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 
 UTC_TZ = timezone('UTC')
@@ -15,10 +19,40 @@ SF_TZ_STR = 'US/Pacific'
 SF_TZ = timezone(SF_TZ_STR)
 
 
+def _calc_delta_time(system, control_input, environment_input):
+    from sp.system_controller.estimator import DefaultProcessingEstimator
+    proc_estimator = DefaultProcessingEstimator()
+
+    delta = []
+    for app in system.apps:
+        for dst_node in system.nodes:
+            if not control_input.get_app_placement(app.id, dst_node.id):
+                continue
+
+            proc_result = proc_estimator(app.id, dst_node.id,
+                                         system=system,
+                                         control_input=control_input,
+                                         environment_input=environment_input)
+            proc_delay = proc_result.delay
+
+            for src_node in system.nodes:
+                ld = control_input.get_load_distribution(app.id, src_node.id, dst_node.id)
+                load = calc_load_before_distribution(app.id, src_node.id, system, environment_input)
+                load = load * ld
+                if load > 0.0:
+                    net_delay = environment_input.get_net_delay(app.id, src_node.id, dst_node.id)
+                    delay = net_delay + proc_delay
+                    delta.append(delay - app.deadline)
+                    if delay > app.deadline:
+                        print('app {}, dst {}, src {}: {} + {} > {}'.format(app.id, dst_node.id, src_node.id,
+                                                                            net_delay, proc_delay, app.deadline))
+    return delta
+
+
 class ControlMonitor(Monitor):
     """Simulation monitor
     """
-    def __init__(self, metrics_func, output_path):
+    def __init__(self, metrics_func, output_path=None):
         """Initialization
         Args:
              metrics_func (list): list of metric functions
@@ -63,14 +97,14 @@ class ControlMonitor(Monitor):
         tz_time = datetime.fromtimestamp(sim_time, tz=UTC_TZ).astimezone(SF_TZ)
         print('{} - {}s'.format(tz_time, elapsed_time))
 
-        datum = {'time': sim_time, 'opt': opt_name, 'elapsed_time': elapsed_time}
+        valid = is_solution_valid(system, control_input, environment_input)
+        datum = {'time': sim_time, 'opt': opt_name, 'elapsed_time': elapsed_time, 'valid': valid}
         for func in self.metrics_func:
             key = func.__name__
             value = func(system, control_input, environment_input)
             datum[key] = value
         self.metrics_data.append(datum)
         print(datum)
-        print("--")
 
         place_datum = []
         alloc_datum = []
@@ -98,7 +132,49 @@ class ControlMonitor(Monitor):
         self.control_data['ld'] += ld_datum
         self.control_data['alloc'] += alloc_datum
 
+        for app in system.apps:
+            places = [n.id for n in system.nodes if control_input.get_app_placement(app.id, n.id)]
+            print(app.id, app.type, len(places), places)
+
+        # for node in system.nodes:
+        #     resource_name = 'CPU'
+        #     alloc = [control_input.get_allocated_resource(app.id, node.id, resource_name) for app in system.apps]
+        #     alloc = sum(alloc)
+        #     capacity = node.capacity[resource_name]
+        #     available = capacity - alloc
+        #     if alloc > 0.0:
+        #         print('node {}, rsc {}, cap {}, alloc {}, free {}'.format(node.id, resource_name,
+        #                                                                            capacity, alloc, available))
+
+        for app in system.apps:
+            users = environment_input.get_attached_users()
+            user = list(filter(lambda u: u.app_id == app.id and u.node_id is not None, users))
+            count = len(user)
+            print('app {} {}, users {}'.format(app.id, app.type, count))
+
+        # for app in system.apps:
+        #     for src_node in system.nodes:
+        #         load = environment_input.get_generated_load(app.id, src_node.id)
+        #         print('app {} {}, node {}, gen load {}'.format(app.id, app.type, src_node.id, load))
+
+        # for app in system.apps:
+        #     for src_node in system.nodes:
+        #         for dst_node in system.nodes:
+        #             ld = control_input.get_load_distribution(app.id, src_node.id, dst_node.id)
+        #             load_before = calc_load_before_distribution(app.id, src_node.id, system, environment_input)
+        #             load_after = load_before * ld
+        #             if load_after > 0.0 and src_node != dst_node:
+        #                 print('app {} {}, src {}, dst {}, {} * {} = load {}'.format(app.id, app.type,
+        #                                                                             src_node.id, dst_node.id,
+        #                                                                             ld, load_before, load_after))
+
+        # _calc_delta_time(system, control_input, environment_input)
+        print("--")
+
     def on_sim_ended(self, sim_time):
+        if self.output_path is None:
+            return
+
         metrics_filename = os.path.join(self.output_path, 'metrics.json')
         place_filename = os.path.join(self.output_path, 'placement.json')
         alloc_filename = os.path.join(self.output_path, 'allocation.json')
@@ -111,9 +187,9 @@ class ControlMonitor(Monitor):
             (ld_filename, self.control_data['ld']),
         ]
 
-        # for (filename, data) in files_data:
-        #     with open(filename, 'w') as file:
-        #         json.dump(data, file, indent=2)
+        for (filename, data) in files_data:
+            with open(filename, 'w') as file:
+                json.dump(data, file, indent=2)
 
 
 def main():
@@ -121,9 +197,9 @@ def main():
     """
 
     # Read input
-    filename = 'input/san_francisco/scenario.json'
+    scenario_filename = 'input/san_francisco/scenario.json'
     scenario = None
-    with open(filename) as json_file:
+    with open(scenario_filename) as json_file:
         data = json.load(json_file)
         scenario = Scenario.from_json(data)
 
@@ -133,39 +209,88 @@ def main():
     # step_time = 10 * 60  # seconds or 10 min
     step_time = 60 * 60  # seconds or 1H
 
-    # Set optimizer solution
+    # Set optimizer solutions
+    optimizers = []
     objective = [
+        metric.deadline.max_deadline_violation,
+        metric.cost.overall_cost,
+        # metric.availability.avg_unavailability,
+        metric.migration.overall_migration_cost
+    ]
+    metrics = [
         metric.deadline.max_deadline_violation,
         metric.cost.overall_cost,
         metric.availability.avg_unavailability,
         metric.migration.overall_migration_cost
     ]
-    # opt = CloudOptimizer()
-    # opt = SOGAOptimizer()
-    # opt = MOGAOptimizer()
-    opt = LLCOptimizer()
-    opt.prediction_window = 3
-    opt.max_iterations = 100
-    opt.pool_size = 6
+    # dominance_func = pareto_dominates
+    dominance_func = preferred_dominates
+    pool_size = 8
+
+    # Cloud optimizer config
+    opt = CloudOptimizer()
+    opt_id = opt.__class__.__name__
+    item = (opt_id, opt)
+    # optimizers.append(item)
+
+    # Single-Objective Heuristic optimizer config
+    opt = SOHeuristicOptimizer()
+    opt_id = opt.__class__.__name__
+    item = (opt_id, opt)
+    # optimizers.append(item)
+
+    # Single-Objective GA optimizer config
+    opt = SOGAOptimizer()
+    opt.objective = metric.deadline.max_deadline_violation
+    opt_id = opt.__class__.__name__
+    item = (opt_id, opt)
+    # optimizers.append(item)
+
+    # Multi-Objective GA optimizer config
+    opt = MOGAOptimizer()
     opt.objective = objective
+    opt.pool_size = pool_size
+    opt.dominance_func = dominance_func
+    opt_id = opt.__class__.__name__
+    item = (opt_id, opt)
+    optimizers.append(item)
 
-    output_path = 'output/san_francisco/exp/{}/'.format(opt.__class__.__name__)
-    try:
-        os.makedirs(output_path)
-    except OSError:
-        pass
+    # LLC optimizer config with different prediction windows
+    # max_prediction_window = 3
+    max_prediction_window = 0
+    for window in range(max_prediction_window + 1):
+        opt = LLCOptimizer()
+        opt.prediction_window = window
+        opt.max_iterations = 100
+        opt.pool_size = pool_size
+        opt.dominance_func = dominance_func
+        opt.objective = objective
+        opt_id = '{}_w{}'.format(opt.__class__.__name__, window)
+        item = (opt_id, opt)
+        # optimizers.append(item)
 
-    # Set simulation parameters
-    sim = Simulator(scenario=scenario)
-    sim.set_time(stop=stop_time, start=start_time, step=step_time)
-    sim.optimizer = opt
-    sim.monitor = ControlMonitor(metrics_func=objective, output_path=output_path)
+    # Execute simulation for each optimizer nb_runs times
+    # nb_runs = 30
+    nb_runs = 1
+    for run in range(nb_runs):
+        for (opt_id, opt) in optimizers:
+            output_path = 'output/san_francisco/exp/{}/{}/'.format(run, opt_id)
+            try:
+                os.makedirs(output_path)
+            except OSError:
+                pass
 
-    # Run simulation
-    perf_count = time.perf_counter()
-    sim.run()
-    elapsed_time = time.perf_counter() - perf_count
-    print('sim exec time: {}s'.format(elapsed_time))
+            # Set simulation parameters
+            sim = Simulator(scenario=scenario)
+            sim.set_time(stop=stop_time, start=start_time, step=step_time)
+            sim.optimizer = opt
+            sim.monitor = ControlMonitor(metrics_func=metrics, output_path=output_path)
+
+            # Run simulation
+            perf_count = time.perf_counter()
+            sim.run()
+            elapsed_time = time.perf_counter() - perf_count
+            print('run {}, opt {} - sim exec time: {}s'.format(run, opt_id, elapsed_time))
 
 
 if __name__ == '__main__':

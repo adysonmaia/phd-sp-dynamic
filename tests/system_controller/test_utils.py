@@ -4,7 +4,7 @@ from sp.system_controller.model import OptSolution
 from sp.system_controller import utils
 from sp.system_controller.optimizer.static.cloud import CloudOptimizer
 import json
-import copy
+import math
 import unittest
 
 
@@ -31,7 +31,7 @@ class OptUtilTestCase(unittest.TestCase):
 
         time = 0
         self.system.time = time
-        self.env_ctl.start()
+        self.env_ctl.init_params()
         self.environment_input = self.env_ctl.update(self.system)
         self.assertIsInstance(self.environment_input, EnvironmentInput)
 
@@ -56,9 +56,9 @@ class OptUtilTestCase(unittest.TestCase):
 
                 if solution.get_app_placement(app.id, dst_node.id):
                     self.assertGreater(proc_delay, 0.0)
-                    self.assertNotEqual(proc_delay, float("inf"))
+                    self.assertNotEqual(proc_delay, math.inf)
                 else:
-                    self.assertEqual(proc_delay, float("inf"))
+                    self.assertEqual(proc_delay, math.inf)
 
                 for src_node in self.system.nodes:
                     net_delay = utils.calc_network_delay(app.id, src_node.id, dst_node.id,

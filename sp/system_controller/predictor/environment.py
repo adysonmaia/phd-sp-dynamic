@@ -4,6 +4,7 @@ from sp.core.predictor.auto_arima import AutoARIMAPredictor
 from sp.core.predictor.exp_smoothing import ExpSmoothingPredictor
 from sp.core.model import EnvironmentInput
 from collections import defaultdict
+from future.utils import iteritems
 from abc import abstractmethod
 
 
@@ -14,6 +15,10 @@ class EnvironmentPredictor(Predictor):
 
     @abstractmethod
     def predict(self, steps=1):
+        pass
+
+    @abstractmethod
+    def clear(self):
         pass
 
 
@@ -30,6 +35,22 @@ class DefaultEnvironmentPredictor(EnvironmentPredictor):
         self.system = None
         self.load_predictor = defaultdict(lambda: defaultdict(lambda: None))
         self.net_predictor = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: None)))
+
+    def clear(self):
+        self.system = None
+        self._clear_load_predictor()
+        self._clear_net_predictor()
+
+    def _clear_load_predictor(self):
+        for (app_id, app_predictors_dict) in iteritems(self.load_predictor):
+            for (node_id, predictor) in iteritems(app_predictors_dict):
+                predictor.clear()
+
+    def _clear_net_predictor(self):
+        for (app_id, app_predictors_dict) in iteritems(self.net_predictor):
+            for (src_node_id, src_node_predictors_dict) in iteritems(app_predictors_dict):
+                for (dst_node_id, predictor) in iteritems(src_node_predictors_dict):
+                    predictor.clear()
 
     def update(self, system, environment_input):
         self.system = system

@@ -1,5 +1,6 @@
 from .mobility import Mobility
 from sp.core.geometry import point
+from functools import total_ordering
 import copy
 import math
 
@@ -20,6 +21,8 @@ class TrackMobility(Mobility):
         if tracks_len > 0:
             prev_tf = None
             next_tf = None
+            first_tf = self.tracks[0]
+            last_tf = self.tracks[-1]
 
             for i in range(start, tracks_len):
                 next_i = min(i + 1, tracks_len - 1)
@@ -34,6 +37,11 @@ class TrackMobility(Mobility):
                 position = prev_tf.position
                 if prev_tf.time != time:
                     position = prev_tf.intermediate(next_tf, time).position
+            elif tolerance is not None and not math.isinf(tolerance):
+                if abs(time - first_tf.time) <= tolerance:
+                    position = first_tf.position
+                elif abs(time - last_tf.time) <= tolerance:
+                    position = last_tf.position
 
         return position
 
@@ -42,6 +50,7 @@ class TrackMobility(Mobility):
         return from_json(json_data)
 
 
+@total_ordering
 class TrackFrame:
     def __init__(self, pos=None, time=0):
         self.position = pos

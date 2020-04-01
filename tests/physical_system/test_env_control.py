@@ -32,7 +32,7 @@ class EnvControlTestCase(unittest.TestCase):
 
         time = 0
         self.system.time = time
-        control.start()
+        control.init_params()
 
         self.assertIsInstance(control.routing, Routing)
         self.assertIsInstance(control.coverage, Coverage)
@@ -46,7 +46,7 @@ class EnvControlTestCase(unittest.TestCase):
         control.link_delay_estimator = DefaultLinkDelayEstimator()
         control.gen_load_estimator = DefaultGeneratedLoadEstimator()
 
-        control.start()
+        control.init_params()
         for time in [0, 1]:
             self.system.time = time
             env_input = control.update(self.system)

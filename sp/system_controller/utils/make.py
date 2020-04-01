@@ -81,6 +81,7 @@ def make_load_distribution_constraint_feasible(system, solution, environment_inp
                 src_ld += solution.load_distribution[app.id][src_node.id][dst_node.id]
 
             remaining_ld = 1.0 - src_ld
+            remaining_ld = round(remaining_ld, ROUND_PRECISION)
             if remaining_ld > 0.0:
                 dst_node = None
                 if solution.app_placement[app.id][cloud_node.id]:

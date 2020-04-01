@@ -19,7 +19,7 @@ def is_solution_valid(system, solution, environment_input):
             for dst_node in system.nodes:
                 dst_ld = solution.load_distribution[app.id][src_node.id][dst_node.id]
                 if math.isnan(dst_ld) or dst_ld < 0.0 or dst_ld > 1.0 + ERROR_TOLERANCE:
-                    logging.debug("Invalid load distribution (app %d, src node %d, dst node %): %f",
+                    logging.debug("Invalid load distribution (app %d, src node %d, dst node %d): %f",
                                   app.id, src_node.id, dst_node.id, dst_ld)
                     return False
 
@@ -39,6 +39,12 @@ def is_solution_valid(system, solution, environment_input):
         for resource in system.resources:
             allocated = 0.0
             for app in system.apps:
+                alloc_res = solution.allocated_resource[app.id][dst_node.id][resource.name]
+                if alloc_res > 0.0 and not solution.app_placement[app.id][dst_node.id]:
+                    logging.debug("Invalid resource allocation for %s, node %d doesn't host app %d",
+                                  resource.name, dst_node.id, app.id)
+                    return False
+
                 dst_load = 0.0
                 for src_node in system.nodes:
                     ld = solution.load_distribution[app.id][src_node.id][dst_node.id]
@@ -58,7 +64,6 @@ def is_solution_valid(system, solution, environment_input):
                         return False
 
                     app_demand = app.demand[resource.name](dst_load)
-                    alloc_res = solution.allocated_resource[app.id][dst_node.id][resource.name]
                     if abs(app_demand - alloc_res) > ERROR_TOLERANCE:
                         logging.debug("Invalid allocated resource for (app %d, node %d, resource %s): %f (valid %f)",
                                       app.id, dst_node.id, resource.name, alloc_res, app_demand)

@@ -30,7 +30,7 @@ class CloudOptTestCase(unittest.TestCase):
 
         time = 0
         self.system.time = time
-        self.env_ctl.start()
+        self.env_ctl.init_params()
         self.environment_input = self.env_ctl.update(self.system)
         self.assertIsInstance(self.environment_input, EnvironmentInput)
 

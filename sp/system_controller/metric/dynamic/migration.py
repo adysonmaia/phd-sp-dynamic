@@ -4,17 +4,17 @@ import math
 
 def overall_migration_cost(current_system, next_control, next_environment):
     values = _calc_migration_cost(current_system, next_control, next_environment)
-    return sum(values) if len(values) > 1 else 0.0
+    return sum(values) if len(values) > 0 else 0.0
 
 
 def max_migration_cost(current_system, next_control, next_environment):
     values = _calc_migration_cost(current_system, next_control, next_environment)
-    return max(values) if len(values) > 1 else 0.0
+    return max(values) if len(values) > 0 else 0.0
 
 
 def avg_migration_cost(current_system, next_control, next_environment):
     values = _calc_migration_cost(current_system, next_control, next_environment)
-    return mean(values) if len(values) > 1 else 0.0
+    return mean(values) if len(values) > 0 else 0.0
 
 
 def _calc_migration_cost(current_system, next_control, next_environment):
@@ -39,7 +39,8 @@ def _calc_migration_cost(current_system, next_control, next_environment):
                     if delay < min_delay:
                         min_delay = delay
 
-                app_cost += (1.0 - curr_place) * next_place * min_delay * app.data_size
+                if not curr_place and next_place:
+                    app_cost += min_delay * app.data_size
 
             costs.append(app_cost)
     return costs

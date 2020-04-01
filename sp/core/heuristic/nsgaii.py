@@ -143,11 +143,13 @@ def fast_non_dominated_sort(fitnesses, dominance_func=pareto_dominates):
         (list, list): fronts, rank
     """
     pop_size = len(fitnesses)
-    r_pop_size = range(pop_size)
+    r_pop_size = list(range(pop_size))
     S = [[] for _ in r_pop_size]
     n = [0 for _ in r_pop_size]
     rank = [0 for _ in r_pop_size]
     fronts = [[]]
+
+    test = [[] for _ in r_pop_size]
 
     for p in r_pop_size:
         S[p] = []
@@ -158,6 +160,8 @@ def fast_non_dominated_sort(fitnesses, dominance_func=pareto_dominates):
                     S[p].append(q)
             elif dominance_func(fitnesses[q], fitnesses[p]):
                 n[p] = n[p] + 1
+                if q not in test[p]:
+                    test[p].append(q)
         if n[p] == 0:
             rank[p] = 0
             if p not in fronts[0]:

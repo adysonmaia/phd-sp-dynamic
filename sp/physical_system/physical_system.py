@@ -14,7 +14,7 @@ class PhysicalSystem:
     def state(self):
         return self._system
 
-    def start(self, scenario, sampling_time):
+    def init_params(self, scenario, sampling_time):
         if self.system_estimator is None:
             self.system_estimator = DefaultSystemEstimator()
 
@@ -24,7 +24,7 @@ class PhysicalSystem:
         self._system = System()
         self._system.scenario = self._scenario
 
-    def stop(self):
+    def clear_params(self):
         pass
 
     def update(self, time):

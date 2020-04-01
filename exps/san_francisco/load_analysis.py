@@ -85,12 +85,47 @@ def data_analysis(scenario, load_filename, users_filename):
     load_df, users_df = data_frames
 
     # plot_load_by_app(scenario, load_df)
-    # plot_load_by_node(scenario, load_df)
+    # plot_load_by_app_node(scenario, load_df)
+    plot_load_by_node(scenario, load_df)
     # plot_users(scenario, load_df, users_df)
-    plot_map(scenario)
+    # plot_map(scenario)
 
 
 def plot_load_by_app(scenario, df):
+    bs_nodes_id = [node.id for node in scenario.network.bs_nodes]
+    df = df.tz_convert(SF_TZ_STR)
+    df = df[df['node'].isin(bs_nodes_id)]
+
+    nb_axes = len(scenario.apps)
+    nb_cols = 1
+    nb_rows = nb_axes // nb_cols
+    if nb_rows * nb_cols < nb_axes:
+        nb_rows += 1
+
+    fig, axes = plt.subplots(nrows=nb_rows, ncols=nb_cols, squeeze=False, figsize=(16, 9))
+    for (app_index, app) in enumerate(scenario.apps):
+        ax_row = app_index // nb_cols
+        ax_col = app_index % nb_cols
+        ax = axes[ax_row, ax_col]
+
+        ax.set_ylabel('Load')
+        ax.set_title('App {} (id {})'.format(app.type, app.id))
+
+        app_df = df[df['app'] == app.id]
+        load_df = app_df.groupby('time')['load'].sum()
+        load_df.plot(ax=ax, legend=False)
+
+    for row in range(nb_rows):
+        for col in range(nb_cols):
+            index = row * nb_cols + col
+            if index >= nb_axes:
+                axes[row, col].remove()
+
+    fig.tight_layout()
+    plt.show()
+
+
+def plot_load_by_app_node(scenario, df):
     bs_nodes_id = [node.id for node in scenario.network.bs_nodes]
     df = df.tz_convert(SF_TZ_STR)
     df = df[df['node'].isin(bs_nodes_id)]
@@ -106,22 +141,39 @@ def plot_load_by_app(scenario, df):
               'darkcyan', 'midnightblue', 'darkviolet', 'tan',
               'lightcoral', 'lightgreen', 'lightblue'] + colors
 
-    fig, axes = plt.subplots(nrows=2, ncols=2, squeeze=False, figsize=(16, 9))
-    for app in scenario.apps:
-        plot_ax = axes[app.id // 2, app.id % 2]
-        plot_ax.set_ylabel('Load')
-        plot_ax.set_prop_cycle(cycler('color', colors))
-        plot_ax.set_title('App {} (id {})'.format(app.type, app.id))
+    nb_axes = len(scenario.apps) + 1
+    nb_cols = 2
+    nb_rows = nb_axes // nb_cols
+    if nb_rows * nb_cols < nb_axes:
+        nb_rows += 1
+
+    fig, axes = plt.subplots(nrows=nb_rows, ncols=nb_cols, squeeze=False, figsize=(16, 9))
+    for (app_index, app) in enumerate(scenario.apps):
+        ax_row = app_index // nb_cols
+        ax_col = app_index % nb_cols
+        ax = axes[ax_row, ax_col]
+
+        ax.set_ylabel('Load')
+        ax.set_prop_cycle(cycler('color', colors))
+        ax.set_title('App {} (id {})'.format(app.type, app.id))
         grouped_df = df[df['app'] == app.id].groupby('node')
-        grouped_df['load'].plot(ax=plot_ax)
+        grouped_df['load'].plot(ax=ax)
+
+    for row in range(nb_rows):
+        for col in range(nb_cols):
+            index = row * nb_cols + col
+            if index >= nb_axes:
+                axes[row, col].remove()
 
     legend = axes[0, 0].legend(ncol=5, loc='upper right', handlelength=0.5, columnspacing=1.0)
     for line in legend.get_lines():
         line.set_linewidth(5.0)
 
     legend_handles_labels = axes[0, 0].get_legend_handles_labels()
-    map_ax = axes[1, 1]
-    plot_map(scenario, map_ax, legend_handles_labels)
+    ax_row = (nb_axes - 1) // nb_cols
+    ax_col = (nb_axes - 1) % nb_cols
+    ax = axes[ax_row, ax_col]
+    plot_map(scenario, ax, legend_handles_labels)
 
     fig.tight_layout()
     plt.show()
@@ -144,7 +196,6 @@ def plot_load_by_node(scenario, df):
               'darkcyan', 'midnightblue', 'darkviolet', 'tan',
               'lightcoral', 'lightgreen', 'lightblue'] + colors
 
-    # nb_axes = len(bs_nodes) + 1
     nb_axes = len(bs_nodes)
     nb_cols = 5
     nb_rows = nb_axes // nb_cols
@@ -153,6 +204,7 @@ def plot_load_by_node(scenario, df):
     fig, axes = plt.subplots(nrows=nb_rows, ncols=nb_cols, squeeze=False, figsize=(16, 9))
 
     load_min, load_max = df['load'].min(), df['load'].max()
+    df['app_label'] = df['app'].map(lambda app_id: 'app {} (id {})'.format(scenario.get_app(app_id).type, int(app_id)))
 
     for (node_index, node) in enumerate(bs_nodes):
         ax_row = node_index // nb_cols
@@ -163,19 +215,12 @@ def plot_load_by_node(scenario, df):
         ax.set_title('Node {}'.format(node.id))
         ax.set_ylim(load_min, load_max)
 
-        grouped_df = df[df['node'] == node.id].groupby('app')
+        # node_df = df[df['node'] == node.id]
+        # load_df = node_df.groupby(['time', 'app_label'])['load'].sum().unstack()
+        # load_df.plot(ax=ax, legend=False)
+
+        grouped_df = df[df['node'] == node.id].groupby('app_label')
         grouped_df['load'].plot(ax=ax)
-
-        # ax_df = df.loc[(df['node'] == node.id) & (df['app'] == 2)]
-        # ax_df['load'].plot(ax=ax)
-
-    legend = axes[0, 0].legend(ncol=3)
-
-    # map_index = nb_axes - 1
-    # ax_row = map_index // nb_cols
-    # ax_col = map_index % nb_cols
-    # map_ax = axes[ax_row, ax_col]
-    # plot_map(scenario, map_ax)
 
     for row in range(nb_rows):
         for col in range(nb_cols):
@@ -183,6 +228,7 @@ def plot_load_by_node(scenario, df):
             if index >= nb_axes:
                 axes[row, col].remove()
 
+    axes[0, 0].legend(ncol=3)
     for ax in fig.get_axes():
         ax.label_outer()
     fig.tight_layout()
