@@ -1,2 +1,1 @@
-from .dynamic import migration
-from .static import availability, cost, deadline, power
+from . import availability, cost, deadline, migration, power

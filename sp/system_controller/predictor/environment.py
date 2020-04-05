@@ -64,8 +64,8 @@ class DefaultEnvironmentPredictor(EnvironmentPredictor):
 
                 # TODO: each application can specify its own predictor
                 if self.load_predictor[app.id][node.id] is None:
-                    # self.load_predictor[app.id][node.id] = AutoARIMAPredictor()
-                    self.load_predictor[app.id][node.id] = ARIMAPredictor()
+                    self.load_predictor[app.id][node.id] = AutoARIMAPredictor()
+                    # self.load_predictor[app.id][node.id] = ARIMAPredictor()
 
                 predictor = self.load_predictor[app.id][node.id]
                 predictor.update(value)

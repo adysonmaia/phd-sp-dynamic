@@ -7,6 +7,7 @@ from cycler import cycler
 from matplotlib.colors import to_hex
 import matplotlib.pyplot as plt
 import json
+import time
 import pandas as pd
 import geopandas as gpd
 import numpy as np
@@ -53,42 +54,6 @@ class EnvMonitor(Monitor):
 
         with open(self.users_filename, 'w') as file:
             json.dump(self.users_data, file, indent=2)
-
-
-def run_sim(scenario, load_filename, users_filename):
-    # Set simulation time based on San Francisco timezone
-    start_time = SF_TZ.localize(datetime(2008, 5, 24, 0, 0, 0)).timestamp()
-    stop_time = SF_TZ.localize(datetime(2008, 5, 24, 23, 59, 59)).timestamp()
-    step_time = 10 * 60  # seconds or 10 min
-    # step_time = 60 * 60  # seconds or 1H
-
-    # Set simulation parameters
-    sim = Simulator(scenario=scenario)
-    sim.set_time(stop=stop_time, start=start_time, step=step_time)
-    sim.monitor = EnvMonitor(load_filename=load_filename, users_filename=users_filename)
-
-    # Run simulation
-    sim.run()
-
-
-def data_analysis(scenario, load_filename, users_filename):
-    file_names = [load_filename, users_filename]
-    data_frames = []
-
-    for filename in file_names:
-        df = pd.read_json(filename, orient='records')
-        df['time'] = pd.to_datetime(df['time'], unit='s', utc=True)
-        df.set_index(['time'], inplace=True)
-        df.sort_index(inplace=True)
-        data_frames.append(df)
-
-    load_df, users_df = data_frames
-
-    # plot_load_by_app(scenario, load_df)
-    # plot_load_by_app_node(scenario, load_df)
-    plot_load_by_node(scenario, load_df)
-    # plot_users(scenario, load_df, users_df)
-    # plot_map(scenario)
 
 
 def plot_load_by_app(scenario, df):
@@ -346,6 +311,45 @@ def plot_users(scenario, load_df, users_df):
     plt.show()
 
 
+def run_sim(scenario, load_filename, users_filename):
+    # Set simulation time based on San Francisco timezone
+    start_time = SF_TZ.localize(datetime(2008, 5, 24, 0, 0, 0)).timestamp()
+    stop_time = SF_TZ.localize(datetime(2008, 5, 24, 23, 59, 59)).timestamp()
+    step_time = 10 * 60  # seconds or 10 min
+    # step_time = 60 * 60  # seconds or 1H
+
+    # Set simulation parameters
+    sim = Simulator(scenario=scenario)
+    sim.set_time(stop=stop_time, start=start_time, step=step_time)
+    sim.monitor = EnvMonitor(load_filename=load_filename, users_filename=users_filename)
+
+    # Run simulation
+    perf_count = time.perf_counter()
+    sim.run()
+    elapsed_time = time.perf_counter() - perf_count
+    print('sim exec time: {}s'.format(elapsed_time))
+
+
+def data_analysis(scenario, load_filename, users_filename):
+    file_names = [load_filename, users_filename]
+    data_frames = []
+
+    for filename in file_names:
+        df = pd.read_json(filename, orient='records')
+        df['time'] = pd.to_datetime(df['time'], unit='s', utc=True)
+        df.set_index(['time'], inplace=True)
+        df.sort_index(inplace=True)
+        data_frames.append(df)
+
+    load_df, users_df = data_frames
+
+    # plot_load_by_app(scenario, load_df)
+    # plot_load_by_app_node(scenario, load_df)
+    plot_load_by_node(scenario, load_df)
+    # plot_users(scenario, load_df, users_df)
+    # plot_map(scenario)
+
+
 def main():
     scenario_filename = 'input/san_francisco/scenario.json'
     load_filename = 'output/san_francisco/load_analysis/load.json'
@@ -355,8 +359,8 @@ def main():
         data = json.load(json_file)
         scenario = Scenario.from_json(data)
 
-    # run_sim(scenario, load_filename, users_filename)
-    data_analysis(scenario, load_filename, users_filename)
+    run_sim(scenario, load_filename, users_filename)
+    # data_analysis(scenario, load_filename, users_filename)
 
 
 if __name__ == '__main__':

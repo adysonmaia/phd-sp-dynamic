@@ -1,7 +1,7 @@
 from sp.core.heuristic.brkga import GAOperator, GAIndividual
 from sp.system_controller.model import OptSolution
 from sp.system_controller.utils import make_solution_feasible
-from sp.system_controller.utils import calc_response_time, calc_network_delay, calc_load_before_distribution
+from sp.system_controller.utils import calc_response_time, calc_load_before_distribution
 from . import indiv_gen
 import math
 import numpy
@@ -66,8 +66,9 @@ class SOGAOperator(GAOperator):
         indiv_list = [
             indiv_gen.create_individual_cloud(self),
             indiv_gen.create_individual_net_delay(self),
-            indiv_gen.create_individual_cluster_metoids(self),
+            # indiv_gen.create_individual_cluster_metoids(self),
             indiv_gen.create_individual_deadline(self),
+            indiv_gen.create_individual_load(self),
             indiv_gen.create_individual_current(self)
         ]
         merged_indiv = []
@@ -206,8 +207,5 @@ class SOGAOperator(GAOperator):
         return True
 
     def _calc_current_response_time(self, app, src_node, dst_node, solution):
-        if solution.app_placement[app.id][dst_node.id]:
-            return calc_response_time(app.id, src_node.id, dst_node.id, self.system, solution, self.environment_input)
-        else:
-            return calc_network_delay(app.id, src_node.id, dst_node.id, self.system, solution, self.environment_input)
+        return calc_response_time(app.id, src_node.id, dst_node.id, self.system, solution, self.environment_input)
 

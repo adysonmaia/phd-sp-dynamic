@@ -1,6 +1,6 @@
 from sp.system_controller.optimizer.optimizer import Optimizer, OptimizerError
 from sp.system_controller.optimizer.static.soga import SOGAOperator, indiv_gen
-from sp.system_controller.metric.static import deadline
+from sp.system_controller.metric import deadline
 
 
 class SOHeuristicOptimizer(Optimizer):

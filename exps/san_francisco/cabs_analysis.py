@@ -30,8 +30,6 @@ def plot_count(df):
     ax.set_ylabel(y_label)
     count_ds[start_time:stop_time].plot(ax=ax)
 
-    for ax in fig.get_axes():
-        ax.label_outer()
     fig.tight_layout()
     plt.show()
 
@@ -144,9 +142,10 @@ def main():
     for (key, value) in iteritems(bbox):
         df = df[df[key].between(*value)]
 
-    # plot_count(df)
+
+    plot_count(df)
     # plot_count_forecasting(df)
-    plot_on_map(df)
+    # plot_on_map(df)
 
 
 if __name__ == '__main__':

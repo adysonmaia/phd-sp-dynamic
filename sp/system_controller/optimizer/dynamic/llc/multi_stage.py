@@ -71,6 +71,7 @@ class MultiStage:
                          nb_generations=self.max_iterations,
                          dominance_func=self.dominance_func,
                          **_SGA_PARAMS)
+            ga.init_params()
             stages_ga.append(ga)
         first_stage_ga = stages_ga[0]
 
@@ -107,14 +108,11 @@ class MultiStage:
         stop = False
         while not stop:
             stages_control = []
-            for stage in range(self.nb_stages):
-                ga = stages_ga[stage]
-                if iteration == 0:
-                    ga.init_params()
-                    ga.first_population()
-                else:
-                    ga.select_individuals()
+            for ga in stages_ga:
+                if iteration > 0:
                     ga.next_population()
+                else:
+                    ga.first_population()
                 stages_control.append(ga.current_population)
 
             population = first_stage_ga.current_population
@@ -137,15 +135,14 @@ class MultiStage:
                     elif (not control_input.is_fitness_valid()) and plan.is_fitness_valid():
                         replace_fitness = True
                     if replace_fitness:
-                        # if stage == 0:
-                        #     print(iteration, control_input.fitness, plan.fitness)
                         control_input.fitness = plan.fitness
 
             default_fitness = [math.inf for _ in self.objective]
-            for population in stages_control:
-                for indiv in population:
+            for ga in stages_ga:
+                for indiv in ga.current_population:
                     if not indiv.is_fitness_valid():
                         indiv.fitness = default_fitness
+                ga.select_individuals()
 
             iteration += 1
             stop = iteration >= self.max_iterations or first_stage_ga.should_stop()

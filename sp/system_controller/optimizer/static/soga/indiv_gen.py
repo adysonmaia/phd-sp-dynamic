@@ -173,15 +173,10 @@ def create_individual_load(ga_operator):
     nb_nodes = len(system.nodes)
 
     indiv = create_empty_individual(ga_operator)
-    max_deadline = 1.0
     max_load = 0.0
 
     for (a_index, app) in enumerate(system.apps):
         indiv[a_index] = 1.0
-        deadline = app.deadline
-        if deadline > max_deadline:
-            max_deadline = deadline
-
         max_app_load = 0.0
         for (n_index, node) in enumerate(system.nodes):
             key = nb_apps + a_index * nb_nodes + n_index

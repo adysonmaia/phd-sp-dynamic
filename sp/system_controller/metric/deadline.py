@@ -1,4 +1,4 @@
-from sp.system_controller.estimator.processing import DefaultProcessingEstimator
+from sp.system_controller.utils import calc_processing_delay, calc_initialization_delay
 from sp.system_controller.utils import calc_load_before_distribution
 from statistics import mean
 
@@ -22,19 +22,14 @@ def deadline_satisfaction(system, control_input, environment_input):
 
 
 def _calc_delta_time(system, control_input, environment_input):
-    proc_estimator = DefaultProcessingEstimator()
-
     delta = []
     for app in system.apps:
         for dst_node in system.nodes:
             if not control_input.get_app_placement(app.id, dst_node.id):
                 continue
 
-            proc_result = proc_estimator(app.id, dst_node.id,
-                                         system=system,
-                                         control_input=control_input,
-                                         environment_input=environment_input)
-            proc_delay = proc_result.delay
+            proc_delay = calc_processing_delay(app.id, dst_node.id, system, control_input, environment_input)
+            init_delay = calc_initialization_delay(app.id, dst_node.id, system, control_input, environment_input)
 
             for src_node in system.nodes:
                 ld = control_input.get_load_distribution(app.id, src_node.id, dst_node.id)
@@ -42,7 +37,7 @@ def _calc_delta_time(system, control_input, environment_input):
                 load = load * ld
                 if load > 0.0:
                     net_delay = environment_input.get_net_delay(app.id, src_node.id, dst_node.id)
-                    delay = net_delay + proc_delay
+                    delay = net_delay + proc_delay + init_delay
                     delta.append(delay - app.deadline)
     return delta
 

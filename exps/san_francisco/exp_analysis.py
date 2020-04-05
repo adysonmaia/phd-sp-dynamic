@@ -1,60 +1,109 @@
 from sp.core.model import Scenario
 from sp.simulator import Simulator, Monitor
 from datetime import datetime
+from future.utils import iteritems
 from pytz import timezone
+from glob import glob
 import json
-import glob
 import time
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
+import scipy.stats as st
+
 
 UTC_TZ = timezone('UTC')
 SF_TZ_STR = 'US/Pacific'
 SF_TZ = timezone(SF_TZ_STR)
 
 
-def plot_placement(scenario):
-    path = 'output/san_francisco/exp/'
-    optimizers = [
-        {'key': 'CloudOptimizer', 'label': 'Cloud'},
-        {'key': 'SOHeuristicOptimizer', 'label': 'SOH'},
-        {'key': 'MOGAOptimizer', 'label': 'MOGA'},
-        {'key': 'SOGAOptimizer', 'label': 'SOGA'},
-        {'key': 'LLCOptimizer', 'label': 'LLC'}
-    ]
+def load_opts_df(optimizers, output_path, filename, nb_runs):
+    opts_df = {}
 
-    files = [os.path.join(path, opt['key'], 'placement.json') for opt in optimizers]
-    list_df = [pd.read_json(file, orient='records') for file in files]
-    for (index, df) in enumerate(list_df):
-        df['opt'] = optimizers[index]['label']
+    for opt in optimizers:
+        opt_df = []
+        for run in range(nb_runs):
+            file = os.path.join(output_path, str(run), opt['id'], filename)
+            if not os.path.isfile(file):
+                continue
+            df = pd.read_json(file, orient='records')
+            df['run'] = run
+            df['time'] = pd.to_datetime(df['time'], unit='s', utc=True)
+            opt_df.append(df)
+
+        opt_df = pd.concat(opt_df)
+        opt_df.set_index(['time'], inplace=True)
+        opt_df.sort_index(inplace=True)
+        opts_df[opt['id']] = opt_df
+
+    return opts_df
+
+
+def calc_stats(df, columns, group_by='time'):
+    if not isinstance(columns, list):
+        columns = [columns]
+
+    confidence_alpha = 0.95
+    stats_df = df[columns].groupby(group_by).agg(['mean', 'count', 'sem'])
+    data = {}
+    for col in columns:
+        values = []
+        errors = []
+        for i in stats_df.index:
+            m, c, s = stats_df.loc[i, col]
+            error = 0.0
+            if s > 0.0:
+                ci = st.t.interval(confidence_alpha, c - 1, loc=m, scale=s)
+                error = ci[1] - m
+            values.append(m)
+            errors.append(error)
+        data[col] = values
+        data[col + '_error'] = errors
+
+    return pd.DataFrame(data=data, index=stats_df.index)
+
+
+def plot_metrics(scenario, optimizers, output_path, nb_runs):
+    metrics = [
+        {'id': 'max_deadline_violation', 'label': 'deadline violation - s'},
+        {'id': 'overall_cost', 'label': 'allocation cost'},
+        # {'id': 'avg_unavailability', 'label': 'avg. unavailability'},
+        {'id': 'overall_migration_cost', 'label': 'migration cost'},
+        {'id': 'elapsed_time', 'label': 'exec time - s'}
+    ]
+    metrics_id = [m['id'] for m in metrics]
+    list_df = []
+    opts_df = load_opts_df(optimizers, output_path, 'metrics.json', nb_runs)
+    for opt in optimizers:
+        opt_df = opts_df[opt['id']]
+        opt_df = calc_stats(opt_df, metrics_id)
+        opt_df['opt'] = opt['label']
+        list_df.append(opt_df)
 
     df = pd.concat(list_df)
-    df['time'] = pd.to_datetime(df['time'], unit='s', utc=True)
-    df.set_index(['time'], inplace=True)
     df.sort_index(inplace=True)
     df = df.tz_convert(SF_TZ_STR)
 
-    nb_axes = len(scenario.apps)
-    nb_cols = 1
+    nb_axes = len(metrics)
+    nb_cols = 2
     nb_rows = nb_axes // nb_cols
     if nb_rows * nb_cols < nb_axes:
         nb_rows += 1
     fig, axes = plt.subplots(nrows=nb_rows, ncols=nb_cols, squeeze=False, figsize=(16, 9))
 
-    df['place'] = df['place'].astype(int)
-    for (app_index, app) in enumerate(scenario.apps):
-        ax_row = app_index // nb_cols
-        ax_col = app_index % nb_cols
+    for (metric_index, metric) in enumerate(metrics):
+        ax_row = metric_index // nb_cols
+        ax_col = metric_index % nb_cols
         ax = axes[ax_row, ax_col]
-        ax.set_title('App {} (id {})'.format(app.type, app.id))
+        ax.set_ylabel(metric['label'])
 
-        app_df = df[df['app'] == app.id]
-        place_df = app_df.groupby(['time', 'opt'])['place'].sum()
-        # y_min, y_max = place_df.min(), place_df.max()
-        # y_tics = range(0, y_max + 1) if y_max > 1 else [0, 1, 2]
-        # place_df.unstack().plot(ax=ax, legend=False, yticks=y_tics)
-        place_df.unstack().plot(ax=ax, legend=False)
+        value_col = metric['id']
+        error_col = metric['id'] + '_error'
+
+        metric_df = df.pivot(columns='opt', values=value_col)
+        error_df = df.pivot(columns='opt', values=error_col)
+
+        metric_df.plot(ax=ax, yerr=error_df, legend=False)
 
     axes[0, 0].legend()
     for row in range(nb_rows):
@@ -67,55 +116,49 @@ def plot_placement(scenario):
     plt.show()
 
 
-def plot_metrics(scenario):
-    path = 'output/san_francisco/exp/'
-    optimizers = [
-        {'key': 'CloudOptimizer', 'label': 'Cloud'},
-        # {'key': 'SOHeuristicOptimizer', 'label': 'SOH'},
-        {'key': 'MOGAOptimizer', 'label': 'MOGA'},
-        # {'key': 'SOGAOptimizer', 'label': 'SOGA'},
-        {'key': 'LLCOptimizer', 'label': 'LLC'},
-        # {'key': 'LLCOptimizer_2', 'label': 'LLC 2'},
-        # {'key': 'LLCOptimizer_3', 'label': 'LLC 3'},
-        # {'key': 'LLCOptimizer_4', 'label': 'LLC 4'}
-    ]
-    metrics = [
-        {'key': 'max_deadline_violation', 'label': 'deadline violation - s'},
-        {'key': 'overall_cost', 'label': 'allocation cost'},
-        {'key': 'avg_unavailability', 'label': 'avg. unavailability'},
-        {'key': 'overall_migration_cost', 'label': 'migration cost'},
-        {'key': 'elapsed_time', 'label': 'exec time - s'}
-    ]
-
-    files = [os.path.join(path, opt['key'], 'metrics.json') for opt in optimizers]
-    list_df = [pd.read_json(file, orient='records') for file in files]
+def plot_placement(scenario, optimizers, output_path, nb_runs):
+    opts_df = load_opts_df(optimizers, output_path, 'placement.json', nb_runs)
+    list_df = []
+    for opt in optimizers:
+        opt_df = opts_df[opt['id']]
+        opt_df['place'] = opt_df['place'].astype(int)
+        opt_df = opt_df.groupby(['time', 'app', 'run'])['place'].sum()
+        opt_df = opt_df.reset_index(level=['run'])
+        opt_df = calc_stats(opt_df, 'place', group_by=['time', 'app'])
+        opt_df = opt_df.reset_index(level=['app'])
+        opt_df['opt'] = opt['label']
+        list_df.append(opt_df)
 
     df = pd.concat(list_df)
-    df['time'] = pd.to_datetime(df['time'], unit='s', utc=True)
-    df.set_index(['time'], inplace=True)
     df.sort_index(inplace=True)
     df = df.tz_convert(SF_TZ_STR)
 
-    nb_cols = 3
-    nb_rows = len(metrics) // nb_cols
-    if nb_rows * nb_cols < len(metrics):
+    nb_axes = len(scenario.apps)
+    nb_cols = 1
+    nb_rows = nb_axes // nb_cols
+    if nb_rows * nb_cols < nb_axes:
         nb_rows += 1
     fig, axes = plt.subplots(nrows=nb_rows, ncols=nb_cols, squeeze=False, figsize=(16, 9))
 
-    grouped_df = df.groupby('opt')
-    for (metric_index, metric) in enumerate(metrics):
-        ax_row = metric_index // nb_cols
-        ax_col = metric_index % nb_cols
+    for (app_index, app) in enumerate(scenario.apps):
+        ax_row = app_index // nb_cols
+        ax_col = app_index % nb_cols
         ax = axes[ax_row, ax_col]
+        ax.set_ylabel('Number of instances')
+        ax.set_title('App {} (id {})'.format(app.type, app.id))
+        ax.set_yticks(range(len(scenario.network.nodes) + 1))
 
-        grouped_df[metric['key']].plot(ax=ax)
-        ax.set_ylabel(metric['label'])
+        app_df = df[df['app'] == app.id]
+        place_df = app_df.pivot(columns='opt', values='place')
+        error_df = app_df.pivot(columns='opt', values='place_error')
+
+        place_df.plot(ax=ax, yerr=error_df, legend=False)
 
     axes[0, 0].legend()
     for row in range(nb_rows):
         for col in range(nb_cols):
             index = row * nb_cols + col
-            if index >= len(metrics):
+            if index >= nb_axes:
                 axes[row, col].remove()
 
     fig.tight_layout()
@@ -129,8 +172,18 @@ def main():
         data = json.load(json_file)
         scenario = Scenario.from_json(data)
 
-    plot_metrics(scenario)
-    # plot_placement(scenario)
+    output_path = 'output/san_francisco/exp/'
+    optimizers = [
+        {'id': 'CloudOptimizer', 'label': 'Cloud'},
+        {'id': 'MOGAOptimizer', 'label': 'MOGA'},
+        {'id': 'MOGAOptimizer_mig', 'label': 'MOGA + migration'},
+    ]
+
+    run_dirs = glob(os.path.join(output_path, '[0-9]*/'))
+    nb_runs = len(run_dirs)
+
+    # plot_metrics(scenario, optimizers, output_path, nb_runs)
+    plot_placement(scenario, optimizers, output_path, nb_runs)
 
 
 if __name__ == '__main__':

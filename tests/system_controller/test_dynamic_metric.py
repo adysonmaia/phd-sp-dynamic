@@ -2,7 +2,7 @@ from sp.core.model import Scenario, System
 from sp.system_controller.estimator.system import DefaultSystemEstimator
 from sp.physical_system.environment_controller import EnvironmentController
 from sp.system_controller.optimizer.static import CloudOptimizer, SOHeuristicOptimizer
-from sp.system_controller.metric.dynamic import migration
+from sp.system_controller.metric import migration
 import json
 import math
 import unittest

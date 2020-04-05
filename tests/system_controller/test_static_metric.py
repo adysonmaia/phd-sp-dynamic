@@ -1,7 +1,7 @@
 from sp.core.model import Scenario, System, EnvironmentInput
 from sp.physical_system.environment_controller import EnvironmentController
 from sp.system_controller.optimizer.static.cloud import CloudOptimizer
-from sp.system_controller.metric.static import availability, cost, deadline, power
+from sp.system_controller.metric import availability, deadline, power, cost
 import json
 import math
 import unittest
