@@ -116,7 +116,7 @@ class MultiStage:
                 stages_control.append(ga.current_population)
 
             population = first_stage_ga.current_population
-            population = list(filter(lambda indiv: not indiv.is_fitness_valid(), population))
+            population = [indiv for indiv in population if not indiv.is_fitness_valid()]
             if len(population) > 0:
                 control_sequences = [[indiv] * self.nb_stages for indiv in population]
                 plans = plan_finder.create_plans(control_sequences)
