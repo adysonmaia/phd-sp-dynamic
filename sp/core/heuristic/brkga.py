@@ -375,7 +375,7 @@ class GAOperator(ABC):
                 offspring_1[g] = indiv_2[g]
                 offspring_2[g] = indiv_1[g]
 
-        return [offspring_1, offspring_2]
+        return [GAIndividual(offspring_1), GAIndividual(offspring_2)]
 
     def should_stop(self, population):
         """Verify whether the GA should stop or not

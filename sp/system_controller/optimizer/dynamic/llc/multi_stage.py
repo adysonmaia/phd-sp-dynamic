@@ -151,7 +151,6 @@ class MultiStage:
             ga.clear_params()
 
         solution = first_stage_ga.current_population[0]
-        # return _decode_control_input(self.system, solution, env_inputs[0])
         return first_stage_ga.operator.decode(solution)
 
 
