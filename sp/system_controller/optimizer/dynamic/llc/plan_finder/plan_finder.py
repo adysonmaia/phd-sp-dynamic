@@ -33,6 +33,14 @@ class PlanFinder(ABC):
         self.__pool_func = None
 
     def __del__(self):
+        """Finalizer
+        """
+        try:
+            self.clear_params()
+        except AttributeError:
+            pass
+
+    def clear_params(self):
         self._clear_pool()
 
     def _init_pool(self):

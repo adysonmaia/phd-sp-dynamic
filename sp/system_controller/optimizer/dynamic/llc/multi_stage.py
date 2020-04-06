@@ -147,11 +147,14 @@ class MultiStage:
             iteration += 1
             stop = iteration >= self.max_iterations or first_stage_ga.should_stop()
 
+        solution = first_stage_ga.current_population[0]
+        solution = first_stage_ga.operator.decode(solution)
+
         for ga in stages_ga:
             ga.clear_params()
+        plan_finder.clear_params()
 
-        solution = first_stage_ga.current_population[0]
-        return first_stage_ga.operator.decode(solution)
+        return solution
 
 
 def _decode_control_input(system, encoded_control, environment_input):
