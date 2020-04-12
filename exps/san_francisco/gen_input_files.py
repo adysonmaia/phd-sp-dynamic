@@ -11,6 +11,8 @@ import json
 import csv
 import copy
 import math
+import random
+import os
 
 
 DATA_PATH = 'input/san_francisco/'
@@ -27,19 +29,22 @@ def main():
     # Generate the network
     topology = 'zipcode'
     network_json = gen_network(topology, bbox)
-    network_filename = DATA_PATH + 'network_{}.json'.format(topology)
+    network_filename = os.path.join(DATA_PATH, 'network_{}.json'.format(topology))
     with open(network_filename, 'w') as outfile:
         json.dump(network_json, outfile, indent=2)
 
     # Generate applications
-    apps_json = gen_apps()
-    apps_filename = DATA_PATH + 'apps.json'
+    apps_json = gen_urllc_apps()
+    apps_filename = os.path.join(DATA_PATH, 'apps.json')
     with open(apps_filename, 'w') as outfile:
         json.dump(apps_json, outfile, indent=2)
 
-    # Generate users
-    users_json = gen_users(apps_json, bbox)
-    users_filename = DATA_PATH + 'users.json'
+    # Generate users' position
+    users_json = gen_users(bbox)
+    # Distribute users among the applications
+    app_type = apps_json['apps'][0]['type']
+    users_json = distribute_users(users_json, apps_json, {app_type: 1.0})
+    users_filename = os.path.join(DATA_PATH, 'users.json')
     with open(users_filename, 'w') as outfile:
         json.dump(users_json, outfile, indent=2)
 
@@ -49,7 +54,7 @@ def main():
         'apps': apps_filename,
         'users': users_filename
     }
-    scenario_filename = DATA_PATH + 'scenario.json'
+    scenario_filename = os.path.join(DATA_PATH, 'scenario.json')
     with open(scenario_filename, 'w') as outfile:
         json.dump(scenario_json, outfile, indent=2)
 
@@ -70,15 +75,16 @@ def gen_network(topology, bbox):
         'type': 'BS',
         'avail': 0.99,  # 99 %
         'capacity': {
-            # 'CPU': 2e+9,  # GIPS (Giga Instructions Per Second),
-            'CPU': 300,  # GIPS (Giga Instructions Per Second),
+            # 'CPU': 1e+9,  # GIPS (Giga Instructions Per Second),
+            # 'CPU': 5e+9,  # GIPS (Giga Instructions Per Second),
+            'CPU': 5e+9,  # GIPS (Giga Instructions Per Second),
             'RAM': 8e+9,  # 8 GB (Giga Byte)
             'DISK': 500e+9,  # 500 GB (Giga Byte)
         },
         'cost': {
-            'CPU': [1.0, 1.0],
-            'RAM': [1.0, 1.0],
-            'DISK': [1.0, 1.0]
+            'CPU': [1e-12, 1e-12],  # cost for IPS / second
+            'RAM': [1e-15, 1e-15],  # cost for Byte / second
+            'DISK': [1e-18, 1e-18]  # cost for Byte / second
         },
         'power': [50.0, 100.0]  # [Idle, Max] Power (Watt)
     }
@@ -87,14 +93,15 @@ def gen_network(topology, bbox):
         'avail': 0.999,  # 99.9 %
         'capacity': {
             # 'CPU': 1e+12,  # 1 TIPS (Tera Instructions Per Second)
-            'CPU': 400,  # 1 TIPS (Tera Instructions Per Second)
+            'CPU': 10e+9,  # 10 GIPS
+            # 'CPU': 0,  # GIPS
             'RAM': 16e+9,  # 16 GB (Giga Byte)
             'DISK': 1e+12  # 1 TB (Tera Byte)
         },
         'cost': {
-            'CPU': [0.5, 0.5],
-            'RAM': [0.5, 0.5],
-            'DISK': [0.5, 0.5]
+            'CPU': [0.5e-12, 0.5e-12],  # cost for IPS / second
+            'RAM': [0.5e-15, 0.5e-15],  # cost for Byte / second
+            'DISK': [0.5e-18, 0.5e-18]  # cost for Byte / second
         },
         'power': [100.0, 200.0],  # [Idle, Max] Power (Watt)
         # https://www.datacenters.com/6x7-networks-6x7-sm1
@@ -109,9 +116,9 @@ def gen_network(topology, bbox):
             'DISK': 'INF'
         },
         'cost': {
-            'CPU': [0.25, 0.25],
-            'RAM': [0.25, 0.25],
-            'DISK': [0.25, 0.25]
+            'CPU': [0.25e-12, 0.25e-12],  # cost for IPS / second
+            'RAM': [0.25e-15, 0.25e-15],  # cost for Byte / second
+            'DISK': [0.25e-18, 0.25e-18]  # cost for Byte / second
         },
         'power': [200.0, 400.0],  # [Idle, Max] Power (Watt)
         # https://www.datacenters.com/6x7-networks-equinix-palo-alto-sv8
@@ -271,58 +278,143 @@ def gen_zipcode_bs_network(bbox):
     return json_data
 
 
+def gen_random_apps(nb_apps):
+    """Generate applications
+    Args:
+        nb_apps (int): number of applications
+    Returns:
+        dict: applications in json format
+    """
+
+    json_data = {'apps': []}
+    for index in range(nb_apps):
+        deadline = random.choice([0.001, 0.005, 0.01, 0.05, 0.1])
+        # cpu_work = 1e+6 * random.choice([1, 10, 50, 100])
+        cpu_work = 1e+6 * random.choice([1, 10])
+        packet_size = random.choice([100, 1000, 10000])
+        request_rate = random.choice([1000, 100, 10, 1])
+        availability = random.choice([0.99, 0.999, 0.9999])
+        max_instance = 100
+
+        # Linear demand, f(x) = ax + b
+        demand_ram_a = 1e+6 * random.choice([1, 10, 100])
+        demand_ram_b = 1e+6 * random.choice([1, 10, 100])
+        demand_disk_a = 1e+6 * random.choice([1, 10, 100, 1000])
+        demand_disk_b = 1e+6 * random.choice([100, 500, 1000])
+
+        # Create linear estimator that satisfies the queue and deadline constraints
+        # f(x) = ax + b
+        demand_cpu_a = cpu_work + 1.0
+        demand_cpu_b = 2.0 * cpu_work / float(deadline)
+
+        app = {
+            'id': index,
+            'type': '',
+            'deadline': deadline,
+            'work': cpu_work,
+            'data': packet_size,
+            'rate': request_rate,
+            'avail': availability,
+            'max_inst': max_instance,
+            'demand': {
+                'RAM': [demand_ram_a, demand_ram_b],
+                'DISK': [demand_disk_a, demand_disk_b],
+                'CPU': [demand_cpu_a, demand_cpu_b]
+            }
+        }
+        json_data['apps'].append(app)
+    return json_data
+
+
+def gen_urllc_apps():
+    """Create URLLC applications
+    Returns:
+        dict: applications in json format
+    """
+    json_data = {'apps': []}
+
+    # for deadline in [0.001, 0.005, 0.01, 0.05, 0.1]:
+    for deadline in [0.001, 0.005, 0.01, 0.015, 0.02, 0.03, 0.05, 0.1]:
+        app = {
+            'id': len(json_data['apps']),
+            'type': 'URLLC',
+            'deadline': deadline,
+            'work': 1e+6,
+            'data': 100,
+            'rate': 100,
+            'avail': 0.9999,
+            'max_inst': 100,
+            'demand': {
+                'RAM': [100e+3, 1e+6],
+                'DISK': [100e+3, 500e+6],
+            }
+        }
+
+        # Create linear estimator that satisfies the queue and deadline constraints
+        # f(x) = ax + b
+        cpu_work = app['work']
+        demand_cpu_a = cpu_work + 1.0
+        demand_cpu_b = 2.0 * cpu_work / float(deadline)
+        app['demand']['CPU'] = [demand_cpu_a, demand_cpu_b]
+        json_data['apps'].append(app)
+
+    return json_data
+
+
 def gen_apps():
     """Generate applications
     Returns:
         dict: applications in json format
     """
+
     embb = {
         'type': 'EMBB',
-        # 'deadline': 0.01,  # seconds or 10 ms
-        # 'deadline': 0.05,  # seconds or 50 ms
-        'deadline': 0.1,  # seconds or 100 ms
+        'deadline': 0.05,  # seconds
         'work': 10e+6,  # MI (Millions of Instructions)
-        'data': 50e+6,  # bits - 50 Mb
-        'rate': 1.0,  # requests per second
+        # 'data': 50e+6,  # bits - 50 Mb
+        'data': 10e+3,  # bits
+        'rate': 100.0,  # requests per second
         'avail': 0.999,  # 99.9 %
         'max_inst': 100,
         'demand': {
             'RAM': [50e+6, 50e+6],  # Byte - 50 MB
-            'DISK': [50e+6, 50e+6]  # Byte - 50 MB
+            'DISK': [50e+6, 1e+9]  # Byte - 50 MB, 1GB
         }
     }
     mmtc = {
         'type': 'MMTC',
-        'deadline': 1.0,  # second
+        # 'deadline': 1.0,  # second
+        'deadline': 0.1,  # second
         'work': 1e+6,  # MI (Millions of Instructions)
-        'data': 100e+3,  # bits - 100 Kb
-        'rate': 1.0,  # requests per second
+        'data': 100,  # bits
+        'rate': 100,  # requests per second
         'avail': 0.99,  # 99.0 %
         'max_inst': 100,
         'demand': {
             'RAM': [100e+3, 100e+3],  # Byte - 100 KB
-            'DISK': [100e+3, 100e+3]  # Byte - 100 KB
+            'DISK': [100e+3, 1e+9]  # Byte - 100 KB, 1GB
         }
     }
     urllc = {
         'type': 'URLLC',
         # 'deadline': 0.001,  # seconds or 1 ms
-        'deadline': 0.01,  # seconds or 10 ms
-        # 'work': 1e+6,  # MI (Millions of Instructions)
-        'work': 1,  # Instructions
-        'data': 100e+3,  # bits - 100 Kb
-        'rate': 1.0,  # requests per second
+        # 'deadline': 0.01,  # seconds or 10 ms
+        'deadline': 0.005,  # seconds
+        'work': 1e+6,  # MI (Millions of Instructions)
+        # 'data': 100e+3,  # bits - 100 Kb
+        'data': 100,  # bits
+        'rate': 100,  # requests per second
         'avail': 0.9999,  # 99.99 %
         'max_inst': 100,
         'demand': {
             'RAM': [100e+3, 100e+3],  # Byte - 100 KB
-            'DISK': [100e+3, 100e+3]  # Byte - 100 KB
+            # 'DISK': [100e+3, 1e+9]  # Byte - 100 KB, 1GB
+            'DISK': [100e+3, 500e+6]
         }
     }
 
     # Generate apps' properties
-    # apps = [embb, mmtc, urllc]
-    apps = [urllc]
+    apps = [embb, mmtc, urllc]
     json_data = {'apps': []}
     for (app_id, app) in enumerate(apps):
         app = copy.copy(app)
@@ -338,10 +430,9 @@ def gen_apps():
     return json_data
 
 
-def gen_users(apps_data, bbox):
+def gen_users(bbox):
     """Generate users
     Args:
-        apps_data (dict): applications data in json format
         bbox (BoundBox): bound box of the users' positions
     Returns:
         dict: users in json format
@@ -351,10 +442,7 @@ def gen_users(apps_data, bbox):
     pos_pathname = DATA_PATH + 'users_position/'
     sf_tz = timezone('America/Los_Angeles')  # San Francisco timezone
     start_time = sf_tz.localize(datetime(2008, 5, 24, 0, 0, 0)).timestamp()
-    stop_time = sf_tz.localize(datetime(2008, 5, 24, 23, 59, 59)).timestamp()
-    # apps_distribution = {'EMBB': 0.3, 'MMTC': 0.65, 'URLLC': 0.05}
-    apps_distribution = {'EMBB': 0.3, 'MMTC': 0.5, 'URLLC': 0.2}
-    # apps_distribution = {'EMBB': 0.2, 'MMTC': 0.7, 'URLLC': 0.1}
+    stop_time = sf_tz.localize(datetime(2008, 5, 25, 23, 59, 59)).timestamp()
 
     # Each taxi has its own GPS trace file and it will be a user if the trace is not empty
     json_data = {'users': []}
@@ -388,8 +476,21 @@ def gen_users(apps_data, bbox):
             user = {'id': user_id, 'pos': pos_filename}
             json_data['users'].append(user)
 
-    # Distribute users among the generated applications
-    nb_users = len(json_data['users'])
+    return json_data
+
+
+def distribute_users(users_data, apps_data, apps_distribution=None):
+    """Distribute users among the generated applications
+    Args:
+        users_data (dict): users data in json format
+        apps_data (dict): applications data in json format
+        apps_distribution (dict): percentage the users for each type of application
+
+    Returns:
+
+    """
+    users_data = copy.deepcopy(users_data)
+    nb_users = len(users_data['users'])
     # Calculate number of users for each type of application
     app_types_nb_users = {app_type: int(math.floor(nb_users * dist))
                           for (app_type, dist) in iteritems(apps_distribution)}
@@ -406,7 +507,7 @@ def gen_users(apps_data, bbox):
         app_nb_users = int(math.floor(app_types_nb_users[app_type] / nb_apps_per_type[app_type]))
         for index in range(app_nb_users):
             user_id = last_user_id + index
-            json_data['users'][user_id]['app_id'] = app_id
+            users_data['users'][user_id]['app_id'] = app_id
         last_user_id += app_nb_users
 
     # Remaining users are mapped to a single application, preferably a MMTC application
@@ -419,9 +520,9 @@ def gen_users(apps_data, bbox):
         if app_id is None:
             app_id = apps_data['apps'][0]['id']
         for user_id in range(last_user_id, nb_users):
-            json_data['users'][user_id]['app_id'] = app_id
+            users_data['users'][user_id]['app_id'] = app_id
 
-    return json_data
+    return users_data
 
 
 if __name__ == '__main__':

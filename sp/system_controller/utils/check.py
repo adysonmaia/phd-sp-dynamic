@@ -44,6 +44,7 @@ def is_solution_valid(system, solution, environment_input):
                     logging.debug("Invalid resource allocation for %s, node %d doesn't host app %d",
                                   resource.name, dst_node.id, app.id)
                     return False
+                allocated += alloc_res
 
                 dst_load = 0.0
                 for src_node in system.nodes:
@@ -57,19 +58,17 @@ def is_solution_valid(system, solution, environment_input):
                                   dst_node.id, app.id, received_load, dst_load)
                     return False
 
-                if dst_load > 0.0:
-                    if not solution.app_placement[app.id][dst_node.id]:
-                        logging.debug("Invalid received load, node %d doesn't host app %d: %f",
-                                      dst_node.id, app.id, dst_load)
-                        return False
+                if dst_load > 0.0 and not solution.app_placement[app.id][dst_node.id]:
+                    logging.debug("Invalid received load, node %d doesn't host app %d: %f",
+                                  dst_node.id, app.id, dst_load)
+                    return False
 
-                    app_demand = app.demand[resource.name](dst_load)
-                    if abs(app_demand - alloc_res) > ERROR_TOLERANCE:
-                        logging.debug("Invalid allocated resource for (app %d, node %d, resource %s): %f (valid %f)",
-                                      app.id, dst_node.id, resource.name, alloc_res, app_demand)
-                        return False
-
-                    allocated += app_demand
+                app_demand = app.demand[resource.name](dst_load)
+                if abs(app_demand - alloc_res) > ERROR_TOLERANCE and solution.app_placement[app.id][dst_node.id]:
+                    logging.debug("Invalid allocated resource for (app %d, node %d, resource %s): %f (valid %f)",
+                                  app.id, dst_node.id, resource.name, alloc_res, app_demand)
+                    print(dst_load, received_load)
+                    return False
 
             capacity = dst_node.capacity[resource.name]
             if allocated - capacity > ERROR_TOLERANCE:

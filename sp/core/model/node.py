@@ -107,7 +107,7 @@ def from_json(json_data):
     It loads the power consumption as a linear function using :py:class:`sp.core.estimator.power.LinearPowerEstimator`
 
     The node's position can be either on point in a cartesian plan
-    :py:class:`sp.core.geometry.point.cartesian.CartesianPoint`
+        :py:class:`sp.core.geometry.point.cartesian.CartesianPoint`
 
     .. code-block:: python
 
@@ -125,7 +125,7 @@ def from_json(json_data):
         json_data = {'position': {'lat': latitude, 'lon': longitude}}
 
     The resource costs are loaded as a polynomial, linear or constant function
-    using the :py:mod:`sp.core.estimator.polynomial` module
+        using the :py:mod:`sp.core.estimator.polynomial` module
 
     E.g.:
 

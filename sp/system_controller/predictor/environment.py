@@ -26,6 +26,7 @@ class DefaultEnvironmentPredictor(EnvironmentPredictor):
     def __init__(self):
         EnvironmentPredictor.__init__(self)
         self.system = None
+        self.environment_input = None
         self.load_predictor = None
         self.net_predictor = None
 
@@ -33,11 +34,13 @@ class DefaultEnvironmentPredictor(EnvironmentPredictor):
 
     def init_params(self):
         self.system = None
+        self.environment_input = None
         self.load_predictor = defaultdict(lambda: defaultdict(lambda: None))
         self.net_predictor = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: None)))
 
     def clear(self):
         self.system = None
+        self.environment_input = None
         self._clear_load_predictor()
         self._clear_net_predictor()
 
@@ -54,6 +57,7 @@ class DefaultEnvironmentPredictor(EnvironmentPredictor):
 
     def update(self, system, environment_input):
         self.system = system
+        self.environment_input = environment_input
         self._update_load_predictor(system, environment_input)
         self._update_net_predictor(system, environment_input)
 
@@ -108,5 +112,8 @@ class DefaultEnvironmentPredictor(EnvironmentPredictor):
                     values = list(map(lambda v: max(0.0, v), values))
                     for index in range(steps):
                         env_inputs[index].net_delay[app.id][src_node.id][dst_node.id] = values[index]
+
+        for index in range(steps):
+            env_inputs[index].net_path = self.environment_input.net_path
 
         return env_inputs

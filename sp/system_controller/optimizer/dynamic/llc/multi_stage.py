@@ -1,13 +1,13 @@
-from .stage_ga import StageGA, StageGAOperator, preferred_dominates
+from .stage_ga import StageGA, StageGAOperator, preferred_dominates, indiv_gen
 from .plan_finder import GAPlanFinder, BeamPlanFinder, RandomPlanFinder
-import math
+import copy
 
 _SGA_PARAMS = {
+    "nb_generations": 100,
     "population_size": 100,
     "elite_proportion": 0.1,
     "mutant_proportion": 0.1,
     "elite_probability": 0.6,
-    "pool_size": 0,
     "stop_threshold": 0.10,
 }
 _GAPF_PARAMS = {
@@ -33,14 +33,14 @@ class MultiStage:
                  environment_input,
                  objective,
                  prediction_window=1,
-                 max_iterations=100,
+                 use_heuristic=True,
                  system_estimator=None,
                  environment_predictor=None,
                  objective_aggregator=None,
                  dominance_func=preferred_dominates,
                  pool_size=0):
 
-        self.max_iterations = max_iterations
+        self.use_heuristic = use_heuristic
         self.prediction_window = prediction_window
         self.nb_stages = 1 + prediction_window
         self.system = system
@@ -52,106 +52,105 @@ class MultiStage:
         self.dominance_func = dominance_func
         self.pool_size = pool_size
 
-    def solve(self):
-        env_inputs = None
-        if self.environment_predictor is not None and self.prediction_window > 0:
-            env_inputs = [self.environment_input]
-            env_inputs += self.environment_predictor.predict(self.prediction_window)
-        else:
-            env_inputs = [self.environment_input] * self.nb_stages
+        self._env_inputs = None
 
-        stages_ga = []
+    def __del__(self):
+        """Finalizer
+        """
+        try:
+            self.clear_params()
+        except AttributeError:
+            pass
+
+    def clear_params(self):
+        self._env_inputs = None
+
+    def init_params(self):
+        self._env_inputs = []
+        if self.environment_predictor is not None and self.prediction_window > 0:
+            self._env_inputs = [self.environment_input]
+            self._env_inputs += self.environment_predictor.predict(self.prediction_window)
+        else:
+            self._env_inputs = [self.environment_input] * self.nb_stages
+
+    def solve(self):
+        self.init_params()
+        stages_population = self._solve_part_1()
+        solution = self._solve_part_2(stages_population)
+        self.clear_params()
+        return solution
+
+    def _solve_part_1(self):
+        stages_population = []
         for stage in range(self.nb_stages):
-            env_input = env_inputs[stage]
+            env_input = self._env_inputs[stage]
             ga_operator = StageGAOperator(system=self.system,
                                           environment_input=env_input,
                                           objective=self.objective,
                                           use_heuristic=True)
             ga = StageGA(operator=ga_operator,
-                         nb_generations=self.max_iterations,
                          dominance_func=self.dominance_func,
+                         pool_size=self.pool_size,
                          **_SGA_PARAMS)
-            ga.init_params()
-            stages_ga.append(ga)
-        first_stage_ga = stages_ga[0]
+            population = ga.solve()
+            stages_population.append(population)
+        return stages_population
 
-        # plan_finder = GAPlanFinder(system=self.system,
-        #                            environment_inputs=env_inputs,
-        #                            objective=self.objective,
-        #                            objective_aggregator=self.objective_aggregator,
-        #                            dominance_func=self.dominance_func,
-        #                            control_decoder=_decode_control_input,
-        #                            system_estimator=self.system_estimator,
-        #                            pool_size=self.pool_size,
-        #                            **_GAPF_PARAMS)
+    def _solve_part_2(self, stages_population):
+        first_stage = 0
+        first_ga_operator = StageGAOperator(system=self.system,
+                                            environment_input=self._env_inputs[first_stage],
+                                            objective=self.objective,
+                                            use_heuristic=True)
+        first_stage_ga = StageGA(operator=first_ga_operator,
+                                 dominance_func=self.dominance_func,
+                                 pool_size=0,
+                                 **_SGA_PARAMS)
+        first_stage_ga.init_params()
+        first_stage_ga.current_population = stages_population[first_stage]
 
-        # plan_finder = BeamPlanFinder(system=self.system,
-        #                              environment_inputs=env_inputs,
-        #                              objective=self.objective,
-        #                              objective_aggregator=self.objective_aggregator,
-        #                              dominance_func=self.dominance_func,
-        #                              control_decoder=_decode_control_input,
-        #                              system_estimator=self.system_estimator,
-        #                              pool_size=self.pool_size,
-        #                              **_BPF_PARAMS)
+        plan_finder = GAPlanFinder(system=self.system,
+                                   environment_inputs=self._env_inputs,
+                                   objective=self.objective,
+                                   objective_aggregator=self.objective_aggregator,
+                                   dominance_func=self.dominance_func,
+                                   control_decoder=_decode_control_input,
+                                   system_estimator=self.system_estimator,
+                                   pool_size=self.pool_size,
+                                   **_GAPF_PARAMS)
 
-        plan_finder = RandomPlanFinder(system=self.system,
-                                       environment_inputs=env_inputs,
-                                       objective=self.objective,
-                                       objective_aggregator=self.objective_aggregator,
-                                       control_decoder=_decode_control_input,
-                                       system_estimator=self.system_estimator,
-                                       pool_size=self.pool_size,
-                                       **_RPF_PARAMS)
+        if self.nb_stages > 1:
+            all_control_inputs = []
+            for population in stages_population:
+                all_control_inputs += population
+            stages_population = [all_control_inputs] * self.nb_stages
+            plans = plan_finder.solve(stages_population)
 
-        iteration = 0
-        stop = False
-        while not stop:
-            stages_control = []
-            for ga in stages_ga:
-                if iteration > 0:
-                    ga.next_population()
-                else:
-                    ga.first_population()
-                stages_control.append(ga.current_population)
+            if self.use_heuristic:
+                control_sequences = []
+                for indiv in all_control_inputs:
+                    indiv = copy.copy(indiv)
+                    sequence = [indiv] * self.nb_stages
+                    control_sequences.append(sequence)
+                for plan in plans:
+                    indiv = indiv_gen.merge_population(first_ga_operator, plan.control_sequence)
+                    sequence = [indiv] * self.nb_stages
+                    control_sequences.append(sequence)
+                plans += plan_finder.create_plans(control_sequences)
 
-            population = first_stage_ga.current_population
-            population = [indiv for indiv in population if not indiv.is_fitness_valid()]
-            if len(population) > 0:
-                control_sequences = [[indiv] * self.nb_stages for indiv in population]
-                plans = plan_finder.create_plans(control_sequences)
-                for (indiv, plan) in zip(population, plans):
-                    indiv.fitness = plan.fitness
-
-            plans = []
-            if self.nb_stages > 1:
-                plans = plan_finder.solve(stages_control)
+            population = []
             for plan in plans:
-                for stage in range(self.nb_stages):
-                    control_input = plan[stage]
-                    replace_fitness = False
-                    if control_input.is_fitness_valid() and plan.is_fitness_valid():
-                        replace_fitness = self.dominance_func(plan.fitness, control_input.fitness)
-                    elif (not control_input.is_fitness_valid()) and plan.is_fitness_valid():
-                        replace_fitness = True
-                    if replace_fitness:
-                        control_input.fitness = plan.fitness
-
-            default_fitness = [math.inf for _ in self.objective]
-            for ga in stages_ga:
-                for indiv in ga.current_population:
-                    if not indiv.is_fitness_valid():
-                        indiv.fitness = default_fitness
-                ga.select_individuals()
-
-            iteration += 1
-            stop = iteration >= self.max_iterations or first_stage_ga.should_stop()
+                control_input = plan[first_stage]
+                control_input.fitness = plan.fitness
+                population.append(control_input)
+            first_stage_ga.current_population = population
+            if len(population) > 1:
+                first_stage_ga.select_individuals()
 
         solution = first_stage_ga.current_population[0]
-        solution = first_stage_ga.operator.decode(solution)
+        solution = first_ga_operator.decode(solution)
 
-        for ga in stages_ga:
-            ga.clear_params()
+        first_stage_ga.clear_params()
         plan_finder.clear_params()
 
         return solution

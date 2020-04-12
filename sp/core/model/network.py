@@ -162,8 +162,8 @@ def from_json(json_data):
     """Create a Network object from a json data
     The nodes and links data can be placed directly inside the json data or in external json files
 
-    See :py:func:`sp.core.model.node.from_json` and :py:func:`sp.core.model.link.from_json`
-    to have more detail about nodes and links specifications
+    See :py:func:`sp.core.model.node.from_json` and :py:func:`sp.core.model.link.from_json` to have more detail
+        about nodes and links specifications
 
     E.g.:
 

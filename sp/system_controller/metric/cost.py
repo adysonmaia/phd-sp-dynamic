@@ -26,5 +26,7 @@ def _calc_resource_allocation_cost(system, control_input, environment_input):
             for resource in system.resources:
                 alloc_resource = control_input.allocated_resource[app.id][node.id][resource.name]
                 cost += node.cost[resource.name](alloc_resource)
+            if system.sampling_time > 0.0:
+                cost *= system.sampling_time
             costs.append(cost)
     return costs

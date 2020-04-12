@@ -1,6 +1,6 @@
 class Link:
     """"Link Model Class
-    it is used to store properties of a network link.
+    It is used to store properties of a network link.
     A link connects two node and its represents an undirected edge in the graph
 
     Attributes:

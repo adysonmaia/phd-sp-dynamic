@@ -1,4 +1,5 @@
 from sp.system_controller.utils.calc import calc_load_before_distribution
+from sp.system_controller.utils.alloc import alloc_demanded_resources
 
 
 ROUND_PRECISION = 5
@@ -9,6 +10,7 @@ def make_solution_feasible(system, solution, environment_input):
     solution = make_min_instances_constraint_feasible(system, solution, environment_input)
     solution = make_max_instances_constraint_feasible(system, solution, environment_input)
     solution = make_load_distribution_constraint_feasible(system, solution, environment_input)
+    # solution = alloc_demanded_resources(system, solution, environment_input)
     return solution
 
 

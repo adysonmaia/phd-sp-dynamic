@@ -9,8 +9,8 @@ class LLCOptimizer(Optimizer):
         Optimizer.__init__(self)
         self.objective = None
         self.objective_aggregator = None
+        self.use_heuristic = True
         self.prediction_window = 1
-        self.max_iterations = 100
         self.environment_predictor = None
         self.system_estimator = None
         self.dominance_func = preferred_dominates
@@ -40,8 +40,8 @@ class LLCOptimizer(Optimizer):
         ms_heuristic = MultiStage(system=system,
                                   environment_input=environment_input,
                                   objective=self.objective,
+                                  use_heuristic=self.use_heuristic,
                                   prediction_window=self.prediction_window,
-                                  max_iterations=self.max_iterations,
                                   environment_predictor=self.environment_predictor,
                                   objective_aggregator=self.objective_aggregator,
                                   dominance_func=self.dominance_func,

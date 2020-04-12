@@ -136,17 +136,13 @@ class SOGAOperator(GAOperator):
             nodes_index = list(range(nb_nodes))
             nodes_index.sort(key=lambda v: priority[v], reverse=True)
             percentage = individual[a_index]
-            nb_instances = int(math.ceil(percentage * app.max_instances))
+            max_nb_instances = min(nb_nodes, app.max_instances)
+            nb_instances = int(math.ceil(percentage * max_nb_instances))
             max_nb_nodes = min(nb_nodes, nb_instances)
             nodes_index = nodes_index[:max_nb_nodes]
 
             nodes = list(map(lambda n_index: self.system.nodes[n_index], nodes_index))
             selected_nodes[app.id] = nodes
-
-            for dst_node in nodes:
-                solution.app_placement[app.id][dst_node.id] = True
-                solution.received_load[app.id][dst_node.id] = 0.0
-                self._update_alloc_resources(app, dst_node, solution)
 
         start = nb_apps * (nb_nodes + 1)
         end = start + self.nb_genes
@@ -160,41 +156,58 @@ class SOGAOperator(GAOperator):
             src_node = self.system.get_node(src_node_id)
 
             nodes = list(selected_nodes[app.id])
-            nodes.sort(key=lambda n: self._calc_current_response_time(app, src_node, n, solution))
+            nodes.sort(key=lambda n: calc_response_time(app.id, src_node.id, n.id,
+                                                        self.system, solution, self.environment_input))
             nodes.append(cloud_node)
 
             total_load = calc_load_before_distribution(app.id, src_node.id, self.system, self.environment_input)
             remaining_load = total_load
             chunk = total_load * self.load_chunk_percent
 
-            while remaining_load > 0.0:
+            while True:
                 for dst_node in nodes:
-                    prev_received_load = solution.received_load[app.id][dst_node.id]
-                    prev_alloc_res = copy.copy(solution.allocated_resource[app.id][dst_node.id])
-
-                    solution.received_load[app.id][dst_node.id] += chunk
-                    self._update_alloc_resources(app, dst_node, solution)
-                    if self._check_capacity_constraint(dst_node, solution):
+                    if self._alloc_resources(app, dst_node, solution, chunk, increment=True):
                         solution.app_placement[app.id][dst_node.id] = True
 
-                        chunk_ld = chunk / total_load
+                        chunk_ld = chunk / total_load if total_load > 0.0 else 1.0
                         solution.load_distribution[app.id][src_node.id][dst_node.id] += chunk_ld
 
                         remaining_load -= chunk
                         chunk = min(remaining_load, chunk)
                         break
-                    else:
-                        solution.received_load[app.id][dst_node.id] = prev_received_load
-                        solution.allocated_resource[app.id][dst_node.id] = prev_alloc_res
+
+                if remaining_load <= 0.0:
+                    break
+
+        for app in self.system.apps:
+            for dst_node in selected_nodes[app.id]:
+                if solution.app_placement[app.id][dst_node.id]:
+                    continue
+
+                if self._alloc_resources(app, dst_node, solution, load=0.0, increment=False):
+                    solution.app_placement[app.id][dst_node.id] = True
 
         return make_solution_feasible(self.system, solution, self.environment_input)
 
-    def _update_alloc_resources(self, app, node, solution):
+    def _alloc_resources(self, app, node, solution, load, increment=True):
+        prev_load = solution.received_load[app.id][node.id]
+        prev_alloc_res = copy.copy(solution.allocated_resource[app.id][node.id])
+
+        if increment:
+            solution.received_load[app.id][node.id] += load
+        else:
+            solution.received_load[app.id][node.id] = load
+        load = solution.received_load[app.id][node.id]
         for resource in self.system.resources:
-            load = solution.received_load[app.id][node.id]
             demand = app.demand[resource.name](load)
             solution.allocated_resource[app.id][node.id][resource.name] = demand
-        return solution
+
+        if not self._check_capacity_constraint(node, solution):
+            solution.received_load[app.id][node.id] = prev_load
+            solution.allocated_resource[app.id][node.id] = prev_alloc_res
+            return False
+        else:
+            return True
 
     def _check_capacity_constraint(self, node, solution):
         alloc_res = solution.allocated_resource
@@ -202,10 +215,6 @@ class SOGAOperator(GAOperator):
             capacity = node.capacity[resource.name]
             demand = sum(map(lambda a: alloc_res[a.id][node.id][resource.name], self.system.apps))
             if demand > capacity:
-                # print('capacity exceeded node {}, {}: {} > {}'.format(node.id, resource.name, demand, capacity))
                 return False
         return True
-
-    def _calc_current_response_time(self, app, src_node, dst_node, solution):
-        return calc_response_time(app.id, src_node.id, dst_node.id, self.system, solution, self.environment_input)
 

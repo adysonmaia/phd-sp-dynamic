@@ -1,6 +1,6 @@
 class Resource:
     """Resource Model Class
-    it it used to store properties of a type of resource that can allocated in a Node
+    It it used to store properties of a type of resource that can allocated in a Node
 
     Attributes:
         name (str): Unique identification of the resource. E.g., 'CPU', 'RAM', 'STORE'
@@ -9,6 +9,8 @@ class Resource:
         precision (int): precision of variable that stores a specific amount of the resource
     """
     CPU = "CPU"
+    RAM = "RAM"
+    DISK = "DISK"
 
     def __init__(self):
         """Initialization
@@ -29,9 +31,8 @@ class Resource:
     def __eq__(self, other):
         """Check if a resource is equal to other
         Two resource are equals if they have the same identification
-
         Args:
-             other (Resource): other resource
+            other (Resource): other resource
         Returns:
             bool: two resource are equals
         """

@@ -26,7 +26,7 @@ def _calc_cpu_power_consumption(system, control_input, environment_input):
             if control_input.app_placement[app.id][node.id]:
                 cpu_used += control_input.allocated_resource[app.id][node.id][Resource.CPU]
 
-        utilization = cpu_used / float(cpu_total)
+        utilization = cpu_used / float(cpu_total) if cpu_total > 0.0 else 0.0
         pwr_cons = node.power_consumption(utilization)
         consumptions.append(pwr_cons)
     return consumptions

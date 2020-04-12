@@ -1,5 +1,6 @@
 from sp.core.heuristic.nsgaii import NSGAII
 from sp.system_controller.optimizer.static.moga import MOGAOperator, preferred_dominates
+from sp.system_controller.optimizer.static.soga import indiv_gen
 
 
 class StageGA(NSGAII):

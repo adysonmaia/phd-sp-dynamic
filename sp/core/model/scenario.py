@@ -166,7 +166,7 @@ class Scenario:
 def from_json(json_data):
     """Create a Scenario object from a json data
     Each scenario properties (resources, network, apps, and users) can be directly passed inside the json data
-    or as external json files
+        or as external json files
     If the resources is not informed, it is inferred through the properties of the network nodes
 
     See the following functions to more details about scenario's properties specifications

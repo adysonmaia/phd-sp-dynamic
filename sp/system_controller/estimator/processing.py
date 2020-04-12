@@ -1,5 +1,5 @@
 from sp.core.estimator import Estimator
-from sp.system_controller.utils.calc import calc_load_before_distribution
+from sp.system_controller.utils.calc import calc_received_load
 from abc import ABC, abstractmethod
 import math
 
@@ -32,12 +32,7 @@ class DefaultProcessingEstimator(ProcessingEstimator):
         app = system.get_app(app_id)
         dst_node = system.get_node(node_id)
 
-        arrival_rate = 0.0
-        for src_node in system.nodes:
-            ld = control_input.get_load_distribution(app.id, src_node.id, dst_node.id)
-            load = calc_load_before_distribution(app.id, src_node.id, system, environment_input)
-            arrival_rate += load * ld
-
+        arrival_rate = calc_received_load(app.id, dst_node.id, system, control_input, environment_input)
         alloc_cpu = control_input.get_allocated_cpu(app.id, dst_node.id)
         service_rate = alloc_cpu / float(app.work_size)
 

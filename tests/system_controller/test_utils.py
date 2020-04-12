@@ -70,6 +70,7 @@ class OptUtilTestCase(unittest.TestCase):
 
                     rt = utils.calc_response_time(app.id, src_node.id, dst_node.id,
                                                   self.system, solution, self.environment_input)
+                    # TODO: update this calculation
                     self.assertEqual(rt, proc_delay + net_delay)
 
     def test_alloc_resource(self):

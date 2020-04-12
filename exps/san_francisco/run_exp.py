@@ -4,7 +4,6 @@ from sp.system_controller.optimizer.dynamic import LLCOptimizer
 from sp.system_controller.optimizer.static import SOGAOptimizer, MOGAOptimizer, CloudOptimizer, SOHeuristicOptimizer
 from sp.system_controller import metric
 from sp.system_controller.utils import is_solution_valid, preferred_dominates
-from sp.system_controller.utils import calc_load_before_distribution
 from datetime import datetime
 from pytz import timezone
 import json
@@ -17,34 +16,6 @@ logging.basicConfig(level=logging.DEBUG)
 UTC_TZ = timezone('UTC')
 SF_TZ_STR = 'US/Pacific'
 SF_TZ = timezone(SF_TZ_STR)
-
-
-def _calc_delta_time(system, control_input, environment_input):
-    from sp.system_controller.utils import calc_processing_delay, calc_initialization_delay
-    from sp.system_controller.utils import calc_load_before_distribution
-
-    delta = []
-    for app in system.apps:
-        for dst_node in system.nodes:
-            if not control_input.get_app_placement(app.id, dst_node.id):
-                continue
-
-            proc_delay = calc_processing_delay(app.id, dst_node.id, system, control_input, environment_input)
-            init_delay = calc_initialization_delay(app.id, dst_node.id, system, control_input, environment_input)
-
-            for src_node in system.nodes:
-                ld = control_input.get_load_distribution(app.id, src_node.id, dst_node.id)
-                load = calc_load_before_distribution(app.id, src_node.id, system, environment_input)
-                load = load * ld
-                if load > 0.0:
-                    net_delay = environment_input.get_net_delay(app.id, src_node.id, dst_node.id)
-                    delay = net_delay + proc_delay + init_delay
-                    delta.append(delay - app.deadline)
-                    print('app {} {}, src {}, dst {}, {} + {} + {} = {}, {}'.format(app.id, app.type,
-                                                                                    src_node.id, dst_node.id,
-                                                                                    net_delay, proc_delay, init_delay,
-                                                                                    delay, app.deadline))
-    return delta
 
 
 class ControlMonitor(Monitor):
@@ -112,7 +83,6 @@ class ControlMonitor(Monitor):
                 value = control_input.get_app_placement(app.id, dst_node.id)
                 item = {'time': sim_time, 'app': app.id, 'node': dst_node.id, 'place': value}
                 place_datum.append(item)
-                # print(item)
 
                 item = {'time': sim_time, 'app': app.id, 'node': dst_node.id}
                 for resource in system.resources:
@@ -132,41 +102,11 @@ class ControlMonitor(Monitor):
 
         for app in system.apps:
             places = [n.id for n in system.nodes if control_input.get_app_placement(app.id, n.id)]
-            print(app.id, app.type, len(places), places)
-
-        # for node in system.nodes:
-        #     resource_name = 'CPU'
-        #     alloc = [control_input.get_allocated_resource(app.id, node.id, resource_name) for app in system.apps]
-        #     alloc = sum(alloc)
-        #     capacity = node.capacity[resource_name]
-        #     available = capacity - alloc
-        #     if alloc > 0.0:
-        #         print('node {}, rsc {}, cap {}, alloc {}, free {}'.format(node.id, resource_name,
-        #                                                                            capacity, alloc, available))
-
-        for app in system.apps:
             users = environment_input.get_attached_users()
-            user = list(filter(lambda u: u.app_id == app.id and u.node_id is not None, users))
-            count = len(user)
-            print('app {} {}, users {}'.format(app.id, app.type, count))
+            users = list(filter(lambda u: u.app_id == app.id and u.node_id is not None, users))
+            print('app {} {}, deadline {}ms, users {}, places {} = {}'.format(app.id, app.type, 1000 * app.deadline,
+                                                                              len(users), len(places), places))
 
-        # for app in system.apps:
-        #     for src_node in system.nodes:
-        #         load = environment_input.get_generated_load(app.id, src_node.id)
-        #         print('app {} {}, node {}, gen load {}'.format(app.id, app.type, src_node.id, load))
-
-        # for app in system.apps:
-        #     for src_node in system.nodes:
-        #         for dst_node in system.nodes:
-        #             ld = control_input.get_load_distribution(app.id, src_node.id, dst_node.id)
-        #             load_before = calc_load_before_distribution(app.id, src_node.id, system, environment_input)
-        #             load_after = load_before * ld
-        #             if load_after > 0.0 and src_node != dst_node:
-        #                 print('app {} {}, src {}, dst {}, {} * {} = load {}'.format(app.id, app.type,
-        #                                                                             src_node.id, dst_node.id,
-        #                                                                             ld, load_before, load_after))
-
-        # _calc_delta_time(system, control_input, environment_input)
         print("--")
 
     def on_sim_ended(self, sim_time):
@@ -204,17 +144,40 @@ def main():
     # Set simulation time
     start_time = SF_TZ.localize(datetime(2008, 5, 24, 0, 0, 0)).timestamp()
     stop_time = SF_TZ.localize(datetime(2008, 5, 24, 23, 59, 59)).timestamp()
+    # stop_time = SF_TZ.localize(datetime(2008, 5, 25, 23, 59, 59)).timestamp()
     # step_time = 10 * 60  # seconds or 10 min
     step_time = 60 * 60  # seconds or 1H
+    # step_time = 30 * 60  # seconds or 30 min
 
     # Set optimizer solutions
     optimizers = []
     metrics = [
-        metric.deadline.max_deadline_violation,
+        metric.deadline.overall_deadline_violation,
         metric.cost.overall_cost,
+        metric.response_time.overall_response_time,
+        metric.migration.overall_migration_cost,
+
+        metric.deadline.max_deadline_violation,
+        metric.deadline.avg_deadline_violation,
+        metric.deadline.deadline_satisfaction,
+        metric.migration.overall_migration_cost,
         metric.availability.avg_unavailability,
-        metric.migration.overall_migration_cost
+        metric.response_time.avg_response_time,
+        metric.response_time.max_response_time,
+        metric.power.overall_power_consumption,
     ]
+    static_objective = [
+        metric.deadline.overall_deadline_violation,
+        metric.cost.overall_cost,
+        metric.response_time.overall_response_time,
+    ]
+    dynamic_objective = [
+        metric.deadline.overall_deadline_violation,
+        metric.cost.overall_cost,
+        metric.response_time.overall_response_time,
+        metric.migration.overall_migration_cost,
+    ]
+
     # dominance_func = pareto_dominates
     dominance_func = preferred_dominates
     pool_size = 8
@@ -223,7 +186,7 @@ def main():
     opt = CloudOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # Single-Objective Heuristic optimizer config
     opt = SOHeuristicOptimizer()
@@ -233,29 +196,22 @@ def main():
 
     # Single-Objective GA optimizer config
     opt = SOGAOptimizer()
-    opt.objective = metric.deadline.max_deadline_violation
+    opt.objective = dynamic_objective[0]
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
     # optimizers.append(item)
 
     # Multi-Objective GA optimizer config
     opt = MOGAOptimizer()
-    opt.objective = [
-        metric.deadline.max_deadline_violation,
-        metric.cost.overall_cost,
-        metric.migration.overall_migration_cost
-    ]
+    opt.objective = dynamic_objective
     opt.pool_size = pool_size
     opt.dominance_func = dominance_func
     opt_id = '{}_mig'.format(opt.__class__.__name__)
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     opt = MOGAOptimizer()
-    opt.objective = [
-        metric.deadline.max_deadline_violation,
-        metric.cost.overall_cost
-    ]
+    opt.objective = static_objective
     opt.pool_size = pool_size
     opt.dominance_func = dominance_func
     opt_id = format(opt.__class__.__name__)
@@ -265,24 +221,19 @@ def main():
     # LLC optimizer config with different prediction windows
     # max_prediction_window = 3
     # for window in range(max_prediction_window + 1):
-    for window in [0]:
+    for window in [1, 2]:
         opt = LLCOptimizer()
         opt.prediction_window = window
-        opt.max_iterations = 100
         opt.pool_size = pool_size
         opt.dominance_func = dominance_func
-        opt.objective = [
-            metric.deadline.max_deadline_violation,
-            metric.cost.overall_cost,
-            metric.migration.overall_migration_cost
-        ]
+        opt.objective = dynamic_objective
         opt_id = '{}_w{}'.format(opt.__class__.__name__, window)
         item = (opt_id, opt)
-        optimizers.append(item)
+        # optimizers.append(item)
 
     # Execute simulation for each optimizer nb_runs times
-    # nb_runs = 30
-    nb_runs = 1
+    nb_runs = 30
+    # nb_runs = 1
     for run in range(nb_runs):
         for (opt_id, opt) in optimizers:
             output_path = 'output/san_francisco/exp/{}/{}/'.format(run, opt_id)
