@@ -14,13 +14,13 @@ class ExpSmoothingPredictor(Predictor):
     def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE,
                  es_params=None, fit_params=None, predict_params=None):
         Predictor.__init__(self)
-        self._data = []
-        self._max_data_size = max_data_size
-        self._fit_results = None
+        self.max_data_size = max_data_size
+        self.es_params = es_params
+        self.fit_params = fit_params
+        self.predict_params = predict_params
 
-        self._es_params = es_params
-        self._fit_params = fit_params
-        self._predict_params = predict_params
+        self._data = []
+        self._fit_results = None
 
     def clear(self):
         self._data.clear()
@@ -28,7 +28,7 @@ class ExpSmoothingPredictor(Predictor):
 
     def update(self, datum):
         self._data.append(datum)
-        if len(self._data) > self._max_data_size:
+        if len(self._data) > self.max_data_size:
             self._data.pop(0)
 
         fit_results = None
@@ -37,10 +37,16 @@ class ExpSmoothingPredictor(Predictor):
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore", category=Warning)
 
-                    model_params = self._es_params if self._es_params else DEFAULT_ES_PARAMS
+                    model_params = {}
+                    model_params.update(DEFAULT_ES_PARAMS)
+                    if self.es_params is not None:
+                        model_params.update(self.es_params)
                     model = ExponentialSmoothing(self._data, **model_params)
 
-                    fit_params = self._fit_params if self._fit_params else DEFAULT_FIT_PARAMS
+                    fit_params = {}
+                    fit_params.update(DEFAULT_FIT_PARAMS)
+                    if self.fit_params is not None:
+                        fit_params.update(self.fit_params)
                     fit_results = model.fit(**fit_params)
             except:
                 pass
@@ -57,7 +63,10 @@ class ExpSmoothingPredictor(Predictor):
                     start = len(self._data)
                     end = start + steps - 1
 
-                    predict_params = self._predict_params if self._predict_params else DEFAULT_PREDICT_PARAMS
+                    predict_params = {}
+                    predict_params.update(DEFAULT_PREDICT_PARAMS)
+                    if self.predict_params is not None:
+                        predict_params.update(self.predict_params)
                     prediction = self._fit_results.predict(start, end, **predict_params)
             except:
                 pass

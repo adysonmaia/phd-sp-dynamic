@@ -65,9 +65,8 @@ def calc_stats(df, columns, group_by='time'):
 
 def plot_metrics(scenario, optimizers, output_path, nb_runs):
     metrics = [
-        {'id': 'max_deadline_violation', 'label': 'deadline violation - s'},
+        {'id': 'overall_deadline_violation', 'label': 'deadline violation - s'},
         {'id': 'overall_cost', 'label': 'allocation cost'},
-        # {'id': 'avg_unavailability', 'label': 'avg. unavailability'},
         {'id': 'overall_migration_cost', 'label': 'migration cost'},
         {'id': 'elapsed_time', 'label': 'exec time - s'}
     ]
@@ -175,15 +174,17 @@ def main():
     output_path = 'output/san_francisco/exp/'
     optimizers = [
         {'id': 'CloudOptimizer', 'label': 'Cloud'},
-        {'id': 'MOGAOptimizer', 'label': 'MOGA'},
         {'id': 'MOGAOptimizer_mig', 'label': 'MOGA + migration'},
+        {'id': 'LLCOptimizer_w1', 'label': 'LLC w1'},
+        {'id': 'LLCOptimizer_w2', 'label': 'LLC w2'},
     ]
 
-    run_dirs = glob(os.path.join(output_path, '[0-9]*/'))
-    nb_runs = len(run_dirs)
+    # run_dirs = glob(os.path.join(output_path, '[0-9]*/'))
+    # nb_runs = len(run_dirs)
+    nb_runs = 4
 
-    # plot_metrics(scenario, optimizers, output_path, nb_runs)
-    plot_placement(scenario, optimizers, output_path, nb_runs)
+    plot_metrics(scenario, optimizers, output_path, nb_runs)
+    # plot_placement(scenario, optimizers, output_path, nb_runs)
 
 
 if __name__ == '__main__':

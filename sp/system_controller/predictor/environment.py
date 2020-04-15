@@ -1,5 +1,4 @@
 from sp.core.predictor import Predictor
-from sp.core.predictor.arima import ARIMAPredictor
 from sp.core.predictor.auto_arima import AutoARIMAPredictor
 from sp.core.predictor.exp_smoothing import ExpSmoothingPredictor
 from sp.core.model import EnvironmentInput
@@ -27,7 +26,11 @@ class DefaultEnvironmentPredictor(EnvironmentPredictor):
         EnvironmentPredictor.__init__(self)
         self.system = None
         self.environment_input = None
+        self.load_predictor_class = None
+        self.load_predictor_params = None
         self.load_predictor = None
+        self.net_predictor_class = None
+        self.net_predictor_params = None
         self.net_predictor = None
 
         self.init_params()
@@ -47,13 +50,15 @@ class DefaultEnvironmentPredictor(EnvironmentPredictor):
     def _clear_load_predictor(self):
         for (app_id, app_predictors_dict) in iteritems(self.load_predictor):
             for (node_id, predictor) in iteritems(app_predictors_dict):
-                predictor.clear()
+                if predictor is not None:
+                    predictor.clear()
 
     def _clear_net_predictor(self):
         for (app_id, app_predictors_dict) in iteritems(self.net_predictor):
             for (src_node_id, src_node_predictors_dict) in iteritems(app_predictors_dict):
                 for (dst_node_id, predictor) in iteritems(src_node_predictors_dict):
-                    predictor.clear()
+                    if predictor is not None:
+                        predictor.clear()
 
     def update(self, system, environment_input):
         self.system = system
@@ -68,8 +73,13 @@ class DefaultEnvironmentPredictor(EnvironmentPredictor):
 
                 # TODO: each application can specify its own predictor
                 if self.load_predictor[app.id][node.id] is None:
-                    self.load_predictor[app.id][node.id] = AutoARIMAPredictor()
-                    # self.load_predictor[app.id][node.id] = ARIMAPredictor()
+                    predictor_class = AutoARIMAPredictor
+                    predictor_params = {}
+                    if self.load_predictor_class is not None:
+                        predictor_class = self.load_predictor_class
+                    if self.load_predictor_params is not None:
+                        predictor_params.update(self.load_predictor_params)
+                    self.load_predictor[app.id][node.id] = predictor_class(**predictor_params)
 
                 predictor = self.load_predictor[app.id][node.id]
                 predictor.update(value)
@@ -81,7 +91,13 @@ class DefaultEnvironmentPredictor(EnvironmentPredictor):
                     value = environment_input.get_net_delay(app.id, src_node.id, dst_node.id)
 
                     if self.net_predictor[app.id][src_node.id][dst_node.id] is None:
-                        self.net_predictor[app.id][src_node.id][dst_node.id] = ExpSmoothingPredictor()
+                        predictor_class = ExpSmoothingPredictor
+                        predictor_params = {}
+                        if self.net_predictor_class is not None:
+                            predictor_class = self.net_predictor_class
+                        if self.net_predictor_params is not None:
+                            predictor_params.update(self.net_predictor_params)
+                        self.net_predictor[app.id][src_node.id][dst_node.id] = predictor_class(**predictor_params)
 
                     predictor = self.net_predictor[app.id][src_node.id][dst_node.id]
                     predictor.update(value)

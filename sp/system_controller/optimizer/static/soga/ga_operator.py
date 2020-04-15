@@ -7,6 +7,7 @@ import math
 import numpy
 import copy
 
+
 DEFAULT_STALL_WINDOW = 30
 DEFAULT_STALL_THRESHOLD = 0.0
 DEFAULT_LOAD_CHUNK_PERCENT = 0.1
@@ -161,14 +162,14 @@ class SOGAOperator(GAOperator):
             nodes.append(cloud_node)
 
             total_load = calc_load_before_distribution(app.id, src_node.id, self.system, self.environment_input)
-            remaining_load = total_load
             chunk = total_load * self.load_chunk_percent
+            remaining_load = total_load
 
+            # while remaining_load > 0.0:
             while True:
                 for dst_node in nodes:
                     if self._alloc_resources(app, dst_node, solution, chunk, increment=True):
                         solution.app_placement[app.id][dst_node.id] = True
-
                         chunk_ld = chunk / total_load if total_load > 0.0 else 1.0
                         solution.load_distribution[app.id][src_node.id][dst_node.id] += chunk_ld
 

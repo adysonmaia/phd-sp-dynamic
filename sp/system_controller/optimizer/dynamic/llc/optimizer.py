@@ -2,6 +2,7 @@ from sp.system_controller.optimizer import Optimizer
 from sp.system_controller.predictor import DefaultEnvironmentPredictor
 from sp.system_controller.metric import deadline, cost, availability, migration
 from .multi_stage import MultiStage, preferred_dominates
+from . import plan_finder
 
 
 class LLCOptimizer(Optimizer):
@@ -13,6 +14,8 @@ class LLCOptimizer(Optimizer):
         self.prediction_window = 1
         self.environment_predictor = None
         self.system_estimator = None
+        self.plan_finder_class = None
+        self.plan_finder_params = None
         self.dominance_func = preferred_dominates
         self.pool_size = 4
 
@@ -44,6 +47,8 @@ class LLCOptimizer(Optimizer):
                                   prediction_window=self.prediction_window,
                                   environment_predictor=self.environment_predictor,
                                   objective_aggregator=self.objective_aggregator,
+                                  plan_finder_class=self.plan_finder_class,
+                                  plan_finder_params=self.plan_finder_params,
                                   dominance_func=self.dominance_func,
                                   pool_size=self.pool_size)
 

@@ -304,7 +304,7 @@ def gen_random_apps(nb_apps):
 
         # Create linear estimator that satisfies the queue and deadline constraints
         # f(x) = ax + b
-        demand_cpu_a = cpu_work + 1.0
+        demand_cpu_a = 2.0 * cpu_work
         demand_cpu_b = 2.0 * cpu_work / float(deadline)
 
         app = {
@@ -334,7 +334,8 @@ def gen_urllc_apps():
     json_data = {'apps': []}
 
     # for deadline in [0.001, 0.005, 0.01, 0.05, 0.1]:
-    for deadline in [0.001, 0.005, 0.01, 0.015, 0.02, 0.03, 0.05, 0.1]:
+    # for deadline in [0.001, 0.005, 0.01, 0.015, 0.02, 0.03, 0.05, 0.1]:
+    for deadline in [0.001, 0.002, 0.003, 0.004, 0.005]:
         app = {
             'id': len(json_data['apps']),
             'type': 'URLLC',
@@ -353,7 +354,7 @@ def gen_urllc_apps():
         # Create linear estimator that satisfies the queue and deadline constraints
         # f(x) = ax + b
         cpu_work = app['work']
-        demand_cpu_a = cpu_work + 1.0
+        demand_cpu_a = 2.0 * cpu_work
         demand_cpu_b = 2.0 * cpu_work / float(deadline)
         app['demand']['CPU'] = [demand_cpu_a, demand_cpu_b]
         json_data['apps'].append(app)
@@ -422,7 +423,7 @@ def gen_apps():
 
         # Create linear estimator that satisfies the queue and deadline constraints
         # f(x) = ax + b
-        cpu_linear_a = app['work'] + 1.0
+        cpu_linear_a = 2.0 * app['work']
         cpu_linear_b = 2.0 * app['work'] / float(app['deadline'])
         app['demand']['CPU'] = [cpu_linear_a, cpu_linear_b]
         json_data['apps'].append(app)

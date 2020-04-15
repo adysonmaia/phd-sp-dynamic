@@ -1,6 +1,26 @@
 from .stage_ga import StageGA, StageGAOperator, preferred_dominates, indiv_gen
 from .plan_finder import GAPlanFinder, BeamPlanFinder, RandomPlanFinder
+from multiprocessing.dummy import Pool as ThreadPool
+import multiprocessing as mp
 import copy
+
+_PF_PARAMS = {
+    GAPlanFinder: {
+        "nb_generations": 100,
+        "population_size": 100,
+        "elite_proportion": 0.1,
+        "mutant_proportion": 0.1,
+        "elite_probability": 0.6,
+        "stop_threshold": 0.10,
+    },
+    BeamPlanFinder: {
+        "beam_width": 10,
+        "prune": True,
+    },
+    RandomPlanFinder: {
+        "nb_plans": 100
+    }
+}
 
 _SGA_PARAMS = {
     "nb_generations": 100,
@@ -9,21 +29,6 @@ _SGA_PARAMS = {
     "mutant_proportion": 0.1,
     "elite_probability": 0.6,
     "stop_threshold": 0.10,
-}
-_GAPF_PARAMS = {
-    "nb_generations": 100,
-    "population_size": 100,
-    "elite_proportion": 0.1,
-    "mutant_proportion": 0.1,
-    "elite_probability": 0.6,
-    "stop_threshold": 0.10,
-}
-_BPF_PARAMS = {
-    "beam_width": 10,
-    "prune": True,
-}
-_RPF_PARAMS = {
-    "nb_plans": 100
 }
 
 
@@ -37,6 +42,8 @@ class MultiStage:
                  system_estimator=None,
                  environment_predictor=None,
                  objective_aggregator=None,
+                 plan_finder_class=None,
+                 plan_finder_params=None,
                  dominance_func=preferred_dominates,
                  pool_size=0):
 
@@ -51,6 +58,8 @@ class MultiStage:
         self.objective_aggregator = objective_aggregator
         self.dominance_func = dominance_func
         self.pool_size = pool_size
+        self.plan_finder_class = plan_finder_class
+        self.plan_finder_params = plan_finder_params
 
         self._env_inputs = None
 
@@ -81,25 +90,41 @@ class MultiStage:
         return solution
 
     def _solve_part_1(self):
-        stages_population = []
-        for stage in range(self.nb_stages):
-            env_input = self._env_inputs[stage]
-            ga_operator = StageGAOperator(system=self.system,
-                                          environment_input=env_input,
-                                          objective=self.objective,
-                                          use_heuristic=True)
-            ga = StageGA(operator=ga_operator,
-                         dominance_func=self.dominance_func,
-                         pool_size=self.pool_size,
-                         **_SGA_PARAMS)
-            population = ga.solve()
-            stages_population.append(population)
+        map_func = map
+        pool_size = min(self.pool_size, self.nb_stages, mp.cpu_count())
+        pool = None
+        if pool_size > 1:
+            try:
+                pool = ThreadPool(self.pool_size)
+                map_func = pool.map
+            except ValueError:
+                pass
+
+        stages_population = list(map_func(self._exec_stage_ga, range(self.nb_stages)))
+
+        if pool is not None:
+            pool.terminate()
+
         return stages_population
+
+    def _exec_stage_ga(self, stage):
+        env_input = self._env_inputs[stage]
+        ga_operator = StageGAOperator(system=self.system,
+                                      environment_input=env_input,
+                                      objective=self.objective,
+                                      use_heuristic=True)
+        ga = StageGA(operator=ga_operator,
+                     dominance_func=self.dominance_func,
+                     pool_size=self.pool_size,
+                     **_SGA_PARAMS)
+        population = ga.solve()
+        return population
 
     def _solve_part_2(self, stages_population):
         first_stage = 0
+        env_input = self._env_inputs[first_stage]
         first_ga_operator = StageGAOperator(system=self.system,
-                                            environment_input=self._env_inputs[first_stage],
+                                            environment_input=env_input,
                                             objective=self.objective,
                                             use_heuristic=True)
         first_stage_ga = StageGA(operator=first_ga_operator,
@@ -109,15 +134,7 @@ class MultiStage:
         first_stage_ga.init_params()
         first_stage_ga.current_population = stages_population[first_stage]
 
-        plan_finder = GAPlanFinder(system=self.system,
-                                   environment_inputs=self._env_inputs,
-                                   objective=self.objective,
-                                   objective_aggregator=self.objective_aggregator,
-                                   dominance_func=self.dominance_func,
-                                   control_decoder=_decode_control_input,
-                                   system_estimator=self.system_estimator,
-                                   pool_size=self.pool_size,
-                                   **_GAPF_PARAMS)
+        plan_finder = self._create_plan_finder()
 
         if self.nb_stages > 1:
             all_control_inputs = []
@@ -130,6 +147,7 @@ class MultiStage:
                 control_sequences = []
                 for indiv in all_control_inputs:
                     indiv = copy.copy(indiv)
+                    indiv.fitness = None
                     sequence = [indiv] * self.nb_stages
                     control_sequences.append(sequence)
                 for plan in plans:
@@ -154,6 +172,28 @@ class MultiStage:
         plan_finder.clear_params()
 
         return solution
+
+    def _create_plan_finder(self):
+        params = {}
+        if self.plan_finder_class is None:
+            self.plan_finder_class = GAPlanFinder
+
+        if self.plan_finder_class in _PF_PARAMS:
+            params.update(_PF_PARAMS[self.plan_finder_class])
+
+        if self.plan_finder_params is not None:
+            params.update(self.plan_finder_params)
+
+        plan_finder = self.plan_finder_class(system=self.system,
+                                             environment_inputs=self._env_inputs,
+                                             objective=self.objective,
+                                             objective_aggregator=self.objective_aggregator,
+                                             dominance_func=self.dominance_func,
+                                             control_decoder=_decode_control_input,
+                                             system_estimator=self.system_estimator,
+                                             pool_size=self.pool_size,
+                                             **params)
+        return plan_finder
 
 
 def _decode_control_input(system, encoded_control, environment_input):
