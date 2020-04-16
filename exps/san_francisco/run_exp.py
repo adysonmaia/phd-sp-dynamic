@@ -164,9 +164,9 @@ class ControlMonitor(Monitor):
             (ld_filename, self.control_data['ld']),
         ]
 
-        # for (filename, data) in files_data:
-        #     with open(filename, 'w') as file:
-        #         json.dump(data, file, indent=2)
+        for (filename, data) in files_data:
+            with open(filename, 'w') as file:
+                json.dump(data, file, indent=2)
 
 
 def main():
@@ -182,8 +182,8 @@ def main():
 
     # Set simulation time
     start_time = SF_TZ.localize(datetime(2008, 5, 24, 0, 0, 0)).timestamp()
-    # stop_time = SF_TZ.localize(datetime(2008, 5, 24, 23, 59, 59)).timestamp()
-    stop_time = SF_TZ.localize(datetime(2008, 5, 25, 23, 59, 59)).timestamp()
+    stop_time = SF_TZ.localize(datetime(2008, 5, 24, 23, 59, 59)).timestamp()
+    # stop_time = SF_TZ.localize(datetime(2008, 5, 25, 23, 59, 59)).timestamp()
     # step_time = 10 * 60  # seconds or 10 min
     step_time = 60 * 60  # seconds or 1H
     # step_time = 30 * 60  # seconds or 30 min
@@ -220,7 +220,7 @@ def main():
     opt = CloudOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # Single-Objective Heuristic optimizer config
     opt = SOHeuristicOptimizer()
@@ -242,7 +242,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = format(opt.__class__.__name__)
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # LLC optimizer config with different prediction windows
     # max_prediction_window = 3
@@ -272,8 +272,8 @@ def main():
         optimizers.append(item)
 
     # Execute simulation for each optimizer nb_runs times
-    # nb_runs = 30
-    nb_runs = 1
+    nb_runs = 30
+    # nb_runs = 1
     for run in range(nb_runs):
         for (opt_id, opt) in optimizers:
             output_path = 'output/san_francisco/exp/{}/{}/'.format(run, opt_id)
