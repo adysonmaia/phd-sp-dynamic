@@ -293,6 +293,15 @@ class GAIndividual(UserList):
         """
         return self.fitness is not None
 
+    def clear_copy(self):
+        """Copy individual with invalid fitness
+        Returns:
+            GAIndividual: copy
+        """
+        indiv = GAIndividual(self.data)
+        indiv.fitness = None
+        return indiv
+
     @property
     def nb_genes(self):
         """ Number of genes of the chromosome

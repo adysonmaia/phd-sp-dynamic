@@ -1,6 +1,9 @@
+from sp.core.heuristic import nsgaii
 from sp.system_controller.estimator.system import DefaultSystemEstimator
+from sp.system_controller.utils import preferred_dominates
 from abc import ABC, abstractmethod
 from collections import UserList
+from functools import cmp_to_key
 import multiprocessing as mp
 
 
@@ -12,7 +15,9 @@ class PlanFinder(ABC):
                  objective_aggregator=None,
                  control_decoder=None,
                  system_estimator=None,
-                 pool_size=0):
+                 dominance_func=None,
+                 pool_size=0,
+                 **kwargs):
 
         self.system = system
         self.environment_inputs = environment_inputs
@@ -20,6 +25,10 @@ class PlanFinder(ABC):
         self.objective_aggregator = objective_aggregator
         self.control_decoder = control_decoder
         self.system_estimator = system_estimator
+        self.dominance_func = dominance_func
+
+        if self.dominance_func is None:
+            self.dominance_func = preferred_dominates
 
         if self.objective_aggregator is None:
             self.objective_aggregator = sum
@@ -100,6 +109,24 @@ class PlanFinder(ABC):
         if self.control_decoder is not None:
             control_input = self.control_decoder(system, control_input, env_input)
         return control_input
+
+    def sort_plans(self, plans):
+        fitnesses = [p.fitness for p in plans]
+        fronts, rank = nsgaii.fast_non_dominated_sort(fitnesses, self.dominance_func)
+        crwd_dist = nsgaii.crowding_distance(fitnesses, fronts)
+
+        def sort_cmp(indiv_1, indiv_2):
+            index_1 = plans.index(indiv_1)
+            index_2 = plans.index(indiv_2)
+            if rank[index_1] < rank[index_2]:
+                return -1
+            elif (rank[index_1] == rank[index_2]
+                  and crwd_dist[index_1] < crwd_dist[index_2]):
+                return -1
+            else:
+                return 1
+
+        return sorted(plans, key=cmp_to_key(sort_cmp))
 
     @abstractmethod
     def solve(self, control_inputs):

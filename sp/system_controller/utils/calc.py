@@ -16,8 +16,7 @@ def calc_response_time(app_id, src_node_id, dst_node_id, system, control_input, 
 
 def calc_processing_delay(app_id, node_id, system, control_input, environment_input):
     from sp.system_controller.estimator.processing import DefaultProcessingEstimator
-    # TODO: default delay as an arg
-    proc_delay = 0.0
+    proc_delay = math.inf
 
     # TODO: make this calculation works with any ProcessingEstimator selected for the simulation
     alloc_cpu = control_input.get_allocated_cpu(app_id, node_id)

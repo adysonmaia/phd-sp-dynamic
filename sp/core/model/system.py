@@ -41,6 +41,17 @@ class System:
         cp.processing_delay = self.processing_delay
         return cp
 
+    def clear_copy(self):
+        """Copy system's state with its (control and environment) inputs undefined
+        Returns:
+            System: an empty system's state
+        """
+        new_system = System()
+        new_system.scenario = self.scenario
+        new_system.time = self.time
+        new_system.sampling_time = self.sampling_time
+        return new_system
+
     def __eq__(self, other):
         """Compare if two system's state are equals
         Args:

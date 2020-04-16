@@ -52,4 +52,60 @@ class StageGA(NSGAII):
 
 
 class StageGAOperator(MOGAOperator):
+    """Stage GA Operator
+    """
+    def __init__(self, extended_first_population=None, **kwargs):
+        """Initialization
+        Args:
+            extended_first_population (list): extended list of first population
+            **kwargs: ga operator params
+        """
+        self.extended_first_population = extended_first_population
+        MOGAOperator.__init__(self, **kwargs)
+
+    def first_population(self):
+        """Generate some specific individuals for the first population based on heuristic algorithms
+        Returns:
+            individuals (list(GAIndividual)): list of individuals
+        """
+        pop = MOGAOperator.first_population(self)
+        if self.extended_first_population is not None:
+            pop += [indiv.clear_copy() for indiv in self.extended_first_population]
+        return pop
+
+
+class MultiStageGA(StageGA):
+    """Multi Stage GA
+    """
     pass
+
+
+class MultiStageGAOperator(StageGAOperator):
+    """Multi Stage GA Operator
+    """
+
+    def __init__(self, plan_finder, nb_stages, **kwargs):
+        """ Initialization
+        Args:
+            plan_finder (sp.system_controller.optimizer.dynamic.llc.plan_finder.plan_finder.PlanFinder): plan finder
+            nb_stages (int): number of stages
+            **kwargs: ga params
+        """
+        StageGAOperator.__init__(self, **kwargs)
+        self.plan_finder = plan_finder
+        self.nb_stages = nb_stages
+
+    def evaluate(self, individual):
+        """Evaluate an individual and obtain its fitness
+        Args:
+            individual (GAIndividual): individual
+        Returns:
+            object: fitness value
+        """
+        if individual.is_fitness_valid():
+            return individual.fitness
+        else:
+            sequence = [individual] * self.nb_stages
+            plan = self.plan_finder.create_plan(sequence)
+            individual.fitness = plan.fitness
+            return individual.fitness

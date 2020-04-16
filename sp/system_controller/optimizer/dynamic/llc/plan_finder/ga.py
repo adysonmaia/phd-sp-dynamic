@@ -12,6 +12,7 @@ class GAPlanFinder(PlanFinder):
                  objective_aggregator,
                  control_decoder,
                  system_estimator,
+                 dominance_func,
                  pool_size,
                  **ga_params):
         PlanFinder.__init__(self,
@@ -21,12 +22,16 @@ class GAPlanFinder(PlanFinder):
                             objective_aggregator=objective_aggregator,
                             control_decoder=control_decoder,
                             system_estimator=system_estimator,
+                            dominance_func=dominance_func,
                             pool_size=pool_size)
         self.ga_params = ga_params
 
     def solve(self, control_inputs):
         ga_operator = GAPFOperator(stages=control_inputs, plan_creator=self.create_plan)
-        ga = NSGAII(operator=ga_operator, pool_size=self.pool_size, **self.ga_params)
+        ga = NSGAII(operator=ga_operator,
+                    pool_size=self.pool_size,
+                    dominance_func=self.dominance_func,
+                    **self.ga_params)
         population = ga.solve()
 
         plans = []

@@ -1,5 +1,3 @@
-from sp.core.heuristic import nsgaii
-from sp.system_controller.optimizer.static import moga
 from .plan_finder import PlanFinder, Plan
 import random
 
@@ -12,6 +10,7 @@ class RandomPlanFinder(PlanFinder):
                  objective_aggregator,
                  control_decoder,
                  system_estimator,
+                 dominance_func,
                  pool_size=0,
                  nb_plans=100):
         PlanFinder.__init__(self,
@@ -21,6 +20,7 @@ class RandomPlanFinder(PlanFinder):
                             objective_aggregator=objective_aggregator,
                             control_decoder=control_decoder,
                             system_estimator=system_estimator,
+                            dominance_func=dominance_func,
                             pool_size=pool_size)
         self.nb_plans = nb_plans
 

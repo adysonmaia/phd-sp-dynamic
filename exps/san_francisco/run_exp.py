@@ -205,13 +205,12 @@ def main():
         metric.response_time.max_response_time,
         metric.power.overall_power_consumption,
     ]
-    dynamic_objective = [
+    multi_objective = [
         metric.deadline.overall_deadline_violation,
         metric.cost.overall_cost,
         metric.migration.overall_migration_cost,
     ]
-    static_objective = dynamic_objective[:-1]
-    single_objective = dynamic_objective[0]
+    single_objective = multi_objective[0]
 
     # dominance_func = utils.pareto_dominates
     dominance_func = utils.preferred_dominates
@@ -221,7 +220,7 @@ def main():
     opt = CloudOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Single-Objective Heuristic optimizer config
     opt = SOHeuristicOptimizer()
@@ -238,15 +237,7 @@ def main():
 
     # Multi-Objective GA optimizer config
     opt = MOGAOptimizer()
-    opt.objective = dynamic_objective
-    opt.pool_size = pool_size
-    opt.dominance_func = dominance_func
-    opt_id = '{}_mig'.format(opt.__class__.__name__)
-    item = (opt_id, opt)
-    optimizers.append(item)
-
-    opt = MOGAOptimizer()
-    opt.objective = static_objective
+    opt.objective = multi_objective
     opt.pool_size = pool_size
     opt.dominance_func = dominance_func
     opt_id = format(opt.__class__.__name__)
@@ -256,15 +247,18 @@ def main():
     # LLC optimizer config with different prediction windows
     # max_prediction_window = 3
     # for window in range(max_prediction_window + 1):
-    for window in [1, 2]:
+    # for window in [1, 2]:
+    for window in [1]:
         opt = LLCOptimizer()
         opt.prediction_window = window
         opt.pool_size = pool_size
         opt.dominance_func = dominance_func
-        opt.objective = dynamic_objective
+        opt.objective = multi_objective
 
         # Set plan finder algorithm
-        opt.plan_finder_class = plan_finder.GAPlanFinder
+        # opt.plan_finder_class = plan_finder.GAPlanFinder
+        # opt.plan_finder_class = plan_finder.ExhaustivePlanFinder
+        opt.plan_finder_class = plan_finder.EmptyPlanFinder
 
         # Set environment forecasting
         seasonal_period = int(round(1 * 24 * 60 * 60 / float(step_time)))  # Seasonal of 1 day
@@ -278,8 +272,8 @@ def main():
         optimizers.append(item)
 
     # Execute simulation for each optimizer nb_runs times
-    nb_runs = 30
-    # nb_runs = 1
+    # nb_runs = 30
+    nb_runs = 1
     for run in range(nb_runs):
         for (opt_id, opt) in optimizers:
             output_path = 'output/san_francisco/exp/{}/{}/'.format(run, opt_id)

@@ -181,7 +181,7 @@ def main():
 
     # run_dirs = glob(os.path.join(output_path, '[0-9]*/'))
     # nb_runs = len(run_dirs)
-    nb_runs = 4
+    nb_runs = 8
 
     plot_metrics(scenario, optimizers, output_path, nb_runs)
     # plot_placement(scenario, optimizers, output_path, nb_runs)

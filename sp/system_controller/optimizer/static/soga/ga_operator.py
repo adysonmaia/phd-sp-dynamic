@@ -1,3 +1,4 @@
+from sp.core.model import Resource
 from sp.core.heuristic.brkga import GAOperator, GAIndividual
 from sp.system_controller.model import OptSolution
 from sp.system_controller.utils import make_solution_feasible
@@ -157,15 +158,13 @@ class SOGAOperator(GAOperator):
             src_node = self.system.get_node(src_node_id)
 
             nodes = list(selected_nodes[app.id])
-            nodes.sort(key=lambda n: calc_response_time(app.id, src_node.id, n.id,
-                                                        self.system, solution, self.environment_input))
+            nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution))
             nodes.append(cloud_node)
 
             total_load = calc_load_before_distribution(app.id, src_node.id, self.system, self.environment_input)
             chunk = total_load * self.load_chunk_percent
             remaining_load = total_load
 
-            # while remaining_load > 0.0:
             while True:
                 for dst_node in nodes:
                     if self._alloc_resources(app, dst_node, solution, chunk, increment=True):
@@ -218,4 +217,24 @@ class SOGAOperator(GAOperator):
             if demand > capacity:
                 return False
         return True
+
+    def _calc_response_time(self, app, src_node, dst_node, solution):
+        prev_cpu_alloc = solution.allocated_resource[app.id][dst_node.id][Resource.CPU]
+        prev_load = solution.received_load[app.id][dst_node.id]
+        prev_place = solution.app_placement[app.id][dst_node.id]
+
+        if not prev_place:
+            load = 0.0
+            demand = app.demand[Resource.CPU](load)
+            solution.allocated_resource[app.id][dst_node.id][Resource.CPU] = demand
+            solution.received_load[app.id][dst_node.id] = load
+            solution.app_placement[app.id][dst_node.id] = True
+
+        rt = calc_response_time(app.id, src_node.id, dst_node.id, self.system, solution, self.environment_input)
+
+        solution.allocated_resource[app.id][dst_node.id][Resource.CPU] = prev_cpu_alloc
+        solution.received_load[app.id][dst_node.id] = prev_load
+        solution.app_placement[app.id][dst_node.id] = prev_place
+
+        return rt
 

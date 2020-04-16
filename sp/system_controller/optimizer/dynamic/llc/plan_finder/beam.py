@@ -1,5 +1,4 @@
 from sp.core.heuristic import nsgaii
-from sp.system_controller.optimizer.static.moga import preferred_dominates
 from .plan_finder import PlanFinder, Plan
 from functools import cmp_to_key
 import multiprocessing as mp
@@ -13,7 +12,7 @@ class BeamPlanFinder(PlanFinder):
                  objective_aggregator,
                  control_decoder,
                  system_estimator,
-                 dominance_func=preferred_dominates,
+                 dominance_func,
                  beam_width=10,
                  prune=True,
                  pool_size=0):
@@ -24,8 +23,8 @@ class BeamPlanFinder(PlanFinder):
                             objective_aggregator=objective_aggregator,
                             control_decoder=control_decoder,
                             system_estimator=system_estimator,
+                            dominance_func=dominance_func,
                             pool_size=pool_size)
-        self.dominance_func = dominance_func
         self.beam_width = beam_width
         self.prune = prune
         self.pool_size = pool_size
