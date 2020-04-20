@@ -1,7 +1,7 @@
 from sp.core.model import Scenario, Node, System, EnvironmentInput
 from sp.system_controller.estimator.system import DefaultSystemEstimator
 from sp.physical_system.environment_controller import EnvironmentController
-from sp.system_controller import utils
+from sp.system_controller import util
 from sp.system_controller.optimizer import CloudOptimizer, SOHeuristicOptimizer
 import json
 import math
@@ -11,7 +11,7 @@ import unittest
 class CalcUtilTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        filename = "tests/system_controller/fixtures/test_calc_utils.json"
+        filename = "tests/system_controller/fixtures/test_calc_util.json"
         system = None
         with open(filename) as json_file:
             data = json.load(json_file)
@@ -54,8 +54,8 @@ class CalcUtilTestCase(unittest.TestCase):
 
             for app in system.apps:
                 for dst_node in system.nodes:
-                    proc_delay = utils.calc_processing_delay(app.id, dst_node.id,
-                                                             system, control_input, env_input)
+                    proc_delay = util.calc_processing_delay(app.id, dst_node.id,
+                                                            system, control_input, env_input)
                     if control_input.get_app_placement(app.id, dst_node.id):
                         self.assertGreater(proc_delay, 0.0)
                         self.assertNotEqual(proc_delay, math.inf)
@@ -71,8 +71,8 @@ class CalcUtilTestCase(unittest.TestCase):
             for app in system.apps:
                 for src_node in system.nodes:
                     for dst_node in system.nodes:
-                        net_delay = utils.calc_network_delay(app.id, src_node.id, dst_node.id,
-                                                             system, control_input, env_input)
+                        net_delay = util.calc_network_delay(app.id, src_node.id, dst_node.id,
+                                                            system, control_input, env_input)
                         env_net_delay = env_input.get_net_delay(app.id, src_node.id, dst_node.id)
                         self.assertEqual(net_delay, env_net_delay)
 
@@ -94,8 +94,8 @@ class CalcUtilTestCase(unittest.TestCase):
                     if system.control_input is not None:
                         prev_place = system.control_input.get_app_placement(app.id, dst_node.id)
 
-                    init_delay = utils.calc_initialization_delay(app.id, dst_node.id,
-                                                                 system, control_input, env_input)
+                    init_delay = util.calc_initialization_delay(app.id, dst_node.id,
+                                                                system, control_input, env_input)
                     if not curr_place:
                         self.assertEqual(init_delay, 0.0)
                     elif curr_place and prev_place:
@@ -112,8 +112,8 @@ class CalcUtilTestCase(unittest.TestCase):
             for app in system.apps:
                 for src_node in system.nodes:
                     for dst_node in system.nodes:
-                        rt = utils.calc_response_time(app.id, src_node.id, dst_node.id,
-                                                      system, control_input, env_input)
+                        rt = util.calc_response_time(app.id, src_node.id, dst_node.id,
+                                                     system, control_input, env_input)
                         self.assertGreaterEqual(rt, 0.0)
                         if control_input.get_app_placement(app.id, dst_node.id):
                             self.assertLess(rt, math.inf)
@@ -127,7 +127,7 @@ class CalcUtilTestCase(unittest.TestCase):
 
             for app in system.apps:
                 for src_node in system.nodes:
-                    load = utils.calc_load_before_distribution(app.id, src_node.id, system, env_input)
+                    load = util.calc_load_before_distribution(app.id, src_node.id, system, env_input)
                     user_load = env_input.get_generated_load(app.id, src_node.id)
                     self.assertGreaterEqual(load, 0.0)
                     self.assertGreaterEqual(load, user_load)
@@ -143,11 +143,11 @@ class CalcUtilTestCase(unittest.TestCase):
             for app in system.apps:
                 for src_node in system.nodes:
                     for dst_node in system.nodes:
-                        load = utils.calc_load_after_distribution(app.id, src_node.id, dst_node.id,
-                                                                  system, control_input, env_input)
+                        load = util.calc_load_after_distribution(app.id, src_node.id, dst_node.id,
+                                                                 system, control_input, env_input)
 
                         ld = control_input.get_load_distribution(app.id, src_node.id, dst_node.id)
-                        before_load = utils.calc_load_before_distribution(app.id, src_node.id, system, env_input)
+                        before_load = util.calc_load_before_distribution(app.id, src_node.id, system, env_input)
 
                         self.assertEqual(load, ld * before_load)
 
@@ -159,10 +159,10 @@ class CalcUtilTestCase(unittest.TestCase):
 
             for app in system.apps:
                 for dst_node in system.nodes:
-                    load = utils.calc_received_load(app.id, dst_node.id,
-                                                    system, control_input, env_input, use_cache=False)
-                    cached_load = utils.calc_received_load(app.id, dst_node.id,
-                                                           system, control_input, env_input, use_cache=True)
+                    load = util.calc_received_load(app.id, dst_node.id,
+                                                   system, control_input, env_input, use_cache=False)
+                    cached_load = util.calc_received_load(app.id, dst_node.id,
+                                                          system, control_input, env_input, use_cache=True)
                     self.assertEqual(round(load), round(cached_load))
 
 

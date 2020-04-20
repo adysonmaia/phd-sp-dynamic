@@ -1,7 +1,7 @@
 from sp.core.model import Scenario, Node, System, EnvironmentInput
 from sp.physical_system.environment_controller import EnvironmentController
 from sp.system_controller.model import OptSolution
-from sp.system_controller import utils
+from sp.system_controller import util
 from sp.system_controller.optimizer.cloud import CloudOptimizer
 import json
 import unittest
@@ -10,7 +10,7 @@ import unittest
 class UtilTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        filename = "tests/system_controller/fixtures/test_utils.json"
+        filename = "tests/system_controller/fixtures/test_util.json"
         system = None
         with open(filename) as json_file:
             data = json.load(json_file)
@@ -39,10 +39,10 @@ class UtilTestCase(unittest.TestCase):
         solution = opt.solve(self.system, self.environment_input)
 
         self.assertIsInstance(solution, OptSolution)
-        self.assertTrue(utils.is_solution_valid(self.system, solution, self.environment_input))
+        self.assertTrue(util.is_solution_valid(self.system, solution, self.environment_input))
 
         solution = OptSolution.create_empty(self.system)
-        self.assertFalse(utils.is_solution_valid(self.system, solution, self.environment_input))
+        self.assertFalse(util.is_solution_valid(self.system, solution, self.environment_input))
 
     def test_alloc_resource(self):
         solution = OptSolution.create_empty(self.system)
@@ -53,15 +53,15 @@ class UtilTestCase(unittest.TestCase):
             for src_node in self.system.nodes:
                 solution.load_distribution[app.id][src_node.id][cloud_node.id] = 1.0
 
-        self.assertFalse(utils.is_solution_valid(self.system, solution, self.environment_input))
-        solution = utils.alloc_demanded_resources(self.system, solution, self.environment_input)
-        self.assertTrue(utils.is_solution_valid(self.system, solution, self.environment_input))
+        self.assertFalse(util.is_solution_valid(self.system, solution, self.environment_input))
+        solution = util.alloc_demanded_resources(self.system, solution, self.environment_input)
+        self.assertTrue(util.is_solution_valid(self.system, solution, self.environment_input))
 
     def test_make_mic_feasible(self):
         opt = CloudOptimizer()
         solution = opt.solve(self.system, self.environment_input)
         self.assertIsInstance(solution, OptSolution)
-        self.assertTrue(utils.is_solution_valid(self.system, solution, self.environment_input))
+        self.assertTrue(util.is_solution_valid(self.system, solution, self.environment_input))
 
         app = self.system.apps[0]
         selected_node = self.system.bs_nodes[0]
@@ -70,15 +70,15 @@ class UtilTestCase(unittest.TestCase):
         self.assertTrue(solution.app_placement[app.id][self.system.cloud_node.id])
         solution.app_placement[app.id][selected_node.id] = True
 
-        self.assertFalse(utils.is_solution_valid(self.system, solution, self.environment_input))
-        solution = utils.make_solution_feasible(self.system, solution, self.environment_input)
-        self.assertTrue(utils.is_solution_valid(self.system, solution, self.environment_input))
+        self.assertFalse(util.is_solution_valid(self.system, solution, self.environment_input))
+        solution = util.make_solution_feasible(self.system, solution, self.environment_input)
+        self.assertTrue(util.is_solution_valid(self.system, solution, self.environment_input))
 
     def test_make_ldc_feasible(self):
         opt = CloudOptimizer()
         solution = opt.solve(self.system, self.environment_input)
         self.assertIsInstance(solution, OptSolution)
-        self.assertTrue(utils.is_solution_valid(self.system, solution, self.environment_input))
+        self.assertTrue(util.is_solution_valid(self.system, solution, self.environment_input))
 
         app = self.system.apps[0]
         selected_node = None
@@ -92,9 +92,9 @@ class UtilTestCase(unittest.TestCase):
             solution.load_distribution[app.id][node.id][selected_node.id] = 0.0
             solution.load_distribution[app.id][selected_node.id][node.id] = 0.0
 
-        self.assertFalse(utils.is_solution_valid(self.system, solution, self.environment_input))
-        solution = utils.make_solution_feasible(self.system, solution, self.environment_input)
-        self.assertTrue(utils.is_solution_valid(self.system, solution, self.environment_input))
+        self.assertFalse(util.is_solution_valid(self.system, solution, self.environment_input))
+        solution = util.make_solution_feasible(self.system, solution, self.environment_input)
+        self.assertTrue(util.is_solution_valid(self.system, solution, self.environment_input))
 
 
 if __name__ == '__main__':

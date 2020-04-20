@@ -1,4 +1,4 @@
-from sp.system_controller.utils.calc import calc_received_load
+from sp.system_controller.util.calc import calc_received_load
 
 
 def alloc_demanded_resources(system, solution, environment_input):

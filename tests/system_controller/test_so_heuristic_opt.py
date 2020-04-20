@@ -1,7 +1,7 @@
 from sp.core.model import Scenario, System, EnvironmentInput
 from sp.physical_system.environment_controller import EnvironmentController
 from sp.system_controller.model import OptSolution
-from sp.system_controller.utils import is_solution_valid
+from sp.system_controller.util import is_solution_valid
 from sp.system_controller.metric import deadline, availability, power, cost
 from sp.system_controller.optimizer.so_heuristic import SOHeuristicOptimizer
 import json

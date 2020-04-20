@@ -1,9 +1,9 @@
 from sp.core.model import Scenario, System
 from sp.system_controller.estimator.system import DefaultSystemEstimator
 from sp.physical_system.environment_controller import EnvironmentController
-from sp.system_controller.optimizer.dynamic.llc import LLCOptimizer
+from sp.system_controller.optimizer.llc import LLCOptimizer
 from sp.system_controller.model import OptSolution
-from sp.system_controller.utils import is_solution_valid
+from sp.system_controller.util import is_solution_valid
 from sp.system_controller.metric import deadline, cost, availability, migration
 import json
 import copy
@@ -24,7 +24,7 @@ class LLCOptTestCase(unittest.TestCase):
         cls.environment_controller = EnvironmentController()
         cls.system_estimator = DefaultSystemEstimator()
 
-    def test_solver(self):
+    def _test_solver(self):
         solver = LLCOptimizer()
         solver.prediction_window = 2
         solver.max_iterations = 3

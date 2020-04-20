@@ -1,4 +1,4 @@
-from sp.system_controller.utils import calc_response_time, calc_load_after_distribution
+from sp.system_controller.util import calc_response_time, calc_load_after_distribution
 from statistics import mean
 
 

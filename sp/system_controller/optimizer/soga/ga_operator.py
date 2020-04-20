@@ -1,8 +1,8 @@
 from sp.core.model import Resource
 from sp.core.heuristic.brkga import GAOperator, GAIndividual
 from sp.system_controller.model import OptSolution
-from sp.system_controller.utils import make_solution_feasible
-from sp.system_controller.utils import calc_response_time, calc_load_before_distribution
+from sp.system_controller.util import make_solution_feasible
+from sp.system_controller.util import calc_response_time, calc_load_before_distribution
 from . import indiv_gen
 import math
 import numpy

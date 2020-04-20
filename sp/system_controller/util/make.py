@@ -1,5 +1,5 @@
-from sp.system_controller.utils.calc import calc_load_before_distribution
-from sp.system_controller.utils.alloc import alloc_demanded_resources
+from sp.system_controller.util.calc import calc_load_before_distribution
+from sp.system_controller.util.alloc import alloc_demanded_resources
 
 
 ROUND_PRECISION = 5

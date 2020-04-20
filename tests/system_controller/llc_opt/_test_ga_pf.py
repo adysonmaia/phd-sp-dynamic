@@ -1,9 +1,9 @@
 from sp.core.model import Scenario, System
 from sp.system_controller.estimator.system import DefaultSystemEstimator
 from sp.physical_system.environment_controller import EnvironmentController
-from sp.system_controller.optimizer.dynamic.llc.plan_finder import Plan, GAPlanFinder
-from sp.system_controller.optimizer.static.moga import MOGAOperator, preferred_dominates
-from sp.system_controller.optimizer.static.soga import indiv_gen
+from sp.system_controller.optimizer.llc.plan_finder import Plan, GAPlanFinder
+from sp.system_controller.optimizer.moga import MOGAOperator, preferred_dominates
+from sp.system_controller.optimizer.soga import indiv_gen
 from sp.system_controller.metric import deadline, cost, availability, migration
 import json
 import math
@@ -36,7 +36,7 @@ class GAPFTestCase(unittest.TestCase):
         cls.system = system
         cls.environment_inputs = env_inputs
 
-    def test_solver(self):
+    def _test_solver(self):
         system_estimator = DefaultSystemEstimator()
         objective = [
             deadline.max_deadline_violation,

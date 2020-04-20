@@ -1,6 +1,6 @@
 from . import Routing
 from sp.physical_system.estimator import DefaultLinkDelayEstimator
-from sp.physical_system.utils import floyd_warshall
+from sp.physical_system.util import floyd_warshall
 
 
 class ShortestPathRouting(Routing):

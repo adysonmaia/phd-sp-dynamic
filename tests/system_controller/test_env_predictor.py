@@ -32,7 +32,7 @@ class EnvPredictorTestCase(unittest.TestCase):
         predictor = DefaultEnvironmentPredictor()
         self.env_ctl.init_params()
         time_start = 0
-        time_end = 20
+        time_end = 10
         prediction_steps = 4
         for time in range(time_start, time_end - prediction_steps):
             self.system.time = time
@@ -70,7 +70,7 @@ class EnvPredictorTestCase(unittest.TestCase):
 
             self.env_ctl.init_params()
             time_start = 0
-            time_end = 20
+            time_end = 10
             prediction_steps = 4
             for time in range(time_start, time_end - prediction_steps):
                 self.system.time = time

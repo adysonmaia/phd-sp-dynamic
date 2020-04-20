@@ -1,7 +1,7 @@
 from .node import Node
 from .link import Link
-from sp.core.utils import json_util
-from sp.core.libs.cached_property import cached_property
+from sp.core.util import json_util
+from sp.core.lib.cached_property import cached_property
 
 
 class Network:

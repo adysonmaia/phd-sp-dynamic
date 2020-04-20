@@ -1,5 +1,5 @@
 from sp.core.model import Resource
-from sp.system_controller.utils.calc import calc_load_before_distribution
+from sp.system_controller.util.calc import calc_load_before_distribution
 import math
 import logging
 

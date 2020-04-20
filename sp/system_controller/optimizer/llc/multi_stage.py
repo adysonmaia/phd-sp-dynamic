@@ -1,7 +1,7 @@
 from .stage_ga import StageGA, StageGAOperator, MultiStageGA, MultiStageGAOperator
 from .plan_finder import GAPlanFinder, BeamPlanFinder, RandomPlanFinder
 from sp.system_controller.optimizer.soga import indiv_gen
-from sp.system_controller.utils import preferred_dominates
+from sp.system_controller.util import preferred_dominates
 from multiprocessing.dummy import Pool as ThreadPool
 import multiprocessing as mp
 

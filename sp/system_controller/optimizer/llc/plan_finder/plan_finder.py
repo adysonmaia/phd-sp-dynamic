@@ -1,6 +1,6 @@
 from sp.core.heuristic import nsgaii
 from sp.system_controller.estimator.system import DefaultSystemEstimator
-from sp.system_controller.utils import preferred_dominates
+from sp.system_controller.util import preferred_dominates
 from abc import ABC, abstractmethod
 from collections import UserList
 from functools import cmp_to_key

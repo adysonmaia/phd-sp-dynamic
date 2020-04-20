@@ -1,5 +1,5 @@
 from sp.core.heuristic.kmedoids import KMedoids
-from sp.system_controller.utils import calc_load_before_distribution
+from sp.system_controller.util import calc_load_before_distribution
 from sp.core.heuristic.brkga import GAIndividual
 import math
 

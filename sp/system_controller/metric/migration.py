@@ -1,5 +1,5 @@
 from sp.core.model import Resource
-from sp.system_controller.utils import calc_initialization_delay
+from sp.system_controller.util import calc_initialization_delay
 from statistics import mean
 import math
 

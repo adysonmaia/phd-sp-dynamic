@@ -1,5 +1,5 @@
 from sp.core.model import Scenario
-from sp.core.libs import forecasting_metrics
+from sp.core.lib import forecasting_metrics
 from sp.simulator import Simulator, Monitor
 from sp.system_controller.predictor import DefaultEnvironmentPredictor
 from datetime import datetime

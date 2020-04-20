@@ -10,7 +10,7 @@ class Mobility(ABC):
 def from_json(json_data):
     from . import static
     from . import track
-    from sp.core.utils import json_util
+    from sp.core.util import json_util
 
     loader = None
     json_data = json_util.load_content(json_data)

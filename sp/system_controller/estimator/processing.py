@@ -1,5 +1,5 @@
 from sp.core.estimator import Estimator
-from sp.system_controller.utils.calc import calc_received_load
+from sp.system_controller.util.calc import calc_received_load
 from abc import ABC, abstractmethod
 import math
 

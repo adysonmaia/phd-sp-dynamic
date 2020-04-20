@@ -5,7 +5,7 @@ from sp.system_controller.optimizer.llc import LLCOptimizer
 from sp.system_controller.optimizer.llc import plan_finder
 from sp.system_controller.optimizer import SOGAOptimizer, MOGAOptimizer, CloudOptimizer, SOHeuristicOptimizer
 from sp.system_controller.predictor import DefaultEnvironmentPredictor
-from sp.system_controller import metric, utils
+from sp.system_controller import metric, util
 from datetime import datetime
 from pytz import timezone
 import json
@@ -28,17 +28,17 @@ def get_app_deadline_violation(app, system, control_input, environment_input):
 
         src_nodes = [n.id for n in system.nodes if control_input.get_load_distribution(app.id, n.id, dst_node.id) > 0]
         alloc = control_input.get_allocated_cpu(app.id, dst_node.id)
-        load = utils.calc_load_before_distribution(app.id, dst_node.id, system, environment_input)
+        load = util.calc_load_before_distribution(app.id, dst_node.id, system, environment_input)
         ld = control_input.get_load_distribution(app.id, dst_node.id, dst_node.id)
         # print('app {}, dst {}, src {}'.format(app.id, dst_node.id, src_nodes))
         # print('\tcpu {}, alloc {}, ld {}, load {}'.format(dst_node.cpu_capacity, alloc, ld, load))
 
         for src_node in system.nodes:
-            load = utils.calc_load_after_distribution(app.id, src_node.id, dst_node.id,
-                                                      system, control_input, environment_input)
+            load = util.calc_load_after_distribution(app.id, src_node.id, dst_node.id,
+                                                     system, control_input, environment_input)
             if load > 0.0:
-                rt = utils.calc_response_time(app.id, src_node.id, dst_node.id,
-                                              system, control_input, environment_input)
+                rt = util.calc_response_time(app.id, src_node.id, dst_node.id,
+                                             system, control_input, environment_input)
                 if rt > app.deadline:
                     # ld = control_input.get_load_distribution(app.id, src_node.id, dst_node.id)
                     # net_delay = environment_input.get_net_delay(app.id, src_node.id, dst_node.id)
@@ -97,7 +97,7 @@ class ControlMonitor(Monitor):
         tz_time = datetime.fromtimestamp(sim_time, tz=UTC_TZ).astimezone(SF_TZ)
         print('{} - {}s'.format(tz_time, elapsed_time))
 
-        valid = utils.is_solution_valid(system, control_input, environment_input)
+        valid = util.is_solution_valid(system, control_input, environment_input)
         datum = {'time': sim_time, 'opt': opt_name, 'elapsed_time': elapsed_time, 'valid': valid}
         for func in self.metrics_func:
             key = func.__name__
@@ -122,7 +122,7 @@ class ControlMonitor(Monitor):
                 alloc_datum.append(item)
 
                 for src_node in system.nodes:
-                    load = utils.calc_load_before_distribution(app.id, src_node.id, system, environment_input)
+                    load = util.calc_load_before_distribution(app.id, src_node.id, system, environment_input)
                     ld = control_input.get_load_distribution(app.id, src_node.id, dst_node.id)
                     item = {'time': sim_time, 'app': app.id,
                             'src_node': src_node.id, 'dst_node': dst_node.id, 'ld': ld, 'load': load}
@@ -142,7 +142,7 @@ class ControlMonitor(Monitor):
             ))
 
             # for src_node in system.nodes:
-            #     load = utils.calc_load_before_distribution(app.id, src_node.id, system, environment_input)
+            #     load = util.calc_load_before_distribution(app.id, src_node.id, system, environment_input)
             #     dst_nodes = [n.id for n in system.nodes
             #                  if control_input.get_load_distribution(app.id, src_node.id, n.id) > 0]
             #     print('\t from {} to {}, load {}'.format(src_node.id, dst_nodes, load))
@@ -213,8 +213,8 @@ def main():
     ]
     single_objective = multi_objective[0]
 
-    # dominance_func = utils.pareto_dominates
-    dominance_func = utils.preferred_dominates
+    # dominance_func = util.pareto_dominates
+    dominance_func = util.preferred_dominates
     pool_size = 8
 
     # Cloud optimizer config
