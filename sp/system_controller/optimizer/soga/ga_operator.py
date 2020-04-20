@@ -18,19 +18,21 @@ class SOGAOperator(GAOperator):
     """ Genetic Operator for SOGA optimizer
     """
 
-    def __init__(self, objective, system, environment_input, use_heuristic=True):
+    def __init__(self, objective, system, environment_input, use_heuristic=True, first_population=None):
         """Initialization
         Args:
             objective (function): objective function to be optimized
             system (sp.core.model.System): system's state
             environment_input (sp.core.mode.EnvironmentInput): environment input
             use_heuristic (bool): use heuristic algorithms to generate the first population
+            first_population (list(GAIndividual)): list of individuals to be added in the first population
         """
         GAOperator.__init__(self)
         self.system = system
         self.environment_input = environment_input
         self.objective = objective
         self.use_heuristic = use_heuristic
+        self.extended_first_population = first_population
 
         nb_apps = len(self.system.apps)
         nb_nodes = len(self.system.nodes)
@@ -62,29 +64,31 @@ class SOGAOperator(GAOperator):
         Returns:
             individuals (list(GAIndividual)): list of individuals
         """
-        if not self.use_heuristic:
-            return []
+        population = []
+        if self.extended_first_population is not None:
+            population += self.extended_first_population
 
-        indiv_list = [
-            indiv_gen.create_individual_cloud(self),
-            indiv_gen.create_individual_net_delay(self),
-            # indiv_gen.create_individual_cluster_metoids(self),
-            indiv_gen.create_individual_deadline(self),
-            indiv_gen.create_individual_load(self),
-            indiv_gen.create_individual_current(self)
-        ]
-        merged_indiv = []
-        for indiv_1 in indiv_list:
-            indiv = indiv_gen.invert_individual(self, indiv_1)
-            merged_indiv.append(indiv)
+        if self.use_heuristic:
+            heuristic_population = [
+                indiv_gen.create_individual_cloud(self),
+                indiv_gen.create_individual_net_delay(self),
+                # indiv_gen.create_individual_cluster_metoids(self),
+                indiv_gen.create_individual_deadline(self),
+                indiv_gen.create_individual_load(self),
+                indiv_gen.create_individual_current(self)
+            ]
+            merged_population = []
+            for indiv_1 in heuristic_population:
+                indiv = indiv_gen.invert_individual(self, indiv_1)
+                merged_population.append(indiv)
 
-            for indiv_2 in indiv_list:
-                if indiv_1 != indiv_2:
-                    indiv = indiv_gen.merge_population(self, [indiv_1, indiv_2])
-                    merged_indiv.append(indiv)
-        indiv_list += merged_indiv
+                for indiv_2 in heuristic_population:
+                    if indiv_1 != indiv_2:
+                        indiv = indiv_gen.merge_population(self, [indiv_1, indiv_2])
+                        merged_population.append(indiv)
+            population += heuristic_population + merged_population
 
-        return indiv_list
+        return population
 
     def should_stop(self, population):
         """Verify whether genetic algorithm should stop or not
@@ -158,8 +162,10 @@ class SOGAOperator(GAOperator):
             src_node = self.system.get_node(src_node_id)
 
             nodes = list(selected_nodes[app.id])
-            nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution))
             nodes.append(cloud_node)
+            nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution))
+
+            place_nodes = []
 
             total_load = calc_load_before_distribution(app.id, src_node.id, self.system, self.environment_input)
             chunk = total_load * self.load_chunk_percent
@@ -174,6 +180,9 @@ class SOGAOperator(GAOperator):
 
                         remaining_load -= chunk
                         chunk = min(remaining_load, chunk)
+
+                        if dst_node not in place_nodes:
+                            place_nodes.append(dst_node)
                         break
 
                 if remaining_load <= 0.0:

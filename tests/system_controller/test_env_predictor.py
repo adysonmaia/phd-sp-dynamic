@@ -1,4 +1,5 @@
 from sp.core.model import Scenario, Node, System, EnvironmentInput
+from sp.core.predictor import ARIMAPredictor, AutoARIMAPredictor, ExpSmoothingPredictor
 from sp.physical_system.environment_controller import EnvironmentController
 from sp.system_controller.predictor.environment import DefaultEnvironmentPredictor
 import json
@@ -31,7 +32,7 @@ class EnvPredictorTestCase(unittest.TestCase):
         predictor = DefaultEnvironmentPredictor()
         self.env_ctl.init_params()
         time_start = 0
-        time_end = 100
+        time_end = 20
         prediction_steps = 4
         for time in range(time_start, time_end - prediction_steps):
             self.system.time = time
@@ -59,6 +60,25 @@ class EnvPredictorTestCase(unittest.TestCase):
                         pred_net_delay = pred_env.get_net_delay(app.id, src_node.id, dst_node.id)
                         self.assertGreaterEqual(pred_net_delay, 0.0)
                         self.assertLess(pred_net_delay, math.inf)
+
+    def test_params(self):
+        versions = [None, ARIMAPredictor, AutoARIMAPredictor, ExpSmoothingPredictor]
+        for version in versions:
+            predictor = DefaultEnvironmentPredictor()
+            predictor.load_predictor_class = version
+            predictor.net_predictor_class = version
+
+            self.env_ctl.init_params()
+            time_start = 0
+            time_end = 20
+            prediction_steps = 4
+            for time in range(time_start, time_end - prediction_steps):
+                self.system.time = time
+                environment_input = self.env_ctl.update(self.system)
+                predictor.update(self.system, environment_input)
+
+            predictions = predictor.predict(prediction_steps)
+            self.assertEqual(len(predictions), prediction_steps)
 
 
 if __name__ == '__main__':

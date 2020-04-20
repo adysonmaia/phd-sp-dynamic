@@ -20,6 +20,8 @@ SF_TZ = timezone(SF_TZ_STR)
 def load_opts_df(optimizers, output_path, filename, nb_runs):
     opts_df = {}
 
+    stop_time = SF_TZ.localize(datetime(2008, 5, 24, 23, 59, 59))
+
     for opt in optimizers:
         opt_df = []
         for run in range(nb_runs):
@@ -29,6 +31,7 @@ def load_opts_df(optimizers, output_path, filename, nb_runs):
             df = pd.read_json(file, orient='records')
             df['run'] = run
             df['time'] = pd.to_datetime(df['time'], unit='s', utc=True)
+            df = df[df['time'] <= stop_time]
             opt_df.append(df)
 
         opt_df = pd.concat(opt_df)
@@ -103,6 +106,7 @@ def plot_metrics(scenario, optimizers, output_path, nb_runs):
         error_df = df.pivot(columns='opt', values=error_col)
 
         metric_df.plot(ax=ax, yerr=error_df, legend=False)
+        # metric_df.plot(ax=ax, legend=False)
 
     axes[0, 0].legend()
     for row in range(nb_rows):
@@ -173,18 +177,19 @@ def main():
 
     output_path = 'output/san_francisco/exp/'
     optimizers = [
-        {'id': 'CloudOptimizer', 'label': 'Cloud'},
-        {'id': 'MOGAOptimizer_mig', 'label': 'MOGA + migration'},
-        {'id': 'LLCOptimizer_w1', 'label': 'LLC w1'},
-        {'id': 'LLCOptimizer_w2', 'label': 'LLC w2'},
+        # {'id': 'CloudOptimizer', 'label': 'Cloud'},
+        # {'id': 'MOGAOptimizer_mig', 'label': 'MOGA + migration'},
+        {'id': 'MOGAOptimizer', 'label': 'Without Prediction'},
+        {'id': 'LLCOptimizer_w1', 'label': 'Prediction H=1'},
+        # {'id': 'LLCOptimizer_w2', 'label': 'LLC w2'},
     ]
 
     # run_dirs = glob(os.path.join(output_path, '[0-9]*/'))
     # nb_runs = len(run_dirs)
-    nb_runs = 8
+    nb_runs = 30
 
-    plot_metrics(scenario, optimizers, output_path, nb_runs)
-    # plot_placement(scenario, optimizers, output_path, nb_runs)
+    # plot_metrics(scenario, optimizers, output_path, nb_runs)
+    plot_placement(scenario, optimizers, output_path, nb_runs)
 
 
 if __name__ == '__main__':

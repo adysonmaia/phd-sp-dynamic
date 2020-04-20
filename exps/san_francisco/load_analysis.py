@@ -345,8 +345,8 @@ def data_analysis(scenario, load_filename, users_filename):
 
     # plot_load_by_app(scenario, load_df)
     # plot_load_by_app_node(scenario, load_df)
-    plot_load_by_node(scenario, load_df)
-    # plot_users(scenario, load_df, users_df)
+    # plot_load_by_node(scenario, load_df)
+    plot_users(scenario, load_df, users_df)
     # plot_map(scenario)
 
 
@@ -359,8 +359,8 @@ def main():
         data = json.load(json_file)
         scenario = Scenario.from_json(data)
 
-    run_sim(scenario, load_filename, users_filename)
-    # data_analysis(scenario, load_filename, users_filename)
+    # run_sim(scenario, load_filename, users_filename)
+    data_analysis(scenario, load_filename, users_filename)
 
 
 if __name__ == '__main__':

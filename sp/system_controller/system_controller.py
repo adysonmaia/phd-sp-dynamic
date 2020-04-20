@@ -1,5 +1,5 @@
 from sp.system_controller.scheduler.always import AlwaysScheduler
-from sp.system_controller.optimizer.static.cloud import CloudOptimizer
+from sp.system_controller.optimizer.cloud import CloudOptimizer
 from sp.system_controller.optimizer import OptimizerError
 
 

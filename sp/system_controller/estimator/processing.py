@@ -43,9 +43,9 @@ class DefaultProcessingResult(ProcessingResult):
     @property
     def delay(self):
         delay = math.inf
-        if self.service_rate > self.arrival_rate > 0.0:
+        if self.service_rate > self.arrival_rate:
             delay = 1.0 / float(self.service_rate - self.arrival_rate)
-        elif self.arrival_rate <= 0.0:
+        elif self.service_rate == self.arrival_rate == 0.0:
             delay = 0.0
         return delay
 
@@ -54,6 +54,6 @@ class DefaultProcessingResult(ProcessingResult):
         size = math.inf
         if self.service_rate > self.arrival_rate > 0.0:
             size = self.arrival_rate / float(self.service_rate - self.arrival_rate)
-        elif self.arrival_rate <= 0.0:
+        elif self.arrival_rate == 0.0:
             size = 0.0
         return size

@@ -1,7 +1,7 @@
 from sp.core.model import Scenario, Node, System, ControlInput, EnvironmentInput
 from sp.system_controller.estimator.processing import DefaultProcessingEstimator
 from sp.physical_system.environment_controller import EnvironmentController
-from sp.system_controller.optimizer.static.cloud import CloudOptimizer
+from sp.system_controller.optimizer.cloud import CloudOptimizer
 import json
 import math
 import unittest

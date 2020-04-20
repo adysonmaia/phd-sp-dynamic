@@ -2,13 +2,12 @@ from sp.core.model import Scenario, Node, System, EnvironmentInput
 from sp.physical_system.environment_controller import EnvironmentController
 from sp.system_controller.model import OptSolution
 from sp.system_controller import utils
-from sp.system_controller.optimizer.static.cloud import CloudOptimizer
+from sp.system_controller.optimizer.cloud import CloudOptimizer
 import json
-import math
 import unittest
 
 
-class OptUtilTestCase(unittest.TestCase):
+class UtilTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         filename = "tests/system_controller/fixtures/test_utils.json"
@@ -44,34 +43,6 @@ class OptUtilTestCase(unittest.TestCase):
 
         solution = OptSolution.create_empty(self.system)
         self.assertFalse(utils.is_solution_valid(self.system, solution, self.environment_input))
-
-    def test_delay_calc(self):
-        opt = CloudOptimizer()
-        solution = opt.solve(self.system, self.environment_input)
-
-        for app in self.system.apps:
-            for dst_node in self.system.nodes:
-                proc_delay = utils.calc_processing_delay(app.id, dst_node.id,
-                                                         self.system, solution, self.environment_input)
-
-                if solution.get_app_placement(app.id, dst_node.id):
-                    self.assertGreater(proc_delay, 0.0)
-                    self.assertNotEqual(proc_delay, math.inf)
-                else:
-                    self.assertEqual(proc_delay, math.inf)
-
-                for src_node in self.system.nodes:
-                    net_delay = utils.calc_network_delay(app.id, src_node.id, dst_node.id,
-                                                         self.system, solution, self.environment_input)
-                    if src_node == dst_node:
-                        self.assertEqual(net_delay, 0.0)
-                    else:
-                        self.assertGreater(net_delay, 0.0)
-
-                    rt = utils.calc_response_time(app.id, src_node.id, dst_node.id,
-                                                  self.system, solution, self.environment_input)
-                    # TODO: update this calculation
-                    self.assertEqual(rt, proc_delay + net_delay)
 
     def test_alloc_resource(self):
         solution = OptSolution.create_empty(self.system)

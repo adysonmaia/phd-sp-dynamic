@@ -11,6 +11,7 @@ def calc_response_time(app_id, src_node_id, dst_node_id, system, control_input, 
     rt = net_delay + proc_delay
     if init_delay > 0.0 and system.sampling_time > 0.0:
         rt += (init_delay ** 2) / float(system.sampling_time)
+    rt = round(rt, 3)
     return rt
 
 

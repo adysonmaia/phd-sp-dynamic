@@ -15,17 +15,23 @@ class SOGAOptimizer(Optimizer):
         self.elite_probability = 0.6
         self.use_heuristic = True
         self.pool_size = 4
+        self._last_population = None
 
     def init_params(self):
         if self.objective is None:
             self.objective = deadline.max_deadline_violation
 
+    def clear_params(self):
+        self._last_population = None
+
     def solve(self, system, environment_input):
         self.init_params()
+
         ga_operator = SOGAOperator(system=system,
                                    environment_input=environment_input,
                                    objective=self.objective,
-                                   use_heuristic=self.use_heuristic)
+                                   use_heuristic=self.use_heuristic,
+                                   first_population=self._last_population)
         so_ga = BRKGA(operator=ga_operator,
                       nb_generations=self.nb_generations,
                       population_size=self.population_size,
@@ -34,5 +40,6 @@ class SOGAOptimizer(Optimizer):
                       elite_probability=self.elite_probability,
                       pool_size=self.pool_size)
         population = so_ga.solve()
+        self._last_population = population
         solution = ga_operator.decode(population[0])
         return solution

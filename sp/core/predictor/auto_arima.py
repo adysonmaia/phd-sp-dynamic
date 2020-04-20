@@ -1,11 +1,12 @@
 from .predictor import Predictor
 import pmdarima as pm
 import warnings
+import math
 
 
 DEFAULT_ARIMA_PARAMS = {"suppress_warnings": True, 'error_action': 'ignore', 'stepwise': True}
 DEFAULT_PREDICT_PARAMS = {}
-DEFAULT_MAX_DATA_SIZE = 10000
+DEFAULT_MAX_DATA_SIZE = math.inf
 
 FIT_MIN_DATA_SIZE = 2
 
@@ -26,9 +27,14 @@ class AutoARIMAPredictor(Predictor):
         self._fit_results = None
 
     def update(self, datum):
-        self._data.append(datum)
+        if isinstance(datum, list):
+            self._data = datum
+        else:
+            self._data.append(datum)
+
         if len(self._data) > self.max_data_size:
-            self._data.pop(0)
+            pos = int(len(self._data) - self.max_data_size)
+            self._data = self._data[pos:]
 
         fit_results = None
         if len(self._data) >= FIT_MIN_DATA_SIZE:

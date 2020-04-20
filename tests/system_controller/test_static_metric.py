@@ -1,7 +1,7 @@
-from sp.core.model import Scenario, System, EnvironmentInput
+from sp.core.model import Scenario, System
 from sp.physical_system.environment_controller import EnvironmentController
-from sp.system_controller.optimizer.static.cloud import CloudOptimizer
-from sp.system_controller.metric import availability, deadline, power, cost
+from sp.system_controller.optimizer.cloud import CloudOptimizer
+from sp.system_controller.metric import availability, power, cost
 import json
 import math
 import unittest
@@ -27,19 +27,6 @@ class StaticMetricTestCase(unittest.TestCase):
         cls.system = system
         cls.environment_input = environment_input
         cls.solution = solution
-
-    def test_deadline(self):
-        max_value = deadline.max_deadline_violation(self.system, self.solution, self.environment_input)
-        avg_value = deadline.avg_deadline_violation(self.system, self.solution, self.environment_input)
-        sat_rate = deadline.deadline_satisfaction(self.system, self.solution, self.environment_input)
-
-        self.assertGreater(max_value, 0.0)
-        self.assertGreater(avg_value, 0.0)
-        self.assertGreaterEqual(max_value, avg_value)
-        self.assertGreaterEqual(sat_rate, 0.0)
-        self.assertLessEqual(sat_rate, 1.0)
-        self.assertLess(avg_value, math.inf)
-        self.assertLess(max_value, math.inf)
 
     def test_availability(self):
         max_unavail = availability.max_unavailability(self.system, self.solution, self.environment_input)

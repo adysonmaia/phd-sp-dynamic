@@ -1,7 +1,8 @@
 from sp.core.model import Scenario
 from sp.core.predictor import AutoARIMAPredictor
 from sp.simulator import Simulator, Monitor
-from sp.system_controller.optimizer.dynamic.llc import LLCOptimizer, plan_finder
+from sp.system_controller.optimizer.llc import LLCOptimizer
+from sp.system_controller.optimizer.llc import plan_finder
 from sp.system_controller.optimizer import SOGAOptimizer, MOGAOptimizer, CloudOptimizer, SOHeuristicOptimizer
 from sp.system_controller.predictor import DefaultEnvironmentPredictor
 from sp.system_controller import metric, utils
@@ -164,9 +165,9 @@ class ControlMonitor(Monitor):
             (ld_filename, self.control_data['ld']),
         ]
 
-        for (filename, data) in files_data:
-            with open(filename, 'w') as file:
-                json.dump(data, file, indent=2)
+        # for (filename, data) in files_data:
+        #     with open(filename, 'w') as file:
+        #         json.dump(data, file, indent=2)
 
 
 def main():
@@ -220,7 +221,7 @@ def main():
     opt = CloudOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Single-Objective Heuristic optimizer config
     opt = SOHeuristicOptimizer()
@@ -269,11 +270,11 @@ def main():
 
         opt_id = '{}_w{}'.format(opt.__class__.__name__, window)
         item = (opt_id, opt)
-        optimizers.append(item)
+        # optimizers.append(item)
 
     # Execute simulation for each optimizer nb_runs times
-    nb_runs = 30
-    # nb_runs = 1
+    # nb_runs = 30
+    nb_runs = 1
     for run in range(nb_runs):
         for (opt_id, opt) in optimizers:
             output_path = 'output/san_francisco/exp/{}/{}/'.format(run, opt_id)

@@ -335,8 +335,8 @@ def gen_urllc_apps():
 
     # for deadline in [0.001, 0.005, 0.01, 0.05, 0.1]:
     # for deadline in [0.001, 0.005, 0.01, 0.015, 0.02, 0.03, 0.05, 0.1]:
-    # for deadline in [0.003]:
-    for deadline in [0.001, 0.002, 0.003, 0.004, 0.005]:
+    # for deadline in [0.001, 0.002, 0.003, 0.004, 0.005]:
+    for deadline in [0.003]:
         app = {
             'id': len(json_data['apps']),
             'type': 'URLLC',
@@ -348,7 +348,8 @@ def gen_urllc_apps():
             'max_inst': 100,
             'demand': {
                 'RAM': [100e+3, 1e+6],
-                'DISK': [100e+3, 500e+6],
+                # 'DISK': [100e+3, 500e+6],
+                'DISK': [100e+3, 1e+9],
             }
         }
 

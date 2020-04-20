@@ -1,9 +1,9 @@
-from .stage_ga import StageGA, StageGAOperator, MultiStageGA, MultiStageGAOperator, preferred_dominates, indiv_gen
+from .stage_ga import StageGA, StageGAOperator, MultiStageGA, MultiStageGAOperator
 from .plan_finder import GAPlanFinder, BeamPlanFinder, RandomPlanFinder
+from sp.system_controller.optimizer.soga import indiv_gen
+from sp.system_controller.utils import preferred_dominates
 from multiprocessing.dummy import Pool as ThreadPool
 import multiprocessing as mp
-import copy
-import time
 
 _PF_PARAMS = {
     GAPlanFinder: {

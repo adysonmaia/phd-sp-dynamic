@@ -1,8 +1,8 @@
 from sp.core.model import Scenario, System
 from sp.system_controller.estimator.system import DefaultSystemEstimator
 from sp.physical_system.environment_controller import EnvironmentController
-from sp.system_controller.optimizer.static import CloudOptimizer, SOHeuristicOptimizer
-from sp.system_controller.metric import migration
+from sp.system_controller.optimizer import CloudOptimizer, SOHeuristicOptimizer
+from sp.system_controller.metric import migration, deadline
 import json
 import math
 import unittest
@@ -51,11 +51,11 @@ class DynamicMetricTestCase(unittest.TestCase):
         values = [[] for _ in funcs]
 
         for time in range(self.time_duration + 1):
-            for (func_index, func) in enumerate(funcs):
-                system = self.systems[time]
-                control_input = self.control_inputs[time]
-                env_input = self.environment_inputs[time]
+            system = self.systems[time]
+            control_input = self.control_inputs[time]
+            env_input = self.environment_inputs[time]
 
+            for (func_index, func) in enumerate(funcs):
                 value = func(system, control_input, env_input)
                 self.assertGreaterEqual(value, 0.0)
                 self.assertLess(value, math.inf)
@@ -67,6 +67,24 @@ class DynamicMetricTestCase(unittest.TestCase):
             self.assertGreater(sum_value, 0.0)
             self.assertLess(sum_value, math.inf)
             self.assertFalse(math.isnan(sum_value))
+
+    def test_deadline(self):
+        for time in range(self.time_duration + 1):
+            system = self.systems[time]
+            control_input = self.control_inputs[time]
+            env_input = self.environment_inputs[time]
+
+            max_value = deadline.max_deadline_violation(system, control_input, env_input)
+            avg_value = deadline.avg_deadline_violation(system, control_input, env_input)
+            sat_rate = deadline.deadline_satisfaction(system, control_input, env_input)
+
+            self.assertGreater(max_value, 0.0)
+            self.assertGreater(avg_value, 0.0)
+            self.assertGreaterEqual(max_value, avg_value)
+            self.assertGreaterEqual(sat_rate, 0.0)
+            self.assertLessEqual(sat_rate, 1.0)
+            self.assertLess(avg_value, math.inf)
+            self.assertLess(max_value, math.inf)
 
 
 if __name__ == '__main__':

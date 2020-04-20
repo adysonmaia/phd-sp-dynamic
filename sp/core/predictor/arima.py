@@ -1,12 +1,13 @@
 from .predictor import Predictor
 from statsmodels.tsa.arima_model import ARIMA
 import warnings
+import math
 
 
 DEFAULT_ARIMA_PARAMS = {"order": (1, 1, 1)}
 DEFAULT_FIT_PARAMS = {"disp": False}
 DEFAULT_PREDICT_PARAMS = {"typ": "levels"}
-DEFAULT_MAX_DATA_SIZE = 10000
+DEFAULT_MAX_DATA_SIZE = math.inf
 
 FIT_MIN_DATA_SIZE = 2
 
@@ -28,9 +29,14 @@ class ARIMAPredictor(Predictor):
         self._fit_results = None
 
     def update(self, datum):
-        self._data.append(datum)
+        if isinstance(datum, list):
+            self._data = datum
+        else:
+            self._data.append(datum)
+
         if len(self._data) > self.max_data_size:
-            self._data.pop(0)
+            pos = int(len(self._data) - self.max_data_size)
+            self._data = self._data[pos:]
 
         fit_results = None
         if len(self._data) >= FIT_MIN_DATA_SIZE:

@@ -3,7 +3,7 @@ from sp.physical_system.environment_controller import EnvironmentController
 from sp.system_controller.model import OptSolution
 from sp.system_controller.utils import is_solution_valid
 from sp.system_controller.metric import deadline, availability, power, cost
-from sp.system_controller.optimizer.static.so_heuristic import SOHeuristicOptimizer
+from sp.system_controller.optimizer.so_heuristic import SOHeuristicOptimizer
 import json
 import math
 import unittest
@@ -35,7 +35,9 @@ class SOHeuristicOptTestCase(unittest.TestCase):
         self.assertIsInstance(self.environment_input, EnvironmentInput)
 
     def test_versions(self):
-        versions = ["cloud", "net_delay", "deadline", "cluster_metoids", "cluster_metoids_sc"]
+        versions = SOHeuristicOptimizer.versions.to_list()
+        self.assertGreater(len(versions), 0)
+
         for version in versions:
             opt = SOHeuristicOptimizer(version=version)
             solution = opt.solve(self.system, self.environment_input)
@@ -50,7 +52,9 @@ class SOHeuristicOptTestCase(unittest.TestCase):
                 self.assertFalse(math.isnan(value))
 
     def test_merged_versions(self):
-        versions = ["cloud", "net_delay", "cluster_metoids", "deadline", "cluster_metoids_sc"]
+        versions = SOHeuristicOptimizer.versions.to_list()
+        self.assertGreater(len(versions), 0)
+
         for i in range(len(versions)):
             for j in range(i+1, len(versions)):
                 version = [versions[i], versions[j]]

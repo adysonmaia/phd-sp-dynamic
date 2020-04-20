@@ -1,3 +1,6 @@
 from .optimizer import Optimizer, OptimizerError
-from .static import CloudOptimizer, SOHeuristicOptimizer, SOGAOptimizer, MOGAOptimizer
-from .dynamic import LLCOptimizer
+from .cloud import CloudOptimizer
+from .so_heuristic import SOHeuristicOptimizer
+from .soga import SOGAOptimizer
+from .moga import MOGAOptimizer
+from .llc import LLCOptimizer
