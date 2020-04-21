@@ -6,6 +6,12 @@ import math
 
 
 class TrackMobility(Mobility):
+    """Track Mobility
+    It stores a list of positions attached to a timestamp
+
+    Attributes:
+        tracks (list(TrackFrame)): list of tracks frame. A frame store the position at a specific time
+    """
     def __init__(self, tracks=None):
         Mobility.__init__(self)
         self.tracks = []
@@ -13,6 +19,20 @@ class TrackMobility(Mobility):
             self.tracks = tracks
 
     def position(self, time, tolerance=None):
+        """Get position at a specific time and with certain time tolerance
+
+        If the specified time isn't stored in the tracks frame, a position is calculated based on the interpolation
+        of two consecutive track frame f1 and f2 such that (f1.time <= time <= f2.time). The interpolation is
+        calculated only if (time - f1.time <= tolerance or f2.time - time <= tolerance)
+
+        Args:
+            time (float): time
+            tolerance (float): a time tolerance to obtain a interpolated position between two consecutive track frame.
+                If None, the tolerance is set to infinity
+        Returns:
+            point.Point: position or None if position is not found
+        """
+
         start = 0
         tracks_len = len(self.tracks)
         position = None
@@ -47,13 +67,32 @@ class TrackMobility(Mobility):
 
     @staticmethod
     def from_json(json_data):
+        """Create Track Mobility from a json data
+        See :py:func:`sp.core.mobility.track.from_json`
+        Args:
+            json_data (list): data loaded from a json
+        Returns:
+            TrackMobility: loaded mobility
+        """
         return from_json(json_data)
 
 
 @total_ordering
 class TrackFrame:
-    def __init__(self, pos=None, time=0):
-        self.position = pos
+    """Track Frame
+    It stores the position at a specific time
+
+    Attributes:
+        position (point.Point): position
+        time (float): time
+    """
+    def __init__(self, position=None, time=0.0):
+        """Initialization
+        Args:
+            position (point.Point): position
+            time (float): time
+        """
+        self.position = position
         self.time = time
 
     def __eq__(self, other):
@@ -66,6 +105,14 @@ class TrackFrame:
         return "t: {} p: {}".format(self.time, self.position)
 
     def intermediate(self, other_frame, time):
+        """Interpolate a position from a time between two frames
+
+        Args:
+            other_frame (TrackFrame): next frame
+            time (float): a time between self.time and other_frame.time
+        Returns:
+            TrackFrame: frame with the interpolated position
+        """
         inter_pos = None
         delta_time = abs(float(other_frame.time - self.time))
         if delta_time != 0.0:
@@ -77,6 +124,14 @@ class TrackFrame:
 
 
 def _frame_from_json(json_data):
+    """Create Track Frame from a json data
+    Args:
+        json_data (Union[list, dict]): loaded data from json
+    Returns:
+        TrackFrame: loaded track frame
+    Raises:
+        KeyError: attributes not found
+    """
     f = TrackFrame()
     f.position = point.from_json(json_data)
     if isinstance(json_data, list):
@@ -86,12 +141,20 @@ def _frame_from_json(json_data):
     elif isinstance(json_data, dict) and "t" in json_data:
         f.time = int(json_data["t"])
     else:
-        raise TypeError
+        raise KeyError
 
     return f
 
 
 def from_json(json_data):
+    """Create a Track Mobility from a json data
+    Args:
+        json_data (list): loaded data from json
+    Returns:
+        TrackMobility: loaded mobility
+    Raises:
+        KeyError: attributes not found
+    """
     tracks_frame = []
     for item in json_data:
         f = _frame_from_json(item)

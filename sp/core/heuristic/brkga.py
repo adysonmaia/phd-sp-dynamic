@@ -333,7 +333,7 @@ class GAOperator(ABC):
     @property
     @abstractmethod
     def nb_genes(self):
-        """
+        """Number of genes in the chromosome
         Returns:
             int: number of genes in a individual's chromosome
         """

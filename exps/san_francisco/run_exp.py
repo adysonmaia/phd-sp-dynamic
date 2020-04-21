@@ -1,8 +1,7 @@
 from sp.core.model import Scenario
 from sp.core.predictor import AutoARIMAPredictor
 from sp.simulator import Simulator, Monitor
-from sp.system_controller.optimizer.llc import LLCOptimizer
-from sp.system_controller.optimizer.llc import plan_finder
+from sp.system_controller.optimizer.llc import LLCOptimizer, plan_finder, input_finder
 from sp.system_controller.optimizer import SOGAOptimizer, MOGAOptimizer, CloudOptimizer, SOHeuristicOptimizer
 from sp.system_controller.predictor import DefaultEnvironmentPredictor
 from sp.system_controller import metric, util
@@ -243,7 +242,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = format(opt.__class__.__name__)
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # LLC optimizer config with different prediction windows
     # max_prediction_window = 3
@@ -256,10 +255,16 @@ def main():
         opt.dominance_func = dominance_func
         opt.objective = multi_objective
 
+        # Set control input finder algorithm
+        # opt.input_finder_class = input_finder.MGAInputFinder
+        opt.input_finder_class = input_finder.SSGAInputFinder
+        # opt.input_finder_class = input_finder.SGAInputFinder
+
         # Set plan finder algorithm
         # opt.plan_finder_class = plan_finder.GAPlanFinder
         # opt.plan_finder_class = plan_finder.ExhaustivePlanFinder
         opt.plan_finder_class = plan_finder.EmptyPlanFinder
+        # opt.plan_finder_class = None
 
         # Set environment forecasting
         seasonal_period = int(round(1 * 24 * 60 * 60 / float(step_time)))  # Seasonal of 1 day
@@ -270,7 +275,7 @@ def main():
 
         opt_id = '{}_w{}'.format(opt.__class__.__name__, window)
         item = (opt_id, opt)
-        # optimizers.append(item)
+        optimizers.append(item)
 
     # Execute simulation for each optimizer nb_runs times
     # nb_runs = 30

@@ -10,24 +10,23 @@ class GAPlanFinder(PlanFinder):
                  environment_inputs,
                  objective,
                  objective_aggregator,
-                 control_decoder,
                  system_estimator,
                  dominance_func,
                  pool_size,
                  **ga_params):
+
         PlanFinder.__init__(self,
                             system=system,
                             environment_inputs=environment_inputs,
                             objective=objective,
                             objective_aggregator=objective_aggregator,
-                            control_decoder=control_decoder,
                             system_estimator=system_estimator,
                             dominance_func=dominance_func,
                             pool_size=pool_size)
         self.ga_params = ga_params
 
     def solve(self, control_inputs):
-        ga_operator = GAPFOperator(stages=control_inputs, plan_creator=self.create_plan)
+        ga_operator = GAPFOperator(control_inputs, self.sequence_length, self.create_plan)
         ga = NSGAII(operator=ga_operator,
                     pool_size=self.pool_size,
                     dominance_func=self.dominance_func,
@@ -49,14 +48,16 @@ class GAPlanFinder(PlanFinder):
 class GAPFOperator(GAOperator):
     """Genetic operator for GAPlanFinder
     """
-    def __init__(self, stages, plan_creator):
+    def __init__(self, control_inputs, sequence_length, plan_creator):
         """Initialization
         Args:
-            stages (list(list)): list of control inputs per stage
+            control_inputs (list): list of control inputs
+            sequence_length (int): sequence's length
             plan_creator (function): function to create a plan
         """
         GAOperator.__init__(self)
-        self.stages = stages
+        self.control_inputs = control_inputs
+        self.sequence_length = sequence_length
         self.plan_creator = plan_creator
 
     @property
@@ -65,7 +66,7 @@ class GAPFOperator(GAOperator):
         Returns:
             int: number of genes
         """
-        return len(self.stages)
+        return self.sequence_length
 
     def rand_individual(self):
         """Generate a random individual
@@ -73,10 +74,10 @@ class GAPFOperator(GAOperator):
             individual (GAIndividual): a new individual
         """
         chromosome = [0] * self.nb_genes
-        for stage in range(self.nb_genes):
-            stage_size = len(self.stages[stage])
-            value = random.randrange(stage_size)
-            chromosome[stage] = value
+        inputs_length = len(self.control_inputs)
+        for index in range(self.nb_genes):
+            value = random.randrange(inputs_length)
+            chromosome[index] = value
         return GAIndividual(chromosome)
 
     def evaluate(self, individual):
@@ -97,6 +98,6 @@ class GAPFOperator(GAOperator):
         Returns:
             list: sequence of control inputs
         """
-        control_sequence = [self.stages[s][individual[s]] for s in range(self.nb_genes)]
+        control_sequence = [self.control_inputs[gene] for gene in individual]
         return control_sequence
 

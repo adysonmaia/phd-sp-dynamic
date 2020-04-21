@@ -1,5 +1,5 @@
-from sp.system_controller.optimizer.soga import SOGAOperator
 from sp.core.heuristic.nsgaii import pareto_dominates
+from sp.system_controller.optimizer.soga import SOGAOperator, indiv_gen
 
 DEFAULT_DOMINANCE_TOLERANCE = 0.0
 

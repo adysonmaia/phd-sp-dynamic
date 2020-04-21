@@ -1,42 +1,18 @@
 from sp.core.heuristic import nsgaii
-from .plan_finder import PlanFinder, Plan
+from .plan_finder import PlanFinder, Plan, decode_control_input
 from functools import cmp_to_key
 import multiprocessing as mp
 
 
 class BeamPlanFinder(PlanFinder):
-    def __init__(self,
-                 system,
-                 environment_inputs,
-                 objective,
-                 objective_aggregator,
-                 control_decoder,
-                 system_estimator,
-                 dominance_func,
-                 beam_width=10,
-                 prune=True,
-                 pool_size=0):
-        PlanFinder.__init__(self,
-                            system=system,
-                            environment_inputs=environment_inputs,
-                            objective=objective,
-                            objective_aggregator=objective_aggregator,
-                            control_decoder=control_decoder,
-                            system_estimator=system_estimator,
-                            dominance_func=dominance_func,
-                            pool_size=pool_size)
+    def __init__(self, beam_width=10, prune=True, **pf_params):
+        PlanFinder.__init__(self, **pf_params)
         self.beam_width = beam_width
         self.prune = prune
-        self.pool_size = pool_size
 
     def _decode_control_inputs(self, system, control_inputs, environment_input):
-        control_decoder = self.control_decoder
-
         def decode(control_input):
-            if control_decoder is not None:
-                return control_decoder(system, control_input, environment_input)
-            else:
-                return control_decoder
+            return decode_control_input(system, control_input, environment_input)
 
         map_func = map
         func = decode
@@ -48,7 +24,7 @@ class BeamPlanFinder(PlanFinder):
                 pool_size = min(self.pool_size, mp_ctx.cpu_count())
                 pool = mp_ctx.Pool(processes=pool_size,
                                    initializer=_init_pool,
-                                   initargs=[system, environment_input, control_decoder])
+                                   initargs=[system, environment_input, decode_control_input])
                 map_func = pool.map
                 func = _decode_control_input
             except ValueError:
@@ -64,11 +40,10 @@ class BeamPlanFinder(PlanFinder):
         beam_node.system = self.system
         beam_nodes = [beam_node]
 
-        nb_stages = len(control_inputs)
-        for stage in range(nb_stages):
+        for seq_index in range(self.sequence_length):
             next_beam_nodes = []
-            env_input = self.environment_inputs[stage]
-            stage_ctrl_inputs = control_inputs[stage]
+            env_input = self.environment_inputs[seq_index]
+            stage_ctrl_inputs = control_inputs[seq_index]
 
             for beam_node in beam_nodes:
                 system = beam_node.system
@@ -162,10 +137,7 @@ class _ControlInputDecoder:
         self.decoder_func = decoder_func
 
     def __call__(self, control_input):
-        if self.decoder_func is not None:
-            return self.decoder_func(self.system, control_input, self.environment_input)
-        else:
-            return control_input
+        return self.decoder_func(self.system, control_input, self.environment_input)
 
 
 def _init_pool(system, environment_input, decoder_func):

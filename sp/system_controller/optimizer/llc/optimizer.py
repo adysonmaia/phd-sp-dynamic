@@ -1,8 +1,7 @@
 from sp.system_controller.optimizer import Optimizer
 from sp.system_controller.predictor import DefaultEnvironmentPredictor
 from sp.system_controller.metric import deadline, cost, availability, migration
-from .multi_stage import MultiStage, preferred_dominates
-from . import plan_finder
+from .two_step import TwoStep
 
 
 class LLCOptimizer(Optimizer):
@@ -16,8 +15,12 @@ class LLCOptimizer(Optimizer):
         self.system_estimator = None
         self.plan_finder_class = None
         self.plan_finder_params = None
-        self.dominance_func = preferred_dominates
+        self.input_finder_class = None
+        self.input_finder_params = None
+        self.dominance_func = None
         self.pool_size = 4
+
+        self._last_population = None
 
     def init_params(self):
         if self.environment_predictor is None:
@@ -36,20 +39,30 @@ class LLCOptimizer(Optimizer):
 
     def clear_params(self):
         self.environment_predictor.clear()
+        self._last_population = None
 
     def solve(self, system, environment_input):
         self.init_params()
         self.environment_predictor.update(system, environment_input)
-        ms_heuristic = MultiStage(system=system,
-                                  environment_input=environment_input,
-                                  objective=self.objective,
-                                  use_heuristic=self.use_heuristic,
-                                  prediction_window=self.prediction_window,
-                                  environment_predictor=self.environment_predictor,
-                                  objective_aggregator=self.objective_aggregator,
-                                  plan_finder_class=self.plan_finder_class,
-                                  plan_finder_params=self.plan_finder_params,
-                                  dominance_func=self.dominance_func,
-                                  pool_size=self.pool_size)
 
-        return ms_heuristic.solve()
+        two_step = TwoStep(system=system,
+                           environment_input=environment_input,
+                           objective=self.objective,
+                           prediction_window=self.prediction_window,
+                           use_heuristic=self.use_heuristic,
+                           system_estimator=self.system_estimator,
+                           environment_predictor=self.environment_predictor,
+                           objective_aggregator=self.objective_aggregator,
+                           plan_finder_class=self.plan_finder_class,
+                           plan_finder_params=self.plan_finder_params,
+                           input_finder_class=self.input_finder_class,
+                           input_finder_params=self.input_finder_params,
+                           dominance_func=self.dominance_func,
+                           pool_size=self.pool_size,
+                           last_population=self._last_population)
+
+        population = two_step.solve()
+        self._last_population = population
+        solution = two_step.decode_control_input(population[0])
+
+        return solution

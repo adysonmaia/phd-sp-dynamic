@@ -1,2 +1,2 @@
 from .optimizer import LLCOptimizer
-from .multi_stage import MultiStage
+from .two_step import TwoStep

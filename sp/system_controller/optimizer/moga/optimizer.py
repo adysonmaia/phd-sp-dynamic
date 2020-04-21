@@ -52,18 +52,6 @@ class MOGAOptimizer(Optimizer):
                        pool_size=self.pool_size)
         population = mo_ga.solve()
 
-        # if system.time >= 1211634000:
-        #     list_indiv = [population[0]]
-        #     if self._last_indiv is not None:
-        #         list_indiv.append(self._last_indiv)
-        #     for (index, indiv) in enumerate(list_indiv):
-        #         fitness = ga_operator.evaluate(indiv)
-        #         print('{} - fit {}'.format(index, fitness))
-        #         control_input = ga_operator.decode(indiv)
-        #         for app in system.apps:
-        #             places = [n.id for n in system.nodes if control_input.get_app_placement(app.id, n.id)]
-        #             print('\tapp {} - {}: {}'.format(app.id, len(places), places))
-
         self._last_population = population
         solution = ga_operator.decode(population[0])
         return solution

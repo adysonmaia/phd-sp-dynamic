@@ -3,51 +3,34 @@ import random
 
 
 class RandomPlanFinder(PlanFinder):
-    def __init__(self,
-                 system,
-                 environment_inputs,
-                 objective,
-                 objective_aggregator,
-                 control_decoder,
-                 system_estimator,
-                 dominance_func,
-                 pool_size=0,
-                 nb_plans=100):
-        PlanFinder.__init__(self,
-                            system=system,
-                            environment_inputs=environment_inputs,
-                            objective=objective,
-                            objective_aggregator=objective_aggregator,
-                            control_decoder=control_decoder,
-                            system_estimator=system_estimator,
-                            dominance_func=dominance_func,
-                            pool_size=pool_size)
+    def __init__(self, nb_plans=100, **pf_params):
+        PlanFinder.__init__(self, **pf_params)
         self.nb_plans = nb_plans
 
     def solve(self, control_inputs):
         """Find random plans
         Args:
-            control_inputs (list(list)): list of control inputs for each stage
+            control_inputs (list): list of control inputs
         Returns:
             list(Plan): list of plans
         """
-        sequences = [_gen_rand_sequence(control_inputs) for _ in range(self.nb_plans)]
+        sequences = [_gen_rand_sequence(control_inputs, self.sequence_length) for _ in range(self.nb_plans)]
         return self.create_plans(sequences)
 
 
-def _gen_rand_sequence(control_inputs):
-    """Generate a random sequence based on the passed control inputs for each stage
+def _gen_rand_sequence(control_inputs, sequence_length):
+    """Generate a random sequence based on the passed control inputs
     Args:
-        control_inputs (list(list)): list of control inputs for each stage
+        control_inputs (list): list of control inputs
+        sequence_length (int): sequence's length
     Returns:
         list: a random generated encoded control input
     """
-    nb_stages = len(control_inputs)
-    sequence = [0] * nb_stages
-    for stage in range(nb_stages):
-        stage_size = len(control_inputs[stage])
-        index = random.randrange(stage_size)
-        value = control_inputs[stage][index]
-        sequence[stage] = value
+    sequence = [0] * sequence_length
+    inputs_length = len(control_inputs)
+    for seq_index in range(sequence_length):
+        input_index = random.randrange(inputs_length)
+        value = control_inputs[input_index]
+        sequence[seq_index] = value
     return sequence
 

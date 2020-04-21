@@ -1,6 +1,5 @@
 from sp.core.heuristic import nsgaii
-from sp.system_controller.estimator.system import DefaultSystemEstimator
-from sp.system_controller.util import preferred_dominates
+from sp.system_controller.optimizer.moga import MOGAOperator
 from abc import ABC, abstractmethod
 from collections import UserList
 from functools import cmp_to_key
@@ -12,10 +11,9 @@ class PlanFinder(ABC):
                  system,
                  environment_inputs,
                  objective,
-                 objective_aggregator=None,
-                 control_decoder=None,
-                 system_estimator=None,
-                 dominance_func=None,
+                 objective_aggregator,
+                 system_estimator,
+                 dominance_func,
                  pool_size=0,
                  **kwargs):
 
@@ -23,23 +21,17 @@ class PlanFinder(ABC):
         self.environment_inputs = environment_inputs
         self.objective = objective
         self.objective_aggregator = objective_aggregator
-        self.control_decoder = control_decoder
         self.system_estimator = system_estimator
         self.dominance_func = dominance_func
-
-        if self.dominance_func is None:
-            self.dominance_func = preferred_dominates
-
-        if self.objective_aggregator is None:
-            self.objective_aggregator = sum
-
-        if self.system_estimator is None:
-            self.system_estimator = DefaultSystemEstimator()
 
         self.pool_size = pool_size
         self.__pool = None
         self.__map_func = None
         self.__pool_func = None
+
+    @property
+    def sequence_length(self):
+        return len(self.environment_inputs)
 
     def __del__(self):
         """Finalizer
@@ -88,7 +80,8 @@ class PlanFinder(ABC):
         system = self.system
         for index in range(len(control_sequence)):
             env_input = self.environment_inputs[index]
-            control_input = self.get_control_input(control_sequence, index, system, env_input)
+            control_input = control_sequence[index]
+            control_input = decode_control_input(system, control_input, env_input)
 
             for (func_index, func) in enumerate(self.objective):
                 value = func(system, control_input, env_input)
@@ -103,12 +96,6 @@ class PlanFinder(ABC):
         self._init_pool()
         plans = list(self.__map_func(self.__pool_func, control_sequences))
         return plans
-
-    def get_control_input(self, control_sequence, index, system, env_input):
-        control_input = control_sequence[index]
-        if self.control_decoder is not None:
-            control_input = self.control_decoder(system, control_input, env_input)
-        return control_input
 
     def sort_plans(self, plans):
         fitnesses = [p.fitness for p in plans]
@@ -148,6 +135,14 @@ class Plan(UserList):
 
     def is_fitness_valid(self):
         return self.fitness is not None
+
+
+def decode_control_input(system, encoded_control, environment_input):
+    ga_operator = MOGAOperator(system=system,
+                               environment_input=environment_input,
+                               objective=None,
+                               use_heuristic=False)
+    return ga_operator.decode(encoded_control)
 
 
 def _init_pool(plan_finder):

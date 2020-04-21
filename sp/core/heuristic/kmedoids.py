@@ -1,7 +1,7 @@
-INF = float("inf")
+import math
 
 
-class KMedoids():
+class KMedoids:
     def __init__(self, max_iterations=300):
         self.max_iterations = max_iterations
         self.last_metoids = []
@@ -19,7 +19,7 @@ class KMedoids():
             clusters = [[] for _ in r_clusters]
             changed = False
             for v in data:
-                min_dist = INF
+                min_dist = math.inf
                 new_label = -1
                 for label in r_clusters:
                     metoid = metoids[label]
@@ -34,7 +34,7 @@ class KMedoids():
             for label in r_clusters:
                 cluster = clusters[label]
                 metoid = metoids[label]
-                min_sum_dist = INF
+                min_sum_dist = math.inf
                 for v in cluster:
                     sum_dist = sum([distances[v][u] for u in cluster])
                     if sum_dist < min_sum_dist:
@@ -90,7 +90,7 @@ class KMedoids():
             return 0.0
 
         a = sum([distances[datum][v] for v in cluster]) / float(len(cluster))
-        b = INF
+        b = math.inf
         for c_label, c in enumerate(clusters):
             if c_label == label or len(c) == 0:
                 continue
