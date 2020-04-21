@@ -25,13 +25,6 @@ def get_app_deadline_violation(app, system, control_input, environment_input):
         if not control_input.get_app_placement(app.id, dst_node.id):
             continue
 
-        src_nodes = [n.id for n in system.nodes if control_input.get_load_distribution(app.id, n.id, dst_node.id) > 0]
-        alloc = control_input.get_allocated_cpu(app.id, dst_node.id)
-        load = util.calc_load_before_distribution(app.id, dst_node.id, system, environment_input)
-        ld = control_input.get_load_distribution(app.id, dst_node.id, dst_node.id)
-        # print('app {}, dst {}, src {}'.format(app.id, dst_node.id, src_nodes))
-        # print('\tcpu {}, alloc {}, ld {}, load {}'.format(dst_node.cpu_capacity, alloc, ld, load))
-
         for src_node in system.nodes:
             load = util.calc_load_after_distribution(app.id, src_node.id, dst_node.id,
                                                      system, control_input, environment_input)
@@ -39,11 +32,6 @@ def get_app_deadline_violation(app, system, control_input, environment_input):
                 rt = util.calc_response_time(app.id, src_node.id, dst_node.id,
                                              system, control_input, environment_input)
                 if rt > app.deadline:
-                    # ld = control_input.get_load_distribution(app.id, src_node.id, dst_node.id)
-                    # net_delay = environment_input.get_net_delay(app.id, src_node.id, dst_node.id)
-                    # proc_delay = calc_processing_delay(app.id, dst_node.id, system, control_input, environment_input)
-                    # init_delay = calc_initialization_delay(app.id, dst_node.id, system, control_input, environment_input)
-                    # print(app.id, src_node.id, dst_node.id, ld, rt, app.deadline, net_delay, proc_delay, init_delay)
                     violation += rt - app.deadline
     return violation
 
@@ -140,12 +128,6 @@ class ControlMonitor(Monitor):
                 app.id, app.type, 1000 * app.deadline, len(users), len(places), places, deadline_violation
             ))
 
-            # for src_node in system.nodes:
-            #     load = util.calc_load_before_distribution(app.id, src_node.id, system, environment_input)
-            #     dst_nodes = [n.id for n in system.nodes
-            #                  if control_input.get_load_distribution(app.id, src_node.id, n.id) > 0]
-            #     print('\t from {} to {}, load {}'.format(src_node.id, dst_nodes, load))
-
         print("--")
 
     def on_sim_ended(self, sim_time):
@@ -164,9 +146,9 @@ class ControlMonitor(Monitor):
             (ld_filename, self.control_data['ld']),
         ]
 
-        # for (filename, data) in files_data:
-        #     with open(filename, 'w') as file:
-        #         json.dump(data, file, indent=2)
+        for (filename, data) in files_data:
+            with open(filename, 'w') as file:
+                json.dump(data, file, indent=2)
 
 
 def main():
@@ -220,7 +202,7 @@ def main():
     opt = CloudOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # Single-Objective Heuristic optimizer config
     opt = SOHeuristicOptimizer()
@@ -242,44 +224,41 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = format(opt.__class__.__name__)
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
-    # LLC optimizer config with different prediction windows
-    # max_prediction_window = 3
-    # for window in range(max_prediction_window + 1):
-    # for window in [1, 2]:
-    for window in [1]:
-        opt = LLCOptimizer()
-        opt.prediction_window = window
-        opt.pool_size = pool_size
-        opt.dominance_func = dominance_func
-        opt.objective = multi_objective
+    # LLC (control input and plan) finders versions
+    llc_finders = [
+        {'input': input_finder.SSGAInputFinder, 'plan': None, 'key': 'ssga'},
+        {'input': input_finder.SGAInputFinder, 'plan': None, 'key': 'sga'},
+        {'input': input_finder.MGAInputFinder, 'plan': plan_finder.GAPlanFinder, 'key': 'mga'},
+    ]
 
-        # Set control input finder algorithm
-        # opt.input_finder_class = input_finder.MGAInputFinder
-        opt.input_finder_class = input_finder.SSGAInputFinder
-        # opt.input_finder_class = input_finder.SGAInputFinder
+    # LLC optimizer config with different parameters
+    prediction_windows = [0, 1, 2]
+    for window in prediction_windows:
+        for llc_finder in llc_finders:
+            opt = LLCOptimizer()
+            opt.prediction_window = window
+            opt.pool_size = pool_size
+            opt.dominance_func = dominance_func
+            opt.objective = multi_objective
+            opt.input_finder_class = llc_finder['input']
+            opt.plan_finder_class = llc_finder['plan']
 
-        # Set plan finder algorithm
-        # opt.plan_finder_class = plan_finder.GAPlanFinder
-        # opt.plan_finder_class = plan_finder.ExhaustivePlanFinder
-        opt.plan_finder_class = plan_finder.EmptyPlanFinder
-        # opt.plan_finder_class = None
+            # Set environment forecasting
+            seasonal_period = int(round(1 * 24 * 60 * 60 / float(step_time)))  # Seasonal of 1 day
+            env_predictor = DefaultEnvironmentPredictor()
+            env_predictor.net_predictor_class = AutoARIMAPredictor
+            env_predictor.net_predictor_params = {'arima_params': {'seasonal': True, 'm': seasonal_period}}
+            opt.environment_predictor = env_predictor
 
-        # Set environment forecasting
-        seasonal_period = int(round(1 * 24 * 60 * 60 / float(step_time)))  # Seasonal of 1 day
-        env_predictor = DefaultEnvironmentPredictor()
-        env_predictor.net_predictor_class = AutoARIMAPredictor
-        env_predictor.net_predictor_params = {'arima_params': {'seasonal': True, 'm': seasonal_period}}
-        opt.environment_predictor = env_predictor
-
-        opt_id = '{}_w{}'.format(opt.__class__.__name__, window)
-        item = (opt_id, opt)
-        optimizers.append(item)
+            opt_id = '{}_{}_w{}'.format(opt.__class__.__name__, llc_finder['key'], window)
+            item = (opt_id, opt)
+            optimizers.append(item)
 
     # Execute simulation for each optimizer nb_runs times
-    # nb_runs = 30
-    nb_runs = 1
+    nb_runs = 30
+    # nb_runs = 1
     for run in range(nb_runs):
         for (opt_id, opt) in optimizers:
             output_path = 'output/san_francisco/exp/{}/{}/'.format(run, opt_id)

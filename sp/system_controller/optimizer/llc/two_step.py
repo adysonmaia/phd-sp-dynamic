@@ -131,12 +131,10 @@ class TwoStep:
 
     def _init_plan_finder(self):
         self._clear_plan_finder()
-
         if self.plan_finder_class is None:
             return
 
         params = {}
-
         if self.plan_finder_class in _PF_PARAMS:
             params.update(_PF_PARAMS[self.plan_finder_class])
 
@@ -155,6 +153,7 @@ class TwoStep:
     def _clear_plan_finder(self):
         if self._plan_finder is not None:
             self._plan_finder.clear_params()
+        self._plan_finder = None
 
     def _init_input_finder(self):
         self._clear_input_finder()
@@ -182,6 +181,7 @@ class TwoStep:
     def _clear_input_finder(self):
         if self._input_finder is not None:
             self._input_finder.clear_params()
+        self._input_finder = None
 
     def solve(self):
         self.init_params()
@@ -201,7 +201,6 @@ class TwoStep:
         return self._input_finder.solve()
 
     def _exec_step_2(self, control_inputs):
-        first_slot = 0
         ga_operator = MOGAOperator(system=self.system,
                                    environment_input=self.environment_input,
                                    objective=self.objective,
