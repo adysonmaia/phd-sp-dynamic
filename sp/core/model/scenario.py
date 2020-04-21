@@ -3,7 +3,7 @@ from .network import Network
 from .application import Application
 from .user import User
 from sp.core.util import json_util
-from sp.core.lib.cached_property import cached_property
+from sp.core.util.cached_property import cached_property
 
 
 class Scenario:
