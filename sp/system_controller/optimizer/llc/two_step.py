@@ -3,15 +3,17 @@ from sp.system_controller.estimator.system import DefaultSystemEstimator
 from . import plan_finder as pf
 from . import input_finder as cif
 
+_GA_PARAMS = {
+    "nb_generations": 100,
+    "population_size": 100,
+    "elite_proportion": 0.1,
+    "mutant_proportion": 0.1,
+    "elite_probability": 0.6,
+    "stop_threshold": 0.10,
+}
+
 _PF_PARAMS = {
-    pf.GAPlanFinder: {
-        "nb_generations": 100,
-        "population_size": 100,
-        "elite_proportion": 0.1,
-        "mutant_proportion": 0.1,
-        "elite_probability": 0.6,
-        "stop_threshold": 0.10,
-    },
+    pf.GAPlanFinder: _GA_PARAMS,
     pf.BeamPlanFinder: {
         "beam_width": 10,
         "prune": True,
@@ -22,30 +24,9 @@ _PF_PARAMS = {
 }
 
 _CIF_PARAMS = {
-    cif.MGAInputFinder: {
-        "nb_generations": 100,
-        "population_size": 100,
-        "elite_proportion": 0.1,
-        "mutant_proportion": 0.1,
-        "elite_probability": 0.6,
-        "stop_threshold": 0.10,
-    },
-    cif.SSGAInputFinder: {
-        "nb_generations": 100,
-        "population_size": 100,
-        "elite_proportion": 0.1,
-        "mutant_proportion": 0.1,
-        "elite_probability": 0.6,
-        "stop_threshold": 0.10,
-    },
-    cif.SGAInputFinder: {
-        "nb_generations": 100,
-        "population_size": 100,
-        "elite_proportion": 0.1,
-        "mutant_proportion": 0.1,
-        "elite_probability": 0.6,
-        "stop_threshold": 0.10,
-    }
+    cif.MGAInputFinder: _GA_PARAMS,
+    cif.SSGAInputFinder: _GA_PARAMS,
+    cif.SGAInputFinder: _GA_PARAMS
 }
 
 
@@ -145,8 +126,8 @@ class TwoStep:
                                                    environment_inputs=self._env_inputs,
                                                    objective=self.objective,
                                                    objective_aggregator=self.objective_aggregator,
-                                                   dominance_func=self.dominance_func,
                                                    system_estimator=self.system_estimator,
+                                                   dominance_func=self.dominance_func,
                                                    pool_size=self.pool_size,
                                                    **params)
 

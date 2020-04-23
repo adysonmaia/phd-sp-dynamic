@@ -13,7 +13,6 @@ import os
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-
 UTC_TZ = timezone('UTC')
 SF_TZ_STR = 'US/Pacific'
 SF_TZ = timezone(SF_TZ_STR)
@@ -197,6 +196,7 @@ def main():
     # dominance_func = util.pareto_dominates
     dominance_func = util.preferred_dominates
     pool_size = 8
+    # pool_size = 0
 
     # Cloud optimizer config
     opt = CloudOptimizer()
@@ -235,6 +235,7 @@ def main():
 
     # LLC optimizer config with different parameters
     prediction_windows = [0, 1, 2]
+    # prediction_windows = [1]
     for window in prediction_windows:
         for llc_finder in llc_finders:
             opt = LLCOptimizer()

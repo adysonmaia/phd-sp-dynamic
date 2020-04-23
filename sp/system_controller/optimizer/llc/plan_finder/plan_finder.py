@@ -102,9 +102,9 @@ class PlanFinder(ABC):
         fronts, rank = nsgaii.fast_non_dominated_sort(fitnesses, self.dominance_func)
         crwd_dist = nsgaii.crowding_distance(fitnesses, fronts)
 
-        def sort_cmp(indiv_1, indiv_2):
-            index_1 = plans.index(indiv_1)
-            index_2 = plans.index(indiv_2)
+        def sort_cmp(plan_1, plan_2):
+            index_1 = plans.index(plan_1)
+            index_2 = plans.index(plan_2)
             if rank[index_1] < rank[index_2]:
                 return -1
             elif (rank[index_1] == rank[index_2]

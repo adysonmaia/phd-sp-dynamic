@@ -183,8 +183,8 @@ class BRKGA:
             list: list of fitness
         """
         fitnesses = list(self._map_func(self._evaluate_func, population))
-        for (fitness, indiv) in zip(fitnesses, population):
-            indiv.fitness = fitness
+        for (fitness, individual) in zip(fitnesses, population):
+            individual.fitness = fitness
         return fitnesses
 
     def sort_population(self, population):
@@ -278,16 +278,18 @@ class BRKGA:
 class GAIndividual(UserList):
     """Individual of a genetic algorithm
     """
-    def __init__(self, chromosome=None):
+    def __init__(self, data=None):
         """Initialization
         Args:
-            chromosome (list): chromosome's data
+            data (list): chromosome's data
         """
-        UserList.__init__(self, chromosome)
+        if isinstance(data, UserList):
+            data = data.data
+        UserList.__init__(self, data)
         self.fitness = None
 
     def is_fitness_valid(self):
-        """Check if the individual's is valid
+        """Check if the individual's fitness is valid
         Returns:
             bool: True if the fitness is valid, False otherwise
         """
@@ -376,15 +378,15 @@ class GAOperator(ABC):
             indiv_1, indiv_2 = indiv_2, indiv_1
             prob_1, prob_2 = prob_2, prob_1
 
-        offspring_1 = indiv_1[:self.nb_genes]
-        offspring_2 = indiv_2[:self.nb_genes]
+        offspring_1 = indiv_1.clear_copy()
+        offspring_2 = indiv_2.clear_copy()
 
         for g in range(self.nb_genes):
             if random.random() > prob_1:
                 offspring_1[g] = indiv_2[g]
                 offspring_2[g] = indiv_1[g]
 
-        return [GAIndividual(offspring_1), GAIndividual(offspring_2)]
+        return [offspring_1, offspring_2]
 
     def should_stop(self, population):
         """Verify whether the GA should stop or not

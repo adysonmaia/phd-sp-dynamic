@@ -39,13 +39,10 @@ class SSGAInputFinder(InputFinder):
 
     def solve(self):
         env_input = self.environment_inputs[0]
-        ga_operator = SSGAOperator(system=self.system,
-                                   environment_input=env_input,
-                                   objective=self.objective,
+        ga_operator = SSGAOperator(plan_finder=self.plan_finder,
+                                   sequence_length=self.nb_slots,
                                    use_heuristic=True,
-                                   first_population=self.last_inputs,
-                                   plan_finder=self.plan_finder,
-                                   sequence_length=self.nb_slots)
+                                   first_population=self.last_inputs)
         ga = NSGAII(operator=ga_operator,
                     dominance_func=self.dominance_func,
                     pool_size=self.pool_size,
@@ -58,14 +55,22 @@ class SSGAOperator(MOGAOperator):
     """Simple Sequence GA Operator
     """
 
-    def __init__(self, plan_finder, sequence_length, **kwargs):
+    def __init__(self, plan_finder, sequence_length, use_heuristic=True, first_population=None):
         """Initialization
         Args:
             plan_finder (PlanFinder): plan finder
             sequence_length (int): sequence length
-            **kwargs: ga params
+            use_heuristic (bool): use heuristic algorithms to generate the first population
+            first_population (list(GAIndividual)): list of individuals to be added in the first population
         """
-        MOGAOperator.__init__(self, **kwargs)
+        env_input = plan_finder.environment_inputs[0]
+        MOGAOperator.__init__(self,
+                              objective=plan_finder.objective,
+                              system=plan_finder.system,
+                              environment_input=env_input,
+                              use_heuristic=use_heuristic,
+                              first_population=first_population)
+
         self.plan_finder = plan_finder
         self.sequence_length = sequence_length
 
@@ -76,10 +81,6 @@ class SSGAOperator(MOGAOperator):
         Returns:
             object: fitness value
         """
-        if individual.is_fitness_valid():
-            return individual.fitness
-        else:
-            sequence = [individual] * self.sequence_length
-            plan = self.plan_finder.create_plan(sequence)
-            individual.fitness = plan.fitness
-            return individual.fitness
+        sequence = [individual] * self.sequence_length
+        plan = self.plan_finder.create_plan(sequence)
+        return plan.fitness

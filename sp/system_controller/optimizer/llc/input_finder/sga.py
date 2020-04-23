@@ -109,7 +109,7 @@ class SGAOperator(GAOperator):
         if self.extended_first_population is not None:
             for indiv in self.extended_first_population:
                 if len(indiv) == self.nb_genes:
-                    population.append(indiv)
+                    population.append(indiv.clear_copy())
                 elif len(indiv) == self.nb_genes_per_input:
                     sequence = GAIndividual(indiv * self.sequence_length)
                     population.append(sequence)
@@ -123,13 +123,9 @@ class SGAOperator(GAOperator):
         Returns:
             object: fitness value
         """
-        if individual.is_fitness_valid():
-            return individual.fitness
-        else:
-            sequence = [self.get_control_input(individual, slot) for slot in range(self.sequence_length)]
-            plan = self.plan_finder.create_plan(sequence)
-            individual.fitness = plan.fitness
-            return individual.fitness
+        sequence = [self.get_control_input(individual, slot) for slot in range(self.sequence_length)]
+        plan = self.plan_finder.create_plan(sequence)
+        return plan.fitness
 
     def get_control_input(self, individual, slot=0):
         """Get the control input in a specific time slot stored in an individual

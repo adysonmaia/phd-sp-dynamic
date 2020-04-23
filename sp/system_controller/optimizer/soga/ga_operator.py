@@ -66,7 +66,7 @@ class SOGAOperator(GAOperator):
         """
         population = []
         if self.extended_first_population is not None:
-            population += self.extended_first_population
+            population += [indiv.clear_copy() for indiv in self.extended_first_population]
 
         if self.use_heuristic:
             heuristic_population = [
@@ -140,7 +140,7 @@ class SOGAOperator(GAOperator):
             priority = individual[start:end]
 
             nodes_index = list(range(nb_nodes))
-            nodes_index.sort(key=lambda v: priority[v], reverse=True)
+            nodes_index.sort(key=lambda i: priority[i], reverse=True)
             percentage = individual[a_index]
             max_nb_instances = min(nb_nodes, app.max_instances)
             nb_instances = int(math.ceil(percentage * max_nb_instances))
@@ -151,7 +151,7 @@ class SOGAOperator(GAOperator):
             selected_nodes[app.id] = nodes
 
         start = nb_apps * (nb_nodes + 1)
-        end = start + self.nb_genes
+        end = self.nb_genes
         priority = individual[start:end]
 
         requests_index = list(range(len(self.requests)))
