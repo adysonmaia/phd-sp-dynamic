@@ -15,7 +15,7 @@ class CircleCoverage(Coverage):
         for user in system.users:
             attached_node_id = None
             min_dist = math.inf
-            user_pos = user.get_position(time, time_tolerance)
+            user_pos = user.get_position(time, time_tolerance=time_tolerance)
 
             if user_pos is not None:
                 for node in system.bs_nodes:

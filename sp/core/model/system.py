@@ -229,6 +229,9 @@ class System:
         """
         return self.scenario.get_user(user_id)
 
+    def get_load_estimator(self, app_id, node_id):
+        return self.scenario.get_load_estimator(app_id, node_id)
+
     def get_processing_delay(self, app_id, node_id):
         """Get the application's processing delay on a node according to system's state
         Args:

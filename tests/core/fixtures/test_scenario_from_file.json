@@ -1,5 +1,6 @@
 {
   "network": "tests/core/fixtures/test_network_from_file.json",
   "apps": "tests/core/fixtures/test_apps_from_file.json",
-  "users": "tests/core/fixtures/test_users_from_file/users.json"
+  "users": "tests/core/fixtures/test_users_from_file/users.json",
+  "loads": "tests/core/fixtures/test_loads_from_file/loads.json"
 }

@@ -1,6 +1,6 @@
 from sp.core.model import User
 from sp.core.mobility.static import StaticMobility
-from sp.core.mobility.track import TrackMobility
+from sp.core.mobility.time_series import TimeSeriesMobility
 from sp.core.geometry.point.gps import GpsPoint, Point
 import json
 import unittest
@@ -37,20 +37,20 @@ class UsersFromFileTestCase(unittest.TestCase):
         user = self.users[1]
         self.assertEqual(user.id, 1)
         self.assertEqual(user.app_id, 1)
-        self.assertIsInstance(user.mobility, TrackMobility)
-        self.assertEqual(len(user.mobility.tracks), 3)
+        self.assertIsInstance(user.mobility, TimeSeriesMobility)
+        self.assertEqual(len(user.mobility.items), 3)
 
         user = self.users[2]
         self.assertEqual(user.id, 2)
         self.assertEqual(user.app_id, 0)
-        self.assertIsInstance(user.mobility, TrackMobility)
-        self.assertEqual(len(user.mobility.tracks), 3)
+        self.assertIsInstance(user.mobility, TimeSeriesMobility)
+        self.assertEqual(len(user.mobility.items), 3)
 
         user = self.users[3]
         self.assertEqual(user.id, 3)
         self.assertEqual(user.app_id, 1)
-        self.assertIsInstance(user.mobility, TrackMobility)
-        self.assertEqual(len(user.mobility.tracks), 100)
+        self.assertIsInstance(user.mobility, TimeSeriesMobility)
+        self.assertEqual(len(user.mobility.items), 100)
 
     def test_update_position(self):
         user = self.users[1]
@@ -98,10 +98,10 @@ class UsersFromFileTestCase(unittest.TestCase):
         # Interpolated values with time tolerance
         tolerance = 1
         for i in [4, 8]:
-            pos = user.get_position(i, tolerance=tolerance)
+            pos = user.get_position(i, time_tolerance=tolerance)
             self.assertIsNone(pos)
         for i in [1, 3, 5]:
-            pos = user.get_position(i, tolerance=tolerance)
+            pos = user.get_position(i, time_tolerance=tolerance)
             self.assertIsInstance(pos, Point)
             self.assertEqual(pos[0], float(i))
             self.assertEqual(pos[1], float(i))

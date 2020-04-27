@@ -5,21 +5,21 @@ from sp.core.geometry import point
 class StaticMobility(Mobility):
     """Static Mobility
     """
-    def __init__(self, pos=None):
+    def __init__(self, position=None):
         """
         Args:
-            pos (point.Point): static position
+            position (point.Point): static position
         """
         Mobility.__init__(self)
-        self._position = pos
+        self._position = position
 
-    def position(self, time=None, tolerance=None):
+    def position(self, *args, **kwargs):
         """Get position
         Args:
-            time (float): time
-            tolerance (object): tolerance
+            *args: args
+            **kwargs: kwargs
         Returns:
-            point.Point: position or None if position is not found
+            point.Point: static position or None if position is not found
         """
         return self._position
 

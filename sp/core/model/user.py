@@ -15,16 +15,17 @@ class User:
         self.app_id = -1
         self.mobility = None
 
-    def get_position(self, time, tolerance=None):
+    def get_position(self, time, *args, **kwargs):
         """ Get the user's position in specific time
         Args:
             time (float): simulation time
-            tolerance (float): time tolerance to obtain the position or None to disregard this parameter
+            *args: args
+            **kwargs: kwargs
         Returns:
             sp.core.geometry.Point: user's position or None if the position is undefined for the specified time
         """
         if self.mobility is not None:
-            return self.mobility.position(time, tolerance)
+            return self.mobility.position(time, *args, **kwargs)
         else:
             return None
 

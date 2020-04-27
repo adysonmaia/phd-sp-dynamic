@@ -24,7 +24,7 @@ class EnvironmentController:
 
         time_tol = system.sampling_time
         env.attached_users = self.coverage.update(system, env, time_tolerance=time_tol)
-        env.generated_load = self.gen_load_estimator.calc_all_loads(system, env)
+        env.generated_load = self.gen_load_estimator.calc_all_loads(system, env, time_tolerance=time_tol)
 
         self.routing.update(system, env)
         env.net_delay = self.routing.get_all_paths_length()

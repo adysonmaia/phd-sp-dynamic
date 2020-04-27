@@ -4,6 +4,8 @@ from .application import Application
 from .user import User
 from sp.core.util import json_util
 from sp.core.util.cached_property import cached_property
+from sp.core.estimator import load as load_estimator
+from collections import defaultdict
 
 
 class Scenario:
@@ -18,6 +20,7 @@ class Scenario:
         self._apps = {}
         self._users = {}
         self._resources = {}
+        self._load_estimators = defaultdict(lambda: defaultdict(lambda: None))
 
     def _clear_cache(self):
         """Clear the cached properties
@@ -149,6 +152,25 @@ class Scenario:
         self._resources[resource.name] = resource
         self._clear_cache()
 
+    def get_load_estimator(self, app_id, node_id):
+        """Get load estimator for an application in a node
+        Args:
+            app_id (int): application's id
+            node_id (int): node's id
+        Returns:
+            load_estimator.LoadEstimator: load estimator
+        """
+        return self._load_estimators[app_id][node_id]
+
+    def add_load_estimator(self, app_id, node_id, estimator):
+        """Add a load estimator in the scenario
+        Args:
+            app_id (int): application's id
+            node_id (int): node's id
+            estimator (load_estimator.LoadEstimator): load estimator
+        """
+        self._load_estimators[app_id][node_id] = estimator
+
     @staticmethod
     def from_json(json_data):
         """Create a Scenario object from a json data
@@ -174,6 +196,7 @@ def from_json(json_data):
     * :py:func:`sp.core.model.network.from_json`
     * :py:func:`sp.core.model.application.from_json`
     * :py:func:`sp.core.model.user.from_json`
+    * :py:func:`sp.core.estimator.load.from_json`
 
     E.g.:
 
@@ -203,6 +226,12 @@ def from_json(json_data):
                 {'id':  1, 'app_id':  1, ...},
                 {'id':  2, 'app_id':  2, ...},
                 {'id':  3, 'app_id':  0, ...}
+            ],
+            'loads': [
+                {'app_id': 0, 'node_id': 2, 'load': 0.0},
+                {'app_id': 0, 'node_id': 3, 'load': [(0, 0), (0, 1), (0, 2), ...]},
+                {'app_id': 1, 'node_id': 2, 'load': [{'t': 0, 'v': 0}, {'t': 1, 'v': 0}, ...]},
+                {'app_id': 1, 'node_id': 3, 'load': 'path/load.json'},
             ]
         }
         scenario = sp.core.model.scenario.from_json(json_data)
@@ -212,7 +241,8 @@ def from_json(json_data):
             'network': 'path/network.json',
             'apps': 'path/apps.json',
             'users': 'path/users.json',
-            'resources': 'path/resources.json'
+            'resources': 'path/resources.json',
+            'loads': 'path/loads.json',
         }
         scenario = sp.core.model.scenario.from_json(json_data)
 
@@ -244,9 +274,24 @@ def from_json(json_data):
         app = Application.from_json(item)
         s.add_app(app)
 
-    for item in json_util.load_key_content(json_data, "users"):
-        user = User.from_json(item)
-        s.add_user(user)
+    if "users" in json_data:
+        for item in json_util.load_key_content(json_data, "users"):
+            user = User.from_json(item)
+            s.add_user(user)
+
+    if "loads" in json_data:
+        for item in json_util.load_key_content(json_data, "loads"):
+            app_id = int(item["app_id"])
+            node_id = int(item["node_id"])
+            loads = json_util.load_key_content(item, "load")
+            estimator = load_estimator.from_json(loads)
+            s.add_load_estimator(app_id, node_id, estimator)
+    for app in s.apps:
+        for node in s.network.nodes:
+            estimator = s.get_load_estimator(app.id, node.id)
+            if estimator is None:
+                estimator = load_estimator.ConstantLoadEstimator(load=0.0)
+                s.add_load_estimator(app.id, node.id, estimator)
 
     return s
 

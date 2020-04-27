@@ -1,0 +1,8 @@
+{
+  "loads": [
+    {"app_id": 0, "node_id": 2, "load":  10.0},
+    {"app_id": 0, "node_id": 3, "load":  [[0, 0], [2, 2], [6, 6]]},
+    {"app_id": 1, "node_id": 2, "load":  [{"t": 0, "v":  0}, {"t": 1, "v":  0}, {"t": 2, "v":  1}]},
+    {"app_id": 1, "node_id": 3, "load":  "tests/core/fixtures/test_loads_from_file/load_app1_node3.json"}
+  ]
+}

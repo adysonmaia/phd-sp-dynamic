@@ -155,7 +155,8 @@ def plot_placement(scenario, optimizers, output_path, nb_runs):
         place_df = app_df.pivot(columns='opt', values='place')
         error_df = app_df.pivot(columns='opt', values='place_error')
 
-        place_df.plot(ax=ax, yerr=error_df, legend=False)
+        # place_df.plot(ax=ax, yerr=error_df, legend=False)
+        place_df.plot(ax=ax, legend=False)
 
     axes[0, 0].legend()
     for row in range(nb_rows):
@@ -180,19 +181,19 @@ def main():
         # {'id': 'CloudOptimizer', 'label': 'Cloud'},
         # {'id': 'MOGAOptimizer', 'label': 'MOGA'},
         # {'id': 'LLCOptimizer_mga_w0', 'label': 'LLC MGA W=0'},
-        # {'id': 'LLCOptimizer_mga_w1', 'label': 'LLC MGA W=1'},
+        {'id': 'LLCOptimizer_mga_w1', 'label': 'LLC MGA W=1'},
         # {'id': 'LLCOptimizer_mga_w2', 'label': 'LLC MGA W=2'},
         # {'id': 'LLCOptimizer_sga_w0', 'label': 'LLC SGA W=0'},
-        # {'id': 'LLCOptimizer_sga_w1', 'label': 'LLC SGA W=1'},
+        {'id': 'LLCOptimizer_sga_w1', 'label': 'LLC SGA W=1'},
         # {'id': 'LLCOptimizer_sga_w2', 'label': 'LLC SGA W=2'},
-        {'id': 'LLCOptimizer_ssga_w0', 'label': 'LLC SSGA W=0'},
+        # {'id': 'LLCOptimizer_ssga_w0', 'label': 'LLC SSGA W=0'},
         {'id': 'LLCOptimizer_ssga_w1', 'label': 'LLC SSGA W=1'},
-        {'id': 'LLCOptimizer_ssga_w2', 'label': 'LLC SSGA W=2'},
+        # {'id': 'LLCOptimizer_ssga_w2', 'label': 'LLC SSGA W=2'},
     ]
 
     # run_dirs = glob(os.path.join(output_path, '[0-9]*/'))
     # nb_runs = len(run_dirs)
-    nb_runs = 5
+    nb_runs = 7
 
     plot_metrics(scenario, optimizers, output_path, nb_runs)
     # plot_placement(scenario, optimizers, output_path, nb_runs)
