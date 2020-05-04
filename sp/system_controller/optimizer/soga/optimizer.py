@@ -15,6 +15,7 @@ class SOGAOptimizer(Optimizer):
         self.elite_probability = 0.6
         self.use_heuristic = True
         self.pool_size = 4
+        self.timeout = None
         self._last_population = None
 
     def init_params(self):
@@ -38,6 +39,7 @@ class SOGAOptimizer(Optimizer):
                       elite_proportion=self.elite_proportion,
                       mutant_proportion=self.mutant_proportion,
                       elite_probability=self.elite_probability,
+                      timeout=self.timeout,
                       pool_size=self.pool_size)
         population = so_ga.solve()
         self._last_population = population

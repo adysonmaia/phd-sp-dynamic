@@ -4,6 +4,14 @@ import math
 
 
 def create_grid_points(bbox, cell_side):
+    """Create list of points in a 2D grid format
+    Args:
+        bbox (BoundBox): points are generated inside the bound box.
+            The generated points use the same coordinate system of the bound box
+        cell_side (float): distance between two neighboring points on the grid
+    Returns:
+        list: list of points
+    """
     x_fraction = cell_side / bbox.x_distance
     cell_width = x_fraction * bbox.width
 

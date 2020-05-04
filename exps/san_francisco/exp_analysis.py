@@ -105,8 +105,8 @@ def plot_metrics(scenario, optimizers, output_path, nb_runs):
         metric_df = df.pivot(columns='opt', values=value_col)
         error_df = df.pivot(columns='opt', values=error_col)
 
-        # metric_df.plot(ax=ax, yerr=error_df, legend=False)
-        metric_df.plot(ax=ax, legend=False)
+        metric_df.plot(ax=ax, yerr=error_df, legend=False)
+        # metric_df.plot(ax=ax, legend=False)
 
     axes[0, 0].legend()
     for row in range(nb_rows):
@@ -193,7 +193,7 @@ def main():
 
     # run_dirs = glob(os.path.join(output_path, '[0-9]*/'))
     # nb_runs = len(run_dirs)
-    nb_runs = 7
+    nb_runs = 30
 
     plot_metrics(scenario, optimizers, output_path, nb_runs)
     # plot_placement(scenario, optimizers, output_path, nb_runs)

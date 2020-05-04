@@ -2,7 +2,7 @@ import random
 from collections import UserList
 from abc import ABC, abstractmethod
 import multiprocessing as mp
-
+import time
 
 _brkga = None
 
@@ -40,6 +40,7 @@ class BRKGA:
                  elite_proportion,
                  mutant_proportion,
                  elite_probability=None,
+                 timeout=None,
                  pool_size=0):
         """Initialize method
         Args:
@@ -49,6 +50,7 @@ class BRKGA:
             elite_proportion (float): proportion of the number of elite individuals in the population, value in [0, 1]
             mutant_proportion (float): proportion of the number of mutant individuals in the population, value in [0, 1]
             elite_probability (float): probability of a elite gene to be selected during crossover
+            timeout (float): timeout in seconds to stop the execution of the genetic algorithm
             pool_size (int): number of processes for parallelisms
         """
 
@@ -66,6 +68,10 @@ class BRKGA:
             self.elite_probability = self._elite_size / float(self.population_size)
 
         self.current_population = list()
+
+        self.timeout = timeout
+        self._elapsed_time = 0.0
+        self._last_perf_count = None
 
         self.pool_size = pool_size
         self._pool = None
@@ -85,6 +91,8 @@ class BRKGA:
         """
         self._elite_size = int(round(self.elite_proportion * self.population_size))
         self._mutant_size = int(round(self.mutant_proportion * self.population_size))
+        self._elapsed_time = 0.0
+        self._last_perf_count = time.perf_counter()
         self._init_pool()
         self.current_population = list()
         self.operator.init_params()
@@ -92,6 +100,7 @@ class BRKGA:
     def clear_params(self):
         """Clear parameters after the execution of the genetic algorithm
         """
+        self._last_perf_count = None
         self._clear_pool()
 
     def _init_pool(self):
@@ -131,7 +140,28 @@ class BRKGA:
         Returns:
             bool: True if algorithm should stop, False otherwise
         """
-        return self.operator.should_stop(population)
+        return self._should_stop_by_timeout() or self.operator.should_stop(population)
+
+    def _should_stop_by_timeout(self):
+        """Check if elapsed execution time of genetic algorithm exceeds the timeout
+        Returns:
+           bool: True if execution time exceeded the timeout, False otherwise
+        """
+        if self.timeout is None:
+            return False
+
+        perf_count = time.perf_counter()
+        if self._last_perf_count is None:
+            self._last_perf_count = perf_count
+            self._elapsed_time = 0.0
+            return False
+
+        increment = perf_count - self._last_perf_count
+        self._elapsed_time += increment
+        self._last_perf_count = perf_count
+        print('{}, {}, {}'.format(self._elapsed_time, increment, self.timeout))
+
+        return self._elapsed_time >= self.timeout
 
     def rand_individual(self):
         """Generate a random individual

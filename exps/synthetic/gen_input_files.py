@@ -1,0 +1,393 @@
+from sp.core.geometry import CartesianPoint, BoundBox, create_grid_points
+from sp.core.util import random as sp_rnd
+import numpy as np
+import copy
+import random
+import sys
+import math
+import json
+import os
+
+
+DATA_PATH = 'input/synthetic/'
+
+
+def main():
+    """ Main function.
+    It generates the simulation scenario
+    """
+    # Set scenario parameters
+    nb_bs = 25
+    nb_apps = 10
+    nb_users = 1000
+
+    # Set simulation parameters
+    time_start = 0.0
+    time_step = 60 * 60  # 1 Hour
+    time_end = 24 * time_step + time_start
+
+    try:
+        os.makedirs(DATA_PATH)
+    except OSError:
+        pass
+
+    # Create network
+    net_data = gen_network(nb_bs)
+    net_filename = os.path.join(DATA_PATH, 'net_{}.json'.format(nb_bs))
+    with open(net_filename, 'w') as outfile:
+        json.dump(net_data, outfile, indent=2)
+
+    # Create applications
+    apps_data = gen_apps(nb_apps, net_data)
+    apps_filename = os.path.join(DATA_PATH, 'apps_{}.json'.format(nb_apps))
+    with open(apps_filename, 'w') as outfile:
+        json.dump(apps_data, outfile, indent=2)
+
+    # Create applications' loads in each node
+    loads_data = gen_loads(nb_users, time_start, time_end, time_step, apps_data, net_data)
+    loads_filename = os.path.join(DATA_PATH, 'loads_{}.json'.format(nb_users))
+    with open(loads_filename, 'w') as outfile:
+        json.dump(loads_data, outfile, indent=2)
+
+    # Create scenario composed of net topology, applications, and loads
+    scenario_json = {
+        'network': net_filename,
+        'apps': apps_filename,
+        'loads': loads_filename
+    }
+    scenario_filename = os.path.join(DATA_PATH, 'scenario_n{}_a{}_u{}.json'.format(nb_bs, nb_apps, nb_users))
+    with open(scenario_filename, 'w') as outfile:
+        json.dump(scenario_json, outfile, indent=2)
+
+
+def gen_network(nb_bs):
+    """Generate the network graph with a specific topology
+    Args:
+        nb_bs (int): number of base stations (edge nodes)
+    Returns:
+         dict: network in json format
+    """
+    bs_properties = {
+        'type': 'BS',
+        'avail': 0.99,  # 99 %
+        'capacity': {
+            'CPU': 5e+9,  # GIPS (Giga Instructions Per Second),
+            'RAM': 8e+9,  # 8 GB (Giga Byte)
+            'DISK': 500e+9,  # 500 GB (Giga Byte)
+        },
+        'cost': {
+            'CPU': [1e-12, 1e-12],  # cost for IPS / second
+            'RAM': [1e-15, 1e-15],  # cost for Byte / second
+            'DISK': [1e-18, 1e-18]  # cost for Byte / second
+        },
+        'power': [50.0, 100.0]  # [Idle, Max] Power (Watt)
+    }
+    core_properties = {
+        'type': 'CORE',
+        'avail': 0.999,  # 99.9 %
+        'capacity': {
+            'CPU': 10e+9,  # 10 GIPS
+            'RAM': 16e+9,  # 16 GB (Giga Byte)
+            'DISK': 1e+12  # 1 TB (Tera Byte)
+        },
+        'cost': {
+            'CPU': [0.5e-12, 0.5e-12],  # cost for IPS / second
+            'RAM': [0.5e-15, 0.5e-15],  # cost for Byte / second
+            'DISK': [0.5e-18, 0.5e-18]  # cost for Byte / second
+        },
+        'power': [100.0, 200.0],  # [Idle, Max] Power (Watt)
+        'position': {'x': -1, 'y': 0},
+    }
+    cloud_properties = {
+        'type': 'CLOUD',
+        'avail': 0.9999,  # 99.99 %
+        'capacity': {
+            'CPU': 'INF',
+            'RAM': 'INF',
+            'DISK': 'INF'
+        },
+        'cost': {
+            'CPU': [0.25e-12, 0.25e-12],  # cost for IPS / second
+            'RAM': [0.25e-15, 0.25e-15],  # cost for Byte / second
+            'DISK': [0.25e-18, 0.25e-18]  # cost for Byte / second
+        },
+        'power': [200.0, 400.0],  # [Idle, Max] Power (Watt)
+        'position': {'x': -2, 'y': 0}
+    }
+    bs_bs_link_properties = {
+        'bw': 100e+6,  # 100 Mbps (Mega bits per second)
+        'delay': 0.001,  # seconds or 1 ms
+    }
+    bs_core_link_properties = {
+        'bw': 1e+9,  # 1 Gbps (Giga bits per second)
+        'delay': 0.001  # seconds or 1 ms
+    }
+    core_cloud_link_properties = {
+        'bw': 10e+9,  # 10 Gbps (Giga bits per second)
+        'delay': 0.01  # seconds or 10 ms
+    }
+
+    # Generate base stations' positions in a bound box grid
+    json_data = gen_bs_network(nb_bs)
+
+    # Set the base station's properties
+    for bs in json_data['nodes']:
+        bs.update(bs_properties)
+
+    # Set the properties of links between base stations
+    for link in json_data['links']:
+        link.update(bs_bs_link_properties)
+
+    # Create the core node
+    core_node = copy.copy(core_properties)
+    core_id = len(json_data['nodes'])
+    core_node['id'] = core_id
+    # Connect each base station to the core node
+    for node in json_data['nodes']:
+        node_id = int(node['id'])
+        link = copy.copy(bs_core_link_properties)
+        link['nodes'] = (node_id, core_id)
+        json_data['links'].append(link)
+    json_data['nodes'].append(core_node)
+
+    # Create the cloud node and connect it to the core node
+    cloud_node = copy.copy(cloud_properties)
+    cloud_id = len(json_data['nodes'])
+    cloud_node['id'] = cloud_id
+    json_data['nodes'].append(cloud_node)
+    link = copy.copy(core_cloud_link_properties)
+    link['nodes'] = (core_id, cloud_id)
+    json_data['links'].append(link)
+
+    return json_data
+
+
+def gen_bs_network(nb_nodes):
+    """Generate base stations with 2D grid topology
+    Args:
+        nb_nodes (int): number of nodes (points) in the grid
+    Returns:
+        dict: network in json format
+    """
+    # Set grid parameters
+    cell_side = 1.0
+    dist_tol = 0.0
+
+    nb_rows = int(math.ceil(math.sqrt(nb_nodes)))
+    nb_cols = nb_rows
+
+    # Set grid's bound box
+    point_1 = CartesianPoint(0.0, 0.0)
+    point_2 = CartesianPoint(nb_cols * cell_side, nb_rows * cell_side)
+    bbox = BoundBox(point_1, point_2)
+
+    # Create grid topology
+    bs_points = create_grid_points(bbox, cell_side)
+    bs_points = bs_points[:nb_nodes]
+
+    # Set the base station's properties
+    json_data = {'nodes': [], 'links': []}
+    for (i_1, p_1) in enumerate(bs_points):
+        pos = {'x': p_1.x, 'y': p_1.y}
+        bs_node = {'id': i_1, 'position': pos}
+        json_data['nodes'].append(bs_node)
+
+        # Connect nearby base stations
+        for i_2 in range(i_1 + 1, len(bs_points)):
+            p_2 = bs_points[i_2]
+            p_dist = p_1.distance(p_2)
+            if p_1 != p_2 and p_dist <= cell_side + dist_tol:
+                link = {'nodes': (i_1, i_2)}
+                json_data['links'].append(link)
+
+    return json_data
+
+
+def gen_apps(nb_apps, net_data):
+    """Generate applications
+    Args:
+        nb_apps (int): number of applications
+        net_data (dict): network's data
+    Returns:
+        dict: applications in json format
+    """
+    deadline_options = [0.001, 0.005, 0.01, 0.05, 0.1]
+    cpu_work_options = np.multiply([1, 5, 10], 1e+6)
+    packet_size_options = [100, 1000, 10000]
+    request_rate_options = [1000, 100, 10, 1]
+    availability_options = [0.99, 0.999, 0.9999]
+    # max_instance_options = list(range(1, len(nodes_data['nodes'])))
+    max_instance_options = [len(net_data['nodes'])]
+    demand_ram_a_options = np.multiply([1, 10, 100], 1e+6)
+    demand_ram_b_options = demand_ram_a_options
+    demand_disk_a_options = np.multiply([1, 10, 100, 1000], 1e+6)
+    demand_disk_b_options = np.multiply([100, 500, 1000], 1e+6)
+
+    json_data = {'apps': []}
+    for index in range(nb_apps):
+        deadline = random.choice(deadline_options)
+        cpu_work = random.choice(cpu_work_options)
+        packet_size = random.choice(packet_size_options)
+        request_rate = random.choice(request_rate_options)
+        availability = random.choice(availability_options)
+        max_instance = random.choice(max_instance_options)
+
+        # Linear demand, f(x) = ax + b
+        demand_ram_a = random.choice(demand_ram_a_options)
+        demand_ram_b = random.choice(demand_ram_b_options)
+        demand_disk_a = random.choice(demand_disk_a_options)
+        demand_disk_b = random.choice(demand_disk_b_options)
+
+        # Create linear estimator that satisfies the queue and deadline constraints
+        # f(x) = ax + b
+        demand_cpu_a = 2.0 * cpu_work
+        demand_cpu_b = 2.0 * cpu_work / float(deadline)
+
+        app = {
+            'id': index,
+            'type': '',
+            'deadline': deadline,
+            'work': cpu_work,
+            'data': packet_size,
+            'rate': request_rate,
+            'avail': availability,
+            'max_inst': max_instance,
+            'demand': {
+                'RAM': [demand_ram_a, demand_ram_b],
+                'DISK': [demand_disk_a, demand_disk_b],
+                'CPU': [demand_cpu_a, demand_cpu_b]
+            }
+        }
+        json_data['apps'].append(app)
+    return json_data
+
+
+def gen_loads(nb_users, time_start, time_end, time_step, apps_data, net_data):
+    """Generate loads for each application in each node along the simulation
+    Args:
+        nb_users (int): total number of users in the system
+        time_start (float): start time of the simulation
+        time_end (float): end time of the simulation
+        time_step (float): time step duration of the simulation
+        apps_data (dict): applications' data
+        net_data (dict): network's data
+    Returns:
+        list: generated load
+    """
+    bs_nodes_id = [row['id'] for row in net_data['nodes'] if row['type'] == 'BS']
+    nb_bs_nodes = len(bs_nodes_id)
+
+    # Distribute users among the applications
+    users_per_app = distribute_users(nb_users, apps_data, net_data)
+
+    json_data = []
+    for app in apps_data['apps']:
+        app_id = app['id']
+        total_users = users_per_app[app_id]
+        for node_id in bs_nodes_id:
+            # Users are equally distributed to each node
+            users = total_users / float(nb_bs_nodes)
+            min_load = 0.0
+            max_load = users * app['rate']
+
+            # Varies load during simulation time steps
+            loads = distribute_load(min_load, max_load, time_start, time_end, time_step)
+
+            # Save load
+            item = {'app_id': app_id, 'node_id': node_id, 'load': loads}
+            json_data.append(item)
+
+    return json_data
+
+
+def distribute_users(nb_users, apps_data, net_data):
+    """Distribute a specific amount of users among the applications
+    Args:
+        nb_users (int): total number of users
+        apps_data (dict): applications' data
+        net_data (dict): network's data
+    Returns:
+        dict: number of users per application after the distribution
+    """
+    apps_id = [row['id'] for row in apps_data['apps']]
+    nb_apps = len(apps_id)
+    nb_nodes = len(net_data['nodes'])
+
+    # Set a minimum amount of users for each application
+    min_users = nb_nodes
+    users_per_app = {app_id: min_users for app_id in apps_id}
+    remaining_users = nb_users - min_users * nb_apps
+
+    # Use zipf (zeta) distribution to set number of users of each application
+    zipf_alpha = 1.8
+    users_distribution = sp_rnd.random_zipf(zipf_alpha, nb_apps)
+    users_count = 0.0
+    max_dist_app_id = None
+    max_dist = 0.0
+    for (app_index, distribution) in enumerate(users_distribution):
+        users = math.floor(distribution * remaining_users)
+        app_id = apps_id[app_index]
+        users_per_app[app_id] += users
+        users_count += users
+        if distribution >= max_dist:
+            max_dist = distribution
+            max_dist_app_id = app_id
+
+    # Put the remaining users to the most popular application (i.e., app with highest distribution)
+    remaining_users -= users_count
+    if remaining_users > 0.0 and max_dist_app_id is not None:
+        users_per_app[max_dist_app_id] += remaining_users
+
+    return users_per_app
+
+
+def distribute_load(min_load, max_load, time_start, time_end, time_step):
+    """Distribute load in a range along the simulation time
+    Args:
+        min_load (float): minimum load
+        max_load (float): maximum load
+        time_start (float): start time of the simulation
+        time_end (float): end time of the simulation
+        time_step (float): time step duration of the simulation
+    Returns:
+        list: distributed load in a json format
+    """
+    nb_steps = int(math.floor((time_end - time_start) / float(time_step)))
+
+    rnd_funcs = [
+        (sp_rnd.random_birth_death_process, {'birth_rate': 0.8, 'death_rate': 0.1}),
+        (sp_rnd.random_birth_death_process, {'birth_rate': 0.1, 'death_rate': 0.8}),
+        (sp_rnd.random_birth_death_process, {'birth_rate': 0.5, 'death_rate': 0.5}),
+        (sp_rnd.random_beta_pdf, {'alpha': 2, 'beta': 3}),
+        (sp_rnd.random_beta_pdf, {'alpha': 1, 'beta': 5}),
+        (sp_rnd.random_beta_pdf, {'alpha': 3, 'beta': 2}),
+        (sp_rnd.random_beta_pdf, {'alpha': 5, 'beta': 1}),
+        (sp_rnd.random_burst, {'normal_transition': 0.1, 'burst_transition': 0.5}),
+        (sp_rnd.random_burst, {'normal_transition': 0.2, 'burst_transition': 0.5}),
+        (sp_rnd.random_burst, {'normal_transition': 0.3, 'burst_transition': 0.5}),
+        (sp_rnd.random_cycle, {'period': nb_steps / 2.0}),
+        (sp_rnd.random_cycle, {'period': nb_steps / 4.0}),
+        (sp_rnd.random_cycle, {'period': nb_steps / 8.0}),
+        (sp_rnd.random_constant, {}),
+        (sp_rnd.random_uniform, {}),
+    ]
+
+    func_data = random.choice(rnd_funcs)
+    func = func_data[0]
+    func_kwargs = func_data[1]
+
+    noise = 0.01
+    samples = func(nb_samples=nb_steps, noise=noise, **func_kwargs)
+    loads = []
+    for step in range(nb_steps):
+        distribution = samples[step]
+        load = max_load * distribution + min_load
+        time = step * time_step + time_start
+        item = {'t': time, 'v': load}
+        loads.append(item)
+
+    return loads
+
+
+if __name__ == '__main__':
+    main()

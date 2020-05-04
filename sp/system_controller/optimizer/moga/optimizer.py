@@ -16,6 +16,7 @@ class MOGAOptimizer(Optimizer):
         self.dominance_func = preferred_dominates
         self.stop_threshold = 0.10
         self.use_heuristic = True
+        self.timeout = None
         self.pool_size = 4
 
         self._last_population = None
@@ -49,6 +50,7 @@ class MOGAOptimizer(Optimizer):
                        elite_probability=self.elite_probability,
                        stop_threshold=self.stop_threshold,
                        dominance_func=self.dominance_func,
+                       timeout=self.timeout,
                        pool_size=self.pool_size)
         population = mo_ga.solve()
 

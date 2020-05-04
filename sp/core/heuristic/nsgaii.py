@@ -65,7 +65,8 @@ class NSGAII(BRKGA):
         Returns:
             bool: True if algorithm should stop, False otherwise
         """
-        stop = self.operator.should_stop(population)
+        stop = self._should_stop_by_timeout()
+        stop = stop or self.operator.should_stop(population)
         stop = stop or self._should_stop_by_mgbm()
         return stop
 

@@ -4,9 +4,10 @@ from sp.system_controller.model import OptSolution
 from sp.system_controller.util import make_solution_feasible
 from sp.system_controller.util import calc_response_time, calc_load_before_distribution
 from . import indiv_gen
+import numpy as np
 import math
-import numpy
 import copy
+import time
 
 
 DEFAULT_STALL_WINDOW = 30
@@ -97,6 +98,17 @@ class SOGAOperator(GAOperator):
         Returns:
            bool: True if genetic algorithm should stop, False otherwise
         """
+        return self.should_stop_by_variance(population)
+
+    def should_stop_by_variance(self, population):
+        """Verify whether genetic algorithm should stop or not
+        It will stop if the best individuals' fitnesses do not change over generations
+
+        Args:
+           population (list(GAIndividual)): population of the current generation
+        Returns:
+           bool: True if genetic algorithm should stop, False otherwise
+        """
         best_indiv = population[0]
         best_value = best_indiv.fitness
 
@@ -106,7 +118,7 @@ class SOGAOperator(GAOperator):
             max_value = float(max(self._best_values))
             values = self._best_values[-1 * self.stall_window:]
             values = list(map(lambda i: i / max_value, values))
-            variance = numpy.var(values)
+            variance = np.var(values)
 
         return best_value == 0.0 or variance <= self.stall_threshold
 
@@ -199,6 +211,16 @@ class SOGAOperator(GAOperator):
         return make_solution_feasible(self.system, solution, self.environment_input)
 
     def _alloc_resources(self, app, node, solution, load, increment=True):
+        """Allocate resources for an application in a node based on current load distribution and application placement
+        Args:
+            app (Application): application
+            node (Node): node
+            solution (OptSolution): solution
+            load (float): received load
+            increment (bool): whether the passed load should be added to the current load in the solution
+        Returns:
+            bool: it was possible to allocate resources or not
+        """
         prev_load = solution.received_load[app.id][node.id]
         prev_alloc_res = copy.copy(solution.allocated_resource[app.id][node.id])
 
@@ -219,6 +241,13 @@ class SOGAOperator(GAOperator):
             return True
 
     def _check_capacity_constraint(self, node, solution):
+        """Check if solution respects capacity constraint in a specific node
+        Args:
+            node (Node):
+            solution (OptSolution): solution
+        Returns:
+            bool: constraint is satisfied or not
+        """
         alloc_res = solution.allocated_resource
         for resource in self.system.resources:
             capacity = node.capacity[resource.name]
@@ -228,6 +257,16 @@ class SOGAOperator(GAOperator):
         return True
 
     def _calc_response_time(self, app, src_node, dst_node, solution):
+        """Calculate response time of requests from src_node to dst_node
+        Args:
+            app (Application): requested application
+            src_node (Node): source node
+            dst_node (Node): destination node
+            solution (OptSolution): solution
+        Returns:
+            float: response time
+        """
+
         prev_cpu_alloc = solution.allocated_resource[app.id][dst_node.id][Resource.CPU]
         prev_load = solution.received_load[app.id][dst_node.id]
         prev_place = solution.app_placement[app.id][dst_node.id]
