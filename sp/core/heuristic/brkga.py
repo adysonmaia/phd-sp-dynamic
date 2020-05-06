@@ -159,7 +159,6 @@ class BRKGA:
         increment = perf_count - self._last_perf_count
         self._elapsed_time += increment
         self._last_perf_count = perf_count
-        print('{}, {}, {}'.format(self._elapsed_time, increment, self.timeout))
 
         return self._elapsed_time >= self.timeout
 

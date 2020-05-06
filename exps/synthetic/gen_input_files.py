@@ -3,7 +3,6 @@ from sp.core.util import random as sp_rnd
 import numpy as np
 import copy
 import random
-import sys
 import math
 import json
 import os
@@ -14,50 +13,102 @@ DATA_PATH = 'input/synthetic/'
 
 def main():
     """ Main function.
-    It generates the simulation scenario
+    It generates the simulation scenarios
     """
-    # Set scenario parameters
-    nb_bs = 25
-    nb_apps = 10
-    nb_users = 1000
+    # Scenarios parameters
+    scenarios = [
+        {'nb_bs': 25, 'nb_apps': 10, 'nb_users': 10000},
+        {'nb_bs': 25, 'nb_apps': 20, 'nb_users': 10000},
+        {'nb_bs': 25, 'nb_apps': 30, 'nb_users': 10000},
+        {'nb_bs': 25, 'nb_apps': 40, 'nb_users': 10000},
+        {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 10000},
 
-    # Set simulation parameters
+        {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 1000},
+        {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 4000},
+        {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 7000},
+    ]
+
+    # Simulation times
     time_start = 0.0
-    time_step = 60 * 60  # 1 Hour
-    time_end = 24 * time_step + time_start
+    time_step = 60.0 * 60.0  # 1 Hour
+    nb_steps = 10
+    # nb_steps = 50
+    time_stop = (nb_steps - 1) * time_step + time_start
+    simulation_data = {
+        'time': {'start': time_start, 'stop': time_stop, 'step': time_step},
+        'scenarios': []
+    }
+
+    # Generate each scenario
+    nb_runs = 30
+    for scenario_params in scenarios:
+        nb_bs = scenario_params['nb_bs']
+        nb_apps = scenario_params['nb_apps']
+        nb_users = scenario_params['nb_users']
+        scenario_id = 'n{}_a{}_u{}'.format(nb_bs, nb_apps, nb_users)
+        for run in range(nb_runs):
+            scenario_path = os.path.join(DATA_PATH, scenario_id, str(run))
+            scenario_filename = gen_scenario(nb_bs, nb_apps, nb_users,
+                                             time_start, time_stop, time_step,
+                                             scenario_path)
+
+            item = {'scenario_id': scenario_id, 'scenario': scenario_filename, 'run': run}
+            simulation_data['scenarios'].append(item)
+
+    # Save simulation configuration
+    simulation_filename = os.path.join(DATA_PATH, 'simulation.json')
+    with open(simulation_filename, 'w') as outfile:
+        json.dump(simulation_data, outfile, indent=2)
+
+
+def gen_scenario(nb_bs, nb_apps, nb_users, time_start, time_stop, time_step, scenario_path):
+    """It generates a scenario with specific parameters
+    Args:
+        nb_bs (int): number of base stations (edge nodes)
+        nb_apps (int): number of applications
+        nb_users (int): number of users
+        time_start (float): simulation start time (in seconds)
+        time_stop (float): simulation stop time (in seconds)
+        time_step (float): simulation time step duration (in seconds)
+        scenario_path (str): directory to save scenario input files
+    Returns:
+        str: config filename of the generated scenario
+    """
 
     try:
-        os.makedirs(DATA_PATH)
+        os.makedirs(scenario_path)
     except OSError:
         pass
 
     # Create network
     net_data = gen_network(nb_bs)
-    net_filename = os.path.join(DATA_PATH, 'net_{}.json'.format(nb_bs))
+    net_filename = os.path.join(scenario_path, 'net.json')
     with open(net_filename, 'w') as outfile:
         json.dump(net_data, outfile, indent=2)
 
     # Create applications
     apps_data = gen_apps(nb_apps, net_data)
-    apps_filename = os.path.join(DATA_PATH, 'apps_{}.json'.format(nb_apps))
+    apps_filename = os.path.join(scenario_path, 'apps.json')
     with open(apps_filename, 'w') as outfile:
         json.dump(apps_data, outfile, indent=2)
 
     # Create applications' loads in each node
-    loads_data = gen_loads(nb_users, time_start, time_end, time_step, apps_data, net_data)
-    loads_filename = os.path.join(DATA_PATH, 'loads_{}.json'.format(nb_users))
+    loads_data = gen_loads(nb_users, time_start, time_stop, time_step, apps_data, net_data)
+    loads_filename = os.path.join(scenario_path, 'loads.json')
     with open(loads_filename, 'w') as outfile:
         json.dump(loads_data, outfile, indent=2)
 
     # Create scenario composed of net topology, applications, and loads
-    scenario_json = {
+    scenario_data = {
         'network': net_filename,
         'apps': apps_filename,
         'loads': loads_filename
     }
-    scenario_filename = os.path.join(DATA_PATH, 'scenario_n{}_a{}_u{}.json'.format(nb_bs, nb_apps, nb_users))
+    scenario_filename = os.path.join(scenario_path, 'scenario.json')
     with open(scenario_filename, 'w') as outfile:
-        json.dump(scenario_json, outfile, indent=2)
+        json.dump(scenario_data, outfile, indent=2)
+
+    return scenario_filename
 
 
 def gen_network(nb_bs):
@@ -71,9 +122,9 @@ def gen_network(nb_bs):
         'type': 'BS',
         'avail': 0.99,  # 99 %
         'capacity': {
-            'CPU': 5e+9,  # GIPS (Giga Instructions Per Second),
-            'RAM': 8e+9,  # 8 GB (Giga Byte)
-            'DISK': 500e+9,  # 500 GB (Giga Byte)
+            'CPU': 5e+9,  # 5 GIPS (Giga Instructions Per Second),
+            'RAM': 4e+9,  # 4 GB (Giga Byte)
+            'DISK': 16e+9,  # 16 GB (Giga Byte)
         },
         'cost': {
             'CPU': [1e-12, 1e-12],  # cost for IPS / second
@@ -87,8 +138,8 @@ def gen_network(nb_bs):
         'avail': 0.999,  # 99.9 %
         'capacity': {
             'CPU': 10e+9,  # 10 GIPS
-            'RAM': 16e+9,  # 16 GB (Giga Byte)
-            'DISK': 1e+12  # 1 TB (Tera Byte)
+            'RAM': 8e+9,  # 8 GB (Giga Byte)
+            'DISK': 32e+9  # 32 GB (Giga Byte)
         },
         'cost': {
             'CPU': [0.5e-12, 0.5e-12],  # cost for IPS / second
@@ -211,41 +262,93 @@ def gen_apps(nb_apps, net_data):
     Returns:
         dict: applications in json format
     """
-    deadline_options = [0.001, 0.005, 0.01, 0.05, 0.1]
-    cpu_work_options = np.multiply([1, 5, 10], 1e+6)
-    packet_size_options = [100, 1000, 10000]
-    request_rate_options = [1000, 100, 10, 1]
-    availability_options = [0.99, 0.999, 0.9999]
-    # max_instance_options = list(range(1, len(nodes_data['nodes'])))
-    max_instance_options = [len(net_data['nodes'])]
-    demand_ram_a_options = np.multiply([1, 10, 100], 1e+6)
-    demand_ram_b_options = demand_ram_a_options
-    demand_disk_a_options = np.multiply([1, 10, 100, 1000], 1e+6)
-    demand_disk_b_options = np.multiply([100, 500, 1000], 1e+6)
+    # Deadline for response time (in seconds)
+    deadline_options = {
+        'URLLC': np.linspace(0.001, 0.01, num=10),
+        'EMBB': np.linspace(0.01, 0.1, num=10),
+        'MMTC': np.linspace(0.1, 1.0, num=10),
+    }
+    # Number of CPU instructions to process a request
+    cpu_work_options = {
+        'URLLC': np.linspace(1, 5, num=5) * 1e+6,
+        'MMTC': np.linspace(1, 5, num=5) * 1e+6,
+        'EMBB': np.linspace(5, 10, num=5) * 1e+6,
+    }
+    # Packet data size of a request transmitted on the network (in bits)
+    packet_size_options = {
+        'URLLC': np.linspace(100, 1000, num=10),
+        'MMTC': np.linspace(100, 1000, num=10),
+        'EMBB': np.linspace(100, 10000, num=10),
+    }
+    # Request generation rate (request / second)
+    request_rate_options = {
+        'URLLC': np.linspace(10, 100, num=10),
+        'MMTC': np.linspace(0.1, 1.0, num=10),
+        'EMBB': np.linspace(1, 10, num=10),
+    }
+    # Availability probability (between 0 and 1)
+    availability_options = {
+        'URLLC': np.linspace(0.99, 0.999, num=10),
+        'MMTC': np.linspace(0.9, 0.99, num=10),
+        'EMBB': np.linspace(0.9, 0.99, num=10),
+    }
 
+    # Maximum number of instances running at the same time-slot
+    max_instance_range = list(range(1, len(net_data['nodes']) + 1))
+    max_instance_options = {
+        'URLLC': max_instance_range,
+        'MMTC': max_instance_range,
+        'EMBB': max_instance_range,
+    }
+
+    # Linear demand for RAM resource (in byte)
+    demand_ram_a_options = {
+        'URLLC': np.linspace(1, 10, num=10) * 1e+6,
+        'MMTC': np.linspace(1, 10, num=10) * 1e+6,
+        'EMBB': np.linspace(1, 100, num=10) * 1e+6,
+    }
+    demand_ram_b_options = demand_ram_a_options
+
+    # Linear demand for DISK resource (in byte)
+    demand_disk_a_options = {
+        'URLLC': np.linspace(1, 10, num=10) * 1e+6,
+        'MMTC': np.linspace(1, 10, num=10) * 1e+6,
+        'EMBB': np.linspace(1, 100, num=10) * 1e+6,
+    }
+    demand_disk_b_options = {
+        'URLLC': np.linspace(10, 100, num=10) * 1e+6,
+        'MMTC': np.linspace(10, 100, num=10) * 1e+6,
+        'EMBB': np.linspace(100, 500, num=10) * 1e+6,
+    }
+
+    app_type_options = ['URLLC', 'MMTC', 'EMBB']
+
+    # Generate applications
     json_data = {'apps': []}
     for index in range(nb_apps):
-        deadline = random.choice(deadline_options)
-        cpu_work = random.choice(cpu_work_options)
-        packet_size = random.choice(packet_size_options)
-        request_rate = random.choice(request_rate_options)
-        availability = random.choice(availability_options)
-        max_instance = random.choice(max_instance_options)
+        app_type = random.choice(app_type_options)
+
+        deadline = random.choice(deadline_options[app_type])
+        cpu_work = random.choice(cpu_work_options[app_type])
+        packet_size = random.choice(packet_size_options[app_type])
+        request_rate = random.choice(request_rate_options[app_type])
+        availability = random.choice(availability_options[app_type])
+        max_instance = random.choice(max_instance_options[app_type])
 
         # Linear demand, f(x) = ax + b
-        demand_ram_a = random.choice(demand_ram_a_options)
-        demand_ram_b = random.choice(demand_ram_b_options)
-        demand_disk_a = random.choice(demand_disk_a_options)
-        demand_disk_b = random.choice(demand_disk_b_options)
+        demand_ram_a = random.choice(demand_ram_a_options[app_type])
+        demand_ram_b = random.choice(demand_ram_b_options[app_type])
+        demand_disk_a = random.choice(demand_disk_a_options[app_type])
+        demand_disk_b = random.choice(demand_disk_b_options[app_type])
 
         # Create linear estimator that satisfies the queue and deadline constraints
         # f(x) = ax + b
-        demand_cpu_a = 2.0 * cpu_work
+        demand_cpu_a = cpu_work
         demand_cpu_b = 2.0 * cpu_work / float(deadline)
 
         app = {
             'id': index,
-            'type': '',
+            'type': app_type,
             'deadline': deadline,
             'work': cpu_work,
             'data': packet_size,
@@ -262,13 +365,13 @@ def gen_apps(nb_apps, net_data):
     return json_data
 
 
-def gen_loads(nb_users, time_start, time_end, time_step, apps_data, net_data):
+def gen_loads(nb_users, time_start, time_stop, time_step, apps_data, net_data):
     """Generate loads for each application in each node along the simulation
     Args:
         nb_users (int): total number of users in the system
-        time_start (float): start time of the simulation
-        time_end (float): end time of the simulation
-        time_step (float): time step duration of the simulation
+        time_start (float): simulation start time (in seconds)
+        time_stop (float): simulation stop time (in seconds)
+        time_step (float): simulation time step duration (in seconds)
         apps_data (dict): applications' data
         net_data (dict): network's data
     Returns:
@@ -291,7 +394,7 @@ def gen_loads(nb_users, time_start, time_end, time_step, apps_data, net_data):
             max_load = users * app['rate']
 
             # Varies load during simulation time steps
-            loads = distribute_load(min_load, max_load, time_start, time_end, time_step)
+            loads = distribute_load(min_load, max_load, time_start, time_stop, time_step)
 
             # Save load
             item = {'app_id': app_id, 'node_id': node_id, 'load': loads}
@@ -318,9 +421,18 @@ def distribute_users(nb_users, apps_data, net_data):
     users_per_app = {app_id: min_users for app_id in apps_id}
     remaining_users = nb_users - min_users * nb_apps
 
-    # Use zipf (zeta) distribution to set number of users of each application
-    zipf_alpha = 1.8
-    users_distribution = sp_rnd.random_zipf(zipf_alpha, nb_apps)
+    # Set users percentage for each application based on its type
+    app_type_distribution = {'URLLC': 0.1, 'EMBB': 0.2, 'MMTC': 0.7}
+    nb_apps_per_type = {app_type: sum(map(lambda a: a['type'] == app_type, apps_data['apps']))
+                        for app_type in ['URLLC', 'MMTC', 'EMBB']}
+    users_distribution = [app_type_distribution[a['type']] / float(nb_apps_per_type[a['type']])
+                          for a in apps_data['apps']]
+
+    # # Use zipf (zeta) distribution to set number of users of each application
+    # zipf_alpha = 1.8
+    # users_distribution = sp_rnd.random_zipf(zipf_alpha, nb_apps)
+
+    # Distribute users among all applications
     users_count = 0.0
     max_dist_app_id = None
     max_dist = 0.0
@@ -354,29 +466,29 @@ def distribute_load(min_load, max_load, time_start, time_end, time_step):
     """
     nb_steps = int(math.floor((time_end - time_start) / float(time_step)))
 
+    # Different load patterns
     rnd_funcs = [
-        (sp_rnd.random_birth_death_process, {'birth_rate': 0.8, 'death_rate': 0.1}),
-        (sp_rnd.random_birth_death_process, {'birth_rate': 0.1, 'death_rate': 0.8}),
-        (sp_rnd.random_birth_death_process, {'birth_rate': 0.5, 'death_rate': 0.5}),
         (sp_rnd.random_beta_pdf, {'alpha': 2, 'beta': 3}),
         (sp_rnd.random_beta_pdf, {'alpha': 1, 'beta': 5}),
         (sp_rnd.random_beta_pdf, {'alpha': 3, 'beta': 2}),
         (sp_rnd.random_beta_pdf, {'alpha': 5, 'beta': 1}),
-        (sp_rnd.random_burst, {'normal_transition': 0.1, 'burst_transition': 0.5}),
-        (sp_rnd.random_burst, {'normal_transition': 0.2, 'burst_transition': 0.5}),
-        (sp_rnd.random_burst, {'normal_transition': 0.3, 'burst_transition': 0.5}),
+        (sp_rnd.random_burst, {'normal_transition': 0.2, 'burst_transition': 0.8}),
+        (sp_rnd.random_burst, {'normal_transition': 0.3, 'burst_transition': 0.8}),
+        (sp_rnd.random_burst, {'normal_transition': 0.4, 'burst_transition': 0.8}),
+        (sp_rnd.random_cycle, {'period': nb_steps}),
         (sp_rnd.random_cycle, {'period': nb_steps / 2.0}),
         (sp_rnd.random_cycle, {'period': nb_steps / 4.0}),
-        (sp_rnd.random_cycle, {'period': nb_steps / 8.0}),
-        (sp_rnd.random_constant, {}),
+        (sp_rnd.random_linear, {}),
         (sp_rnd.random_uniform, {}),
     ]
 
+    # Choose a load pattern
     func_data = random.choice(rnd_funcs)
     func = func_data[0]
     func_kwargs = func_data[1]
 
-    noise = 0.01
+    # Generate load along the simulation according to the selected pattern
+    noise = 0.05
     samples = func(nb_samples=nb_steps, noise=noise, **func_kwargs)
     loads = []
     for step in range(nb_steps):

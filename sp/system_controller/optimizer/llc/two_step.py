@@ -10,7 +10,7 @@ _GA_PARAMS = {
     "mutant_proportion": 0.1,
     "elite_probability": 0.6,
     "stop_threshold": 0.10,
-    "timeout": 300,
+    "timeout": 180,
 }
 
 _PF_PARAMS = {

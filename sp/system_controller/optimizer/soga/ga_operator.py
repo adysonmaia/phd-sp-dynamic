@@ -73,7 +73,7 @@ class SOGAOperator(GAOperator):
             heuristic_population = [
                 indiv_gen.create_individual_cloud(self),
                 indiv_gen.create_individual_net_delay(self),
-                # indiv_gen.create_individual_cluster_metoids(self),
+                indiv_gen.create_individual_cluster_metoids(self),
                 indiv_gen.create_individual_deadline(self),
                 indiv_gen.create_individual_load(self),
                 indiv_gen.create_individual_current(self)

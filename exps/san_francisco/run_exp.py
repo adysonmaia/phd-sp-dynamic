@@ -1,17 +1,16 @@
 from sp.core.model import Scenario
-from sp.core.predictor import AutoARIMAPredictor
+from sp.core.predictor import SARIMAPredictor
 from sp.simulator import Simulator, Monitor
+from sp.system_controller import metric, util
 from sp.system_controller.optimizer.llc import LLCOptimizer, plan_finder, input_finder
 from sp.system_controller.optimizer import SOGAOptimizer, MOGAOptimizer, CloudOptimizer, SOHeuristicOptimizer
 from sp.system_controller.predictor import DefaultEnvironmentPredictor
-from sp.system_controller import metric, util
 from datetime import datetime
 from pytz import timezone
 import json
-import time
+import math
 import os
-import logging
-logging.basicConfig(level=logging.DEBUG)
+import time
 
 UTC_TZ = timezone('UTC')
 SF_TZ_STR = 'US/Pacific'
@@ -38,7 +37,7 @@ def get_app_deadline_violation(app, system, control_input, environment_input):
 class ControlMonitor(Monitor):
     """Simulation monitor
     """
-    def __init__(self, metrics_func, output_path=None):
+    def __init__(self, metrics_func, output_path=None, debug_prefix=None):
         """Initialization
         Args:
              metrics_func (list): list of metric functions
@@ -50,6 +49,7 @@ class ControlMonitor(Monitor):
         self.control_data = dict()  # log of control data
         self.perf_count = 0  # last performance count
         self.output_path = output_path
+        self.debug_prefix = debug_prefix
 
     def on_sim_started(self, sim_time):
         """Event dispatched when the simulation started
@@ -80,8 +80,14 @@ class ControlMonitor(Monitor):
         opt_name = self.simulator.optimizer.__class__.__name__
         elapsed_time = time.perf_counter() - self.perf_count
 
+        time_slot = (sim_time - self.simulator.start_time) / float(self.simulator.step_time)
+        time_slot = int(math.floor(time_slot)) + 1
+        total_time_slot = (self.simulator.stop_time - self.simulator.start_time) / float(self.simulator.step_time)
+        total_time_slot = int(math.floor(total_time_slot)) + 1
+
         tz_time = datetime.fromtimestamp(sim_time, tz=UTC_TZ).astimezone(SF_TZ)
-        print('{} - {}s'.format(tz_time, elapsed_time))
+        print_prefix = '{}: '.format(self.debug_prefix) if self.debug_prefix else ''
+        print('{}{}/{} - {} - {}s'.format(print_prefix, time_slot, total_time_slot, tz_time, elapsed_time))
 
         valid = util.is_solution_valid(system, control_input, environment_input)
         datum = {'time': sim_time, 'opt': opt_name, 'elapsed_time': elapsed_time, 'valid': valid}
@@ -122,9 +128,13 @@ class ControlMonitor(Monitor):
             places = [n.id for n in system.nodes if control_input.get_app_placement(app.id, n.id)]
             users = environment_input.get_attached_users()
             users = list(filter(lambda u: u.app_id == app.id and u.node_id is not None, users))
+            load = sum([util.calc_load_before_distribution(app.id, node.id, system, environment_input)
+                        for node in system.nodes])
             deadline_violation = get_app_deadline_violation(app, system, control_input, environment_input)
-            print('app {} {}, deadline {}ms, users {}, places {}: {}, deadline violation {}ms'.format(
-                app.id, app.type, 1000 * app.deadline, len(users), len(places), places, deadline_violation
+            print('app {:2d} {:>5}, deadline {:6.1f}ms, max instances {:2d}, users {:4d}, load {:10.3f}, '
+                  'places {:2d}: {}, deadline violation {}s'.format(
+                app.id, app.type, 1000 * app.deadline, app.max_instances, len(users), load,
+                len(places), places, deadline_violation
             ))
 
         print("--")
@@ -153,23 +163,18 @@ class ControlMonitor(Monitor):
 def main():
     """Main function
     """
+    # Load simulation parameters
+    root_output_path = 'output/san_francisco/exp/'
+    simulation_filename = 'input/san_francisco/simulation.json'
+    simulation_data = None
+    with open(simulation_filename) as json_file:
+        simulation_data = json.load(json_file)
 
-    # Read input
-    scenario_filename = 'input/san_francisco/scenario.json'
-    scenario = None
-    with open(scenario_filename) as json_file:
-        data = json.load(json_file)
-        scenario = Scenario.from_json(data)
+    time_start = simulation_data['time']['start']
+    time_stop = simulation_data['time']['stop']
+    time_step = simulation_data['time']['step']
 
-    # Set simulation time
-    start_time = SF_TZ.localize(datetime(2008, 5, 24, 0, 0, 0)).timestamp()
-    stop_time = SF_TZ.localize(datetime(2008, 5, 24, 23, 59, 59)).timestamp()
-    # stop_time = SF_TZ.localize(datetime(2008, 5, 25, 23, 59, 59)).timestamp()
-    # step_time = 10 * 60  # seconds or 10 min
-    step_time = 60 * 60  # seconds or 1H
-    # step_time = 30 * 60  # seconds or 30 min
-
-    # Set optimizer solutions
+    # Set objectives and metrics functions
     optimizers = []
     metrics = [
         metric.deadline.overall_deadline_violation,
@@ -193,10 +198,12 @@ def main():
     ]
     single_objective = multi_objective[0]
 
-    # dominance_func = util.pareto_dominates
+    #
     dominance_func = util.preferred_dominates
     pool_size = 8
     # pool_size = 0
+
+    # Set optimizer solutions
 
     # Cloud optimizer config
     opt = CloudOptimizer()
@@ -208,7 +215,7 @@ def main():
     opt = SOHeuristicOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # Single-Objective GA optimizer config
     opt = SOGAOptimizer()
@@ -224,7 +231,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = format(opt.__class__.__name__)
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # LLC (control input and plan) finders versions
     llc_finders = [
@@ -233,9 +240,8 @@ def main():
         {'input': input_finder.MGAInputFinder, 'plan': plan_finder.GAPlanFinder, 'key': 'mga'},
     ]
 
-    # LLC optimizer config with different parameters
+    # LLC optimizer with different parameters
     prediction_windows = [0, 1, 2]
-    # prediction_windows = [1]
     for window in prediction_windows:
         for llc_finder in llc_finders:
             opt = LLCOptimizer()
@@ -247,22 +253,34 @@ def main():
             opt.plan_finder_class = llc_finder['plan']
 
             # Set environment forecasting
-            seasonal_period = int(round(1 * 24 * 60 * 60 / float(step_time)))  # Seasonal of 1 day
+            seasonal_period = int(round(1 * 24 * 60 * 60 / float(time_step)))  # Seasonal of 1 day
+            sarima_params = {'sarima_params': {'seasonal_order': (1, 0, 1, seasonal_period)}}
             env_predictor = DefaultEnvironmentPredictor()
-            env_predictor.net_predictor_class = AutoARIMAPredictor
-            env_predictor.net_predictor_params = {'arima_params': {'seasonal': True, 'm': seasonal_period}}
+            env_predictor.net_predictor_class = SARIMAPredictor
+            env_predictor.net_predictor_params = sarima_params
             opt.environment_predictor = env_predictor
 
             opt_id = '{}_{}_w{}'.format(opt.__class__.__name__, llc_finder['key'], window)
             item = (opt_id, opt)
             optimizers.append(item)
 
-    # Execute simulation for each optimizer nb_runs times
-    nb_runs = 30
-    # nb_runs = 1
-    for run in range(nb_runs):
+    # Create a simulation for each loaded scenario
+    for scenario_data in simulation_data['scenarios']:
+        scenario_filename = scenario_data['scenario']
+        scenario_id = scenario_data['scenario_id']
+        run = scenario_data['run']
+
+        scenario = None
+        with open(scenario_filename) as json_file:
+            scenario_json = json.load(json_file)
+            scenario = Scenario.from_json(scenario_json)
+
+        # Execute simulation for each optimizer nb_runs times
         for (opt_id, opt) in optimizers:
-            output_path = 'output/san_francisco/exp/{}/{}/'.format(run, opt_id)
+            # Set simulation output parameters
+            output_sub_path = '{}/{}/{}'.format(scenario_id, run, opt_id)
+            output_path = os.path.join(root_output_path, output_sub_path)
+            debug_prefix = output_sub_path
             try:
                 os.makedirs(output_path)
             except OSError:
@@ -270,15 +288,15 @@ def main():
 
             # Set simulation parameters
             sim = Simulator(scenario=scenario)
-            sim.set_time(stop=stop_time, start=start_time, step=step_time)
+            sim.set_time(stop=time_stop, start=time_start, step=time_step)
             sim.optimizer = opt
-            sim.monitor = ControlMonitor(metrics_func=metrics, output_path=output_path)
+            sim.monitor = ControlMonitor(metrics_func=metrics, output_path=output_path, debug_prefix=debug_prefix)
 
             # Run simulation
             perf_count = time.perf_counter()
             sim.run()
             elapsed_time = time.perf_counter() - perf_count
-            print('run {}, opt {} - sim exec time: {}s'.format(run, opt_id, elapsed_time))
+            print('scenario {}, run {}, opt {} - sim exec time: {}s'.format(scenario_id, run, opt_id, elapsed_time))
 
 
 if __name__ == '__main__':

@@ -111,22 +111,26 @@ def random_birth_death_process(birth_rate=.5, death_rate=.5, nb_samples=None, no
     """
 
     n = 100
-    a = birth_rate / float(n)
-    b = death_rate / float(n)
+    # a = birth_rate / float(n)
+    # b = death_rate / float(n)
 
     nb_steps = nb_samples if nb_samples else 1
     y = np.zeros(nb_steps)
 
-    if a > b:
+    if birth_rate > death_rate:
         y[0] = np.random.randint(0, n // 2)
-    elif a < b:
+    elif birth_rate < death_rate:
         y[0] = np.random.randint(n // 2, n + 1)
     else:
         y[0] = np.random.randint(0, n + 1)
 
     for i in range(nb_steps - 1):
-        birth = np.random.rand() <= a * y[i]
-        death = np.random.rand() <= b * y[i]
+        # birth = np.random.rand() <= a * y[i]
+        # death = np.random.rand() <= b * y[i]
+
+        birth = np.random.rand() <= birth_rate
+        death = np.random.rand() <= death_rate
+
         y[i + 1] = y[i]
         if y[i] < n and birth:
             y[i + 1] += 1
@@ -142,13 +146,13 @@ def random_birth_death_process(birth_rate=.5, death_rate=.5, nb_samples=None, no
         return y
 
 
-def random_burst(normal_value=0.0, burst_value=1.0, normal_transition=0.5, burst_transition=0.5,
+def random_burst(normal_value=None, burst_value=1.0, normal_transition=0.5, burst_transition=0.5,
                  nb_samples=None, noise=None):
     """Generate random samples according to a burst model.
     A burst model follows a markov chain with two states (normal and burst state), where each state is
     associated with a generated value.
     Args:
-        normal_value (float): generated value during the normal state
+        normal_value (float): generated value during the normal state. If None, a random value is selected
         burst_value (float): generated value during the burst state
         normal_transition (float): transition probability from normal state to burst state
         burst_transition (float): transition probability from burst state to normal state
@@ -159,6 +163,11 @@ def random_burst(normal_value=0.0, burst_value=1.0, normal_transition=0.5, burst
         Union[list, float]: list of random values or a single value if nb_samples is None.
             Resulted values are between 0 and 1
     """
+
+    if normal_value is None:
+        factors = [0.5, 0.6, 0.7, 0.8]
+        factor = np.random.choice(factors)
+        normal_value = np.random.uniform(0.0, burst_value * factor)
 
     v = [normal_value, burst_value]
     p = [normal_transition, burst_transition]
@@ -172,7 +181,33 @@ def random_burst(normal_value=0.0, burst_value=1.0, normal_transition=0.5, burst
             s = 1 - s
         y[i] = v[s]
 
-    y = scale_samples(y, min_value=min(v), max_value=max(v))
+    y = scale_samples(y, min_value=0.0)
+    y = add_white_noise(y, noise)
+
+    if nb_samples is None:
+        return y[0]
+    else:
+        return y
+
+
+def random_linear(nb_samples=None, noise=None):
+    """Generate random samples following a linear function
+    Args:
+        nb_samples (int): number of generated samples. If None, function returns only a single value
+        noise (float): it adds a white noise to the generated values if this parameter is not None
+
+    Returns:
+        Union[list, float]: list of values or a single value if nb_samples is None.
+            Resulted values are between 0 and 1
+    """
+    a = np.random.uniform(0.0, 1.0)
+    b_param_options = [(0.0, 1.0), (a, 1.0), (0.0, a), (a, a)]
+    b_param_index = np.random.choice(range(len(b_param_options)))
+    b_param = b_param_options[b_param_index]
+    b = np.random.uniform(*b_param)
+
+    nb_steps = nb_samples if nb_samples else 1
+    y = np.linspace(a, b, num=nb_steps)
     y = add_white_noise(y, noise)
 
     if nb_samples is None:

@@ -67,7 +67,6 @@ def is_solution_valid(system, solution, environment_input):
                 if abs(app_demand - alloc_res) > ERROR_TOLERANCE and solution.app_placement[app.id][dst_node.id]:
                     logging.debug("Invalid allocated resource for (app %d, node %d, resource %s): %f (valid %f)",
                                   app.id, dst_node.id, resource.name, alloc_res, app_demand)
-                    print(dst_load, received_load)
                     return False
 
             capacity = dst_node.capacity[resource.name]

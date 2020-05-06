@@ -1,12 +1,12 @@
-from sp.core.geometry import grid
-from sp.core.geometry.bound_box import BoundBox
-from sp.core.geometry.point.gps import GpsPoint
+from sp.core.geometry import BoundBox, GpsPoint, create_grid_points
+from sp.core.util import random as sp_rnd
 from glob import glob
 from collections import defaultdict
 from future.utils import iteritems
 from datetime import datetime
 from pytz import timezone
 import geopandas as gpd
+import numpy as np
 import json
 import csv
 import copy
@@ -16,11 +16,81 @@ import os
 
 
 DATA_PATH = 'input/san_francisco/'
+UTC_TZ = timezone('UTC')
+SF_TZ_STR = 'US/Pacific'
+SF_TZ = timezone(SF_TZ_STR)
 
 
 def main():
-    """ Main function. It generates the simulation scenario
+    """ Main function.
+    It generates the simulation scenarios
     """
+
+    # Input parameters
+    map_path = os.path.join(DATA_PATH, 'shapefile/bay_area_zip_codes/')
+    map_filename = os.path.join(map_path, 'geo_export_2defef9a-b2e1-4ddd-84f6-1a131dd80410.shp')
+    mobility_path = os.path.join(DATA_PATH, 'cabs')
+
+    # Scenarios parameters
+    scenarios = [
+        {'nb_apps': 10},
+    ]
+
+    # Simulation time
+    time_start = SF_TZ.localize(datetime(2008, 5, 24, 0, 0, 0)).timestamp()
+    time_stop = SF_TZ.localize(datetime(2008, 5, 24, 23, 59, 59)).timestamp()
+    time_step = 60 * 60  # seconds or 1H
+    simulation_data = {
+        'time': {'start': time_start, 'stop': time_stop, 'step': time_step},
+        'scenarios': []
+    }
+
+    # Generate each scenario
+    nb_runs = 30
+    cached_users_data = None
+    for scenario_params in scenarios:
+        nb_apps = scenario_params['nb_apps']
+        scenario_id = 'a{}_{}_{}'.format(nb_apps, int(time_start), int(time_stop))
+        for run in range(nb_runs):
+            scenario_path = os.path.join(DATA_PATH, scenario_id, str(run))
+            scenario_filename, scenario_data = gen_scenario(nb_apps=nb_apps,
+                                                            time_start=time_start,
+                                                            time_stop=time_stop,
+                                                            map_filename=map_filename,
+                                                            mobility_path=mobility_path,
+                                                            output_path=scenario_path,
+                                                            cached_users_data=cached_users_data)
+            if cached_users_data is None:
+                cached_users_data = scenario_data['users']
+
+            item = {'scenario_id': scenario_id, 'scenario': scenario_filename, 'run': run}
+            simulation_data['scenarios'].append(item)
+
+    # Save simulation configuration
+    simulation_filename = os.path.join(DATA_PATH, 'simulation.json')
+    with open(simulation_filename, 'w') as outfile:
+        json.dump(simulation_data, outfile, indent=2)
+
+
+def gen_scenario(nb_apps, time_start, time_stop, map_filename, mobility_path, output_path, cached_users_data=None):
+    """ It generates a simulation scenario with specific parameters
+    Args:
+        nb_apps (int): number of applications
+        time_start (float): simulation start time (in seconds)
+        time_stop (float): simulation stop time (in seconds)
+        map_filename (str): map filename
+        mobility_path (str): directory of the mobility traces
+        output_path (str): directory to save scenario config files
+        cached_users_data (dict): cached users' data in json format. It reuses this previously generated data
+    Returns:
+        str: config filename of the generated scenario
+        dict: scenario's data in json format
+    """
+    try:
+        os.makedirs(output_path)
+    except OSError:
+        pass
+
     # Bound Box of San Francisco, CA, US
     bbox_pos = [{'lon': -122.5160063624, 'lat': 37.7093}, {'lon': -122.3754337591, 'lat': 37.8112472822}]
     bbox_points = [GpsPoint(**pos) for pos in bbox_pos]
@@ -28,42 +98,55 @@ def main():
 
     # Generate the network
     topology = 'zipcode'
-    network_json = gen_network(topology, bbox)
-    network_filename = os.path.join(DATA_PATH, 'network_{}.json'.format(topology))
-    with open(network_filename, 'w') as outfile:
-        json.dump(network_json, outfile, indent=2)
+    net_data = gen_network(bbox, topology, map_filename=map_filename)
+    net_filename = os.path.join(output_path, 'network_{}.json'.format(topology))
+    with open(net_filename, 'w') as outfile:
+        json.dump(net_data, outfile, indent=2)
 
     # Generate applications
-    apps_json = gen_urllc_apps()
-    apps_filename = os.path.join(DATA_PATH, 'apps.json')
+    apps_data = gen_apps(nb_apps, net_data)
+    apps_filename = os.path.join(output_path, 'apps.json')
     with open(apps_filename, 'w') as outfile:
-        json.dump(apps_json, outfile, indent=2)
+        json.dump(apps_data, outfile, indent=2)
 
-    # Generate users' position
-    users_json = gen_users(bbox)
-    # Distribute users among the applications
-    app_type = apps_json['apps'][0]['type']
-    users_json = distribute_users(users_json, apps_json, {app_type: 1.0})
-    users_filename = os.path.join(DATA_PATH, 'users.json')
+    # Generate users if cache is None
+    users_data = None
+    if cached_users_data is not None:
+        users_data = copy.deepcopy(cached_users_data)
+    else:
+        users_pos_path = os.path.join(output_path, 'users_position')
+        users_data = gen_users(time_start, time_stop, bbox, mobility_path, users_pos_path)
+
+    # Distribute users among all applications
+    users_data = distribute_users(users_data, apps_data, net_data)
+    users_filename = os.path.join(output_path, 'users.json')
     with open(users_filename, 'w') as outfile:
-        json.dump(users_json, outfile, indent=2)
+        json.dump(users_data, outfile, indent=2)
 
     # Create scenario composed of net topology, applications, and users
-    scenario_json = {
-        'network': network_filename,
+    scenario_data = {
+        'network': net_filename,
         'apps': apps_filename,
         'users': users_filename
     }
-    scenario_filename = os.path.join(DATA_PATH, 'scenario.json')
+    scenario_filename = os.path.join(output_path, 'scenario.json')
     with open(scenario_filename, 'w') as outfile:
-        json.dump(scenario_json, outfile, indent=2)
+        json.dump(scenario_data, outfile, indent=2)
+
+    scenario_data = {
+        'network': net_data,
+        'apps': apps_data,
+        'users': users_data
+    }
+    return scenario_filename, scenario_data
 
 
-def gen_network(topology, bbox):
+def gen_network(bbox, topology, **kwargs):
     """Generate the network graph with a specific topology
     Args:
-        topology (str): network's topology, values: 'grid', 'zipcode'
         bbox (BoundBox): bound box of positions
+        topology (str): network's topology, values: 'grid', 'zipcode'
+        **kwargs: extra parameters for creating a specific topology
     Returns:
          dict: network in json format
     """
@@ -75,11 +158,9 @@ def gen_network(topology, bbox):
         'type': 'BS',
         'avail': 0.99,  # 99 %
         'capacity': {
-            # 'CPU': 1e+9,  # GIPS (Giga Instructions Per Second),
-            # 'CPU': 5e+9,  # GIPS (Giga Instructions Per Second),
-            'CPU': 5e+9,  # GIPS (Giga Instructions Per Second),
-            'RAM': 8e+9,  # 8 GB (Giga Byte)
-            'DISK': 500e+9,  # 500 GB (Giga Byte)
+            'CPU': 5e+9,  # 5 GIPS (Giga Instructions Per Second),
+            'RAM': 4e+9,  # 4 GB (Giga Byte)
+            'DISK': 16e+9,  # 16 GB (Giga Byte)
         },
         'cost': {
             'CPU': [1e-12, 1e-12],  # cost for IPS / second
@@ -92,11 +173,9 @@ def gen_network(topology, bbox):
         'type': 'CORE',
         'avail': 0.999,  # 99.9 %
         'capacity': {
-            # 'CPU': 1e+12,  # 1 TIPS (Tera Instructions Per Second)
             'CPU': 10e+9,  # 10 GIPS
-            # 'CPU': 0,  # GIPS
-            'RAM': 16e+9,  # 16 GB (Giga Byte)
-            'DISK': 1e+12  # 1 TB (Tera Byte)
+            'RAM': 8e+9,  # 8 GB (Giga Byte)
+            'DISK': 32e+9  # 32 GB (Giga Byte)
         },
         'cost': {
             'CPU': [0.5e-12, 0.5e-12],  # cost for IPS / second
@@ -111,8 +190,8 @@ def gen_network(topology, bbox):
         'type': 'CLOUD',
         'avail': 0.9999,  # 99.99 %
         'capacity': {
-            'CPU': 'INF', 
-            'RAM': 'INF', 
+            'CPU': 'INF',
+            'RAM': 'INF',
             'DISK': 'INF'
         },
         'cost': {
@@ -136,12 +215,11 @@ def gen_network(topology, bbox):
     }
     core_cloud_link_properties = {
         'bw': 10e+9,  # 10 Gbps (Giga bits per second)
-        # 'delay': 0.01  # seconds or 10 ms
-        'delay': 0.02  # seconds or 20 ms
+        'delay': 0.01  # seconds or 10 ms
     }
 
     # Generate base stations' positions in a bound box grid
-    json_data = gen_bs_network(bbox, topology=topology)
+    json_data = gen_bs_network(bbox, topology, **kwargs)
 
     # Set the base station's properties
     for bs in json_data['nodes']:
@@ -184,13 +262,14 @@ def gen_bs_network(bbox, topology='grid', **kwargs):
     Args:
         bbox (BoundBox): limits where base stations' positions will be placed
         topology (str): format / topology of the network
+        **kwargs: extra parameters for creating a specific topology
     Returns:
         dict: network in json format
     """
     if topology == 'grid':
         return gen_grid_bs_network(bbox, **kwargs)
     elif topology == 'zipcode':
-        return gen_zipcode_bs_network(bbox)
+        return gen_zipcode_bs_network(bbox, **kwargs)
     else:
         raise TypeError('Invalid topology format {}'.format(topology))
 
@@ -205,7 +284,7 @@ def gen_grid_bs_network(bbox, distance=2000.0, tol=200.0):
         dict: network in json format
     """
     # Generate base stations' positions in a bound box grid
-    bs_points = grid.create_grid_points(bbox, distance)
+    bs_points = create_grid_points(bbox, distance)
 
     # Set the base station's properties
     json_data = {'nodes': [], 'links': []}
@@ -225,17 +304,17 @@ def gen_grid_bs_network(bbox, distance=2000.0, tol=200.0):
     return json_data
 
 
-def gen_zipcode_bs_network(bbox):
+def gen_zipcode_bs_network(bbox, map_filename):
     """Generate base stations in the centroid of each zip code area of San Francisco
     Args:
        bbox (BoundBox): bound box of the grid
+       map_filename (str): file name of the zip code map
     Returns:
        dict: network in json format
     """
     # Load zip code map as a geopanda DataFrame
     crs = 'EPSG:4326'
-    shape_file = 'input/san_francisco/shapefile/bay_area_zip_codes/geo_export_2defef9a-b2e1-4ddd-84f6-1a131dd80410.shp'
-    map_gdf = gpd.read_file(shape_file)
+    map_gdf = gpd.read_file(map_filename)
     map_gdf = map_gdf.to_crs(crs)
     map_gdf = map_gdf.cx[bbox.x_min:bbox.x_max, bbox.y_min:bbox.y_max]
     map_gdf.sort_values('zip', inplace=True)
@@ -278,38 +357,101 @@ def gen_zipcode_bs_network(bbox):
     return json_data
 
 
-def gen_random_apps(nb_apps):
+def gen_apps(nb_apps, net_data):
     """Generate applications
     Args:
         nb_apps (int): number of applications
+        net_data (dict): network's data
     Returns:
         dict: applications in json format
     """
+    # Deadline for response time (in seconds)
+    deadline_options = {
+        'URLLC': np.linspace(0.001, 0.01, num=10),
+        'EMBB': np.linspace(0.01, 0.1, num=10),
+        'MMTC': np.linspace(0.1, 1.0, num=10),
+    }
+    # Number of CPU instructions to process a request
+    cpu_work_options = {
+        'URLLC': np.linspace(1, 5, num=5) * 1e+6,
+        'MMTC': np.linspace(1, 5, num=5) * 1e+6,
+        'EMBB': np.linspace(5, 10, num=5) * 1e+6,
+    }
+    # Packet data size of a request transmitted on the network (in bits)
+    packet_size_options = {
+        'URLLC': np.linspace(100, 1000, num=10),
+        'MMTC': np.linspace(100, 1000, num=10),
+        'EMBB': np.linspace(100, 10000, num=10),
+    }
+    # Request generation rate (request / second)
+    request_rate_options = {
+        'URLLC': np.linspace(10, 100, num=10),
+        'MMTC': np.linspace(0.1, 1.0, num=10),
+        'EMBB': np.linspace(1, 10, num=10),
+    }
+    # Availability probability (between 0 and 1)
+    availability_options = {
+        'URLLC': np.linspace(0.99, 0.999, num=10),
+        'MMTC': np.linspace(0.9, 0.99, num=10),
+        'EMBB': np.linspace(0.9, 0.99, num=10),
+    }
 
+    # Maximum number of instances running at the same time-slot
+    max_instance_range = list(range(1, len(net_data['nodes']) + 1))
+    max_instance_options = {
+        'URLLC': max_instance_range,
+        'MMTC': max_instance_range,
+        'EMBB': max_instance_range,
+    }
+
+    # Linear demand for RAM resource (in byte)
+    demand_ram_a_options = {
+        'URLLC': np.linspace(1, 10, num=10) * 1e+6,
+        'MMTC': np.linspace(1, 10, num=10) * 1e+6,
+        'EMBB': np.linspace(1, 100, num=10) * 1e+6,
+    }
+    demand_ram_b_options = demand_ram_a_options
+
+    # Linear demand for DISK resource (in byte)
+    demand_disk_a_options = {
+        'URLLC': np.linspace(1, 10, num=10) * 1e+6,
+        'MMTC': np.linspace(1, 10, num=10) * 1e+6,
+        'EMBB': np.linspace(1, 100, num=10) * 1e+6,
+    }
+    demand_disk_b_options = {
+        'URLLC': np.linspace(10, 100, num=10) * 1e+6,
+        'MMTC': np.linspace(10, 100, num=10) * 1e+6,
+        'EMBB': np.linspace(100, 500, num=10) * 1e+6,
+    }
+
+    app_type_options = ['URLLC', 'MMTC', 'EMBB']
+
+    # Generate applications
     json_data = {'apps': []}
     for index in range(nb_apps):
-        deadline = random.choice([0.001, 0.005, 0.01, 0.05, 0.1])
-        # cpu_work = 1e+6 * random.choice([1, 10, 50, 100])
-        cpu_work = 1e+6 * random.choice([1, 10])
-        packet_size = random.choice([100, 1000, 10000])
-        request_rate = random.choice([1000, 100, 10, 1])
-        availability = random.choice([0.99, 0.999, 0.9999])
-        max_instance = 100
+        app_type = 'URLLC'
+
+        deadline = random.choice(deadline_options[app_type])
+        cpu_work = random.choice(cpu_work_options[app_type])
+        packet_size = random.choice(packet_size_options[app_type])
+        request_rate = random.choice(request_rate_options[app_type])
+        availability = random.choice(availability_options[app_type])
+        max_instance = random.choice(max_instance_options[app_type])
 
         # Linear demand, f(x) = ax + b
-        demand_ram_a = 1e+6 * random.choice([1, 10, 100])
-        demand_ram_b = 1e+6 * random.choice([1, 10, 100])
-        demand_disk_a = 1e+6 * random.choice([1, 10, 100, 1000])
-        demand_disk_b = 1e+6 * random.choice([100, 500, 1000])
+        demand_ram_a = random.choice(demand_ram_a_options[app_type])
+        demand_ram_b = random.choice(demand_ram_b_options[app_type])
+        demand_disk_a = random.choice(demand_disk_a_options[app_type])
+        demand_disk_b = random.choice(demand_disk_b_options[app_type])
 
         # Create linear estimator that satisfies the queue and deadline constraints
         # f(x) = ax + b
-        demand_cpu_a = 2.0 * cpu_work
+        demand_cpu_a = cpu_work
         demand_cpu_b = 2.0 * cpu_work / float(deadline)
 
         app = {
             'id': index,
-            'type': '',
+            'type': app_type,
             'deadline': deadline,
             'work': cpu_work,
             'data': packet_size,
@@ -326,126 +468,24 @@ def gen_random_apps(nb_apps):
     return json_data
 
 
-def gen_urllc_apps():
-    """Create URLLC applications
-    Returns:
-        dict: applications in json format
-    """
-    json_data = {'apps': []}
-
-    # for deadline in [0.001, 0.005, 0.01, 0.05, 0.1]:
-    # for deadline in [0.001, 0.005, 0.01, 0.015, 0.02, 0.03, 0.05, 0.1]:
-    # for deadline in [0.001, 0.002, 0.003, 0.004, 0.005]:
-    for deadline in [0.003]:
-        app = {
-            'id': len(json_data['apps']),
-            'type': 'URLLC',
-            'deadline': deadline,
-            'work': 1e+6,
-            'data': 100,
-            'rate': 100,
-            'avail': 0.9999,
-            'max_inst': 100,
-            'demand': {
-                'RAM': [100e+3, 1e+6],
-                # 'DISK': [100e+3, 500e+6],
-                'DISK': [100e+3, 1e+9],
-            }
-        }
-
-        # Create linear estimator that satisfies the queue and deadline constraints
-        # f(x) = ax + b
-        cpu_work = app['work']
-        demand_cpu_a = 2.0 * cpu_work
-        demand_cpu_b = 2.0 * cpu_work / float(deadline)
-        app['demand']['CPU'] = [demand_cpu_a, demand_cpu_b]
-        json_data['apps'].append(app)
-
-    return json_data
-
-
-def gen_apps():
-    """Generate applications
-    Returns:
-        dict: applications in json format
-    """
-
-    embb = {
-        'type': 'EMBB',
-        'deadline': 0.05,  # seconds
-        'work': 10e+6,  # MI (Millions of Instructions)
-        # 'data': 50e+6,  # bits - 50 Mb
-        'data': 10e+3,  # bits
-        'rate': 100.0,  # requests per second
-        'avail': 0.999,  # 99.9 %
-        'max_inst': 100,
-        'demand': {
-            'RAM': [50e+6, 50e+6],  # Byte - 50 MB
-            'DISK': [50e+6, 1e+9]  # Byte - 50 MB, 1GB
-        }
-    }
-    mmtc = {
-        'type': 'MMTC',
-        # 'deadline': 1.0,  # second
-        'deadline': 0.1,  # second
-        'work': 1e+6,  # MI (Millions of Instructions)
-        'data': 100,  # bits
-        'rate': 100,  # requests per second
-        'avail': 0.99,  # 99.0 %
-        'max_inst': 100,
-        'demand': {
-            'RAM': [100e+3, 100e+3],  # Byte - 100 KB
-            'DISK': [100e+3, 1e+9]  # Byte - 100 KB, 1GB
-        }
-    }
-    urllc = {
-        'type': 'URLLC',
-        # 'deadline': 0.001,  # seconds or 1 ms
-        # 'deadline': 0.01,  # seconds or 10 ms
-        'deadline': 0.005,  # seconds
-        'work': 1e+6,  # MI (Millions of Instructions)
-        # 'data': 100e+3,  # bits - 100 Kb
-        'data': 100,  # bits
-        'rate': 100,  # requests per second
-        'avail': 0.9999,  # 99.99 %
-        'max_inst': 100,
-        'demand': {
-            'RAM': [100e+3, 100e+3],  # Byte - 100 KB
-            # 'DISK': [100e+3, 1e+9]  # Byte - 100 KB, 1GB
-            'DISK': [100e+3, 500e+6]
-        }
-    }
-
-    # Generate apps' properties
-    apps = [embb, mmtc, urllc]
-    json_data = {'apps': []}
-    for (app_id, app) in enumerate(apps):
-        app = copy.copy(app)
-        app['id'] = app_id
-
-        # Create linear estimator that satisfies the queue and deadline constraints
-        # f(x) = ax + b
-        cpu_linear_a = 2.0 * app['work']
-        cpu_linear_b = 2.0 * app['work'] / float(app['deadline'])
-        app['demand']['CPU'] = [cpu_linear_a, cpu_linear_b]
-        json_data['apps'].append(app)
-
-    return json_data
-
-
-def gen_users(bbox):
+def gen_users(time_start, time_stop, bbox, mobility_path, output_path):
     """Generate users
     Args:
+        time_start (float): simulation start time (unix timestamp)
+        time_stop (float): simulation stop time (unix timestamp)
         bbox (BoundBox): bound box of the users' positions
+        mobility_path (str): directory of the mobility traces
+        output_path (str): directory to save users' positions
     Returns:
         dict: users in json format
     """
-    cabs_pathname = DATA_PATH + 'cabs/new_*.txt'
+    cabs_pathname = os.path.join(mobility_path, 'new_*.txt')
     cabs_filename = glob(cabs_pathname)
-    pos_pathname = DATA_PATH + 'users_position/'
-    sf_tz = timezone('America/Los_Angeles')  # San Francisco timezone
-    start_time = sf_tz.localize(datetime(2008, 5, 24, 0, 0, 0)).timestamp()
-    stop_time = sf_tz.localize(datetime(2008, 5, 25, 23, 59, 59)).timestamp()
+
+    try:
+        os.makedirs(output_path)
+    except OSError:
+        pass
 
     # Each taxi has its own GPS trace file and it will be a user if the trace is not empty
     json_data = {'users': []}
@@ -460,7 +500,7 @@ def gen_users(bbox):
                 time = int(row[3])
 
                 # Filter positions in a time and position interval
-                in_interval = start_time <= time <= stop_time
+                in_interval = time_start <= time <= time_stop
                 in_interval = in_interval and (bbox.x_min <= lon <= bbox.x_max)
                 in_interval = in_interval and (bbox.y_min <= lat <= bbox.y_max)
                 if in_interval:
@@ -471,7 +511,7 @@ def gen_users(bbox):
         if len(positions) > 0:
             user_id = len(json_data['users'])
             # Save the position traces in a separated file
-            pos_filename = pos_pathname + 'user_{}.json'.format(user_id)
+            pos_filename = os.path.join(output_path, 'user_{}.json'.format(user_id))
             with open(pos_filename, mode='w') as json_file:
                 json.dump(positions, json_file)
 
@@ -482,48 +522,55 @@ def gen_users(bbox):
     return json_data
 
 
-def distribute_users(users_data, apps_data, apps_distribution=None):
+def distribute_users(users_data, apps_data, net_data):
     """Distribute users among the generated applications
     Args:
         users_data (dict): users data in json format
         apps_data (dict): applications data in json format
-        apps_distribution (dict): percentage the users for each type of application
-
+        net_data (dict): network data in json format
     Returns:
-
+        dict: distributed users in json format
     """
-    users_data = copy.deepcopy(users_data)
-    nb_users = len(users_data['users'])
-    # Calculate number of users for each type of application
-    app_types_nb_users = {app_type: int(math.floor(nb_users * dist))
-                          for (app_type, dist) in iteritems(apps_distribution)}
-    # Calculate number of apps per type
-    nb_apps_per_type = {app_type: sum(map(lambda a: a['type'] == app_type, apps_data['apps']))
-                        for app_type in apps_distribution.keys()}
+    apps_id = [row['id'] for row in apps_data['apps']]
+    nb_apps = len(apps_id)
+    nb_nodes = len(net_data['nodes'])
+    total_nb_users = len(users_data['users'])
+    users_index = list(range(total_nb_users))
 
-    # Map each user to an application according to the calculated distribution
-    last_user_id = 0
-    for app in apps_data['apps']:
-        app_id = app['id']
-        app_type = app['type']
-        # applications with same type receive an equal amount of users
-        app_nb_users = int(math.floor(app_types_nb_users[app_type] / nb_apps_per_type[app_type]))
-        for index in range(app_nb_users):
-            user_id = last_user_id + index
-            users_data['users'][user_id]['app_id'] = app_id
-        last_user_id += app_nb_users
+    # Use zipf (zeta) distribution to set number of users of each application
+    zipf_alpha = 1.6
+    users_distribution = sp_rnd.random_zipf(zipf_alpha, nb_apps)
 
-    # Remaining users are mapped to a single application, preferably a MMTC application
-    if last_user_id < nb_users:
-        app_id = None
-        for app in apps_data['apps']:
-            if app['type'] == 'MMTC':
-                app_id = app['id']
-                break
-        if app_id is None:
-            app_id = apps_data['apps'][0]['id']
-        for user_id in range(last_user_id, nb_users):
-            users_data['users'][user_id]['app_id'] = app_id
+    # Distribute users among all applications
+    remaining_users = frozenset(users_index)
+    min_nb_users = min(nb_nodes, total_nb_users // nb_apps)
+    # min_nb_users = 1
+    nb_users_to_distribute = total_nb_users - nb_apps * min_nb_users
+    users_per_app = {}
+    max_dist_app_id = None
+    max_dist = 0.0
+    for (app_index, distribution) in enumerate(users_distribution):
+        app_id = apps_id[app_index]
+        nb_users = math.floor(distribution * nb_users_to_distribute) + min_nb_users
+        nb_users = int(min(nb_users, len(remaining_users)))
+
+        users = list(random.sample(remaining_users, nb_users))
+        remaining_users = remaining_users.difference(users)
+        users_per_app[app_id] = users
+
+        if distribution >= max_dist:
+            max_dist = distribution
+            max_dist_app_id = app_id
+
+    # Put the remaining users to the most popular application (i.e., app with highest distribution)
+    if len(remaining_users) > 0 and max_dist_app_id is not None:
+        users_per_app[max_dist_app_id] += list(remaining_users)
+
+    # Set the requested application for each user
+    for (app_id, users) in iteritems(users_per_app):
+        for user_index in users:
+            user = users_data['users'][user_index]
+            user['app_id'] = app_id
 
     return users_data
 
