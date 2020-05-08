@@ -4,7 +4,7 @@ import warnings
 import math
 
 DEFAULT_MAX_DATA_SIZE = math.inf
-DEFAULT_ES_PARAMS = {}
+DEFAULT_INIT_PARAMS = {}
 DEFAULT_FIT_PARAMS = {}
 DEFAULT_PREDICT_PARAMS = {}
 
@@ -12,11 +12,10 @@ FIT_MIN_DATA_SIZE = 2
 
 
 class ExpSmoothingPredictor(Predictor):
-    def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE,
-                 es_params=None, fit_params=None, predict_params=None):
+    def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE, fit_params=None, predict_params=None, **kwargs):
         Predictor.__init__(self)
         self.max_data_size = max_data_size
-        self.es_params = es_params
+        self.init_params = kwargs
         self.fit_params = fit_params
         self.predict_params = predict_params
 
@@ -44,9 +43,9 @@ class ExpSmoothingPredictor(Predictor):
                     warnings.simplefilter("ignore", category=Warning)
 
                     model_params = {}
-                    model_params.update(DEFAULT_ES_PARAMS)
-                    if self.es_params is not None:
-                        model_params.update(self.es_params)
+                    model_params.update(DEFAULT_INIT_PARAMS)
+                    if self.init_params:
+                        model_params.update(self.init_params)
                     model = ExponentialSmoothing(self._data, **model_params)
 
                     fit_params = {}

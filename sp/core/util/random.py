@@ -165,7 +165,7 @@ def random_burst(normal_value=None, burst_value=1.0, normal_transition=0.5, burs
     """
 
     if normal_value is None:
-        factors = [0.5, 0.6, 0.7, 0.8]
+        factors = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
         factor = np.random.choice(factors)
         normal_value = np.random.uniform(0.0, burst_value * factor)
 

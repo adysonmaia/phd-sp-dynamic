@@ -18,20 +18,23 @@ def main():
     # Scenarios parameters
     scenarios = [
         {'nb_bs': 25, 'nb_apps': 10, 'nb_users': 10000},
-        {'nb_bs': 25, 'nb_apps': 20, 'nb_users': 10000},
-        {'nb_bs': 25, 'nb_apps': 30, 'nb_users': 10000},
-        {'nb_bs': 25, 'nb_apps': 40, 'nb_users': 10000},
-        {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 10000},
 
-        {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 1000},
-        {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 4000},
-        {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 7000},
+        # {'nb_bs': 25, 'nb_apps': 10, 'nb_users': 10000},
+        # {'nb_bs': 25, 'nb_apps': 20, 'nb_users': 10000},
+        # {'nb_bs': 25, 'nb_apps': 30, 'nb_users': 10000},
+        # {'nb_bs': 25, 'nb_apps': 40, 'nb_users': 10000},
+        # {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 10000},
+        #
+        # {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 1000},
+        # {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 4000},
+        # {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 7000},
     ]
 
     # Simulation times
     time_start = 0.0
     time_step = 60.0 * 60.0  # 1 Hour
-    nb_steps = 10
+    nb_steps = 24
+    # nb_steps = 10
     # nb_steps = 50
     time_stop = (nb_steps - 1) * time_step + time_start
     simulation_data = {
@@ -122,9 +125,9 @@ def gen_network(nb_bs):
         'type': 'BS',
         'avail': 0.99,  # 99 %
         'capacity': {
-            'CPU': 5e+9,  # 5 GIPS (Giga Instructions Per Second),
-            'RAM': 4e+9,  # 4 GB (Giga Byte)
-            'DISK': 16e+9,  # 16 GB (Giga Byte)
+            'CPU': 4 * 5e+9,  # 4 Core with 5 GIPS (Giga Instructions Per Second)
+            'RAM': 16e+9,  # 16 GB (Giga Byte)
+            'DISK': 32e+9,  # 32 GB (Giga Byte)
         },
         'cost': {
             'CPU': [1e-12, 1e-12],  # cost for IPS / second
@@ -137,9 +140,9 @@ def gen_network(nb_bs):
         'type': 'CORE',
         'avail': 0.999,  # 99.9 %
         'capacity': {
-            'CPU': 10e+9,  # 10 GIPS
-            'RAM': 8e+9,  # 8 GB (Giga Byte)
-            'DISK': 32e+9  # 32 GB (Giga Byte)
+            'CPU': 8 * 5e+9,  # 8 Core with 5 GIPS (Giga Instructions Per Second)
+            'RAM': 32e+9,  # 16 GB (Giga Byte)
+            'DISK': 64e+9,  # 64 GB (Giga Byte)
         },
         'cost': {
             'CPU': [0.5e-12, 0.5e-12],  # cost for IPS / second
@@ -282,9 +285,9 @@ def gen_apps(nb_apps, net_data):
     }
     # Request generation rate (request / second)
     request_rate_options = {
-        'URLLC': np.linspace(10, 100, num=10),
+        'URLLC': np.linspace(1, 100, num=10),
         'MMTC': np.linspace(0.1, 1.0, num=10),
-        'EMBB': np.linspace(1, 10, num=10),
+        'EMBB': np.linspace(1, 100, num=10),
     }
     # Availability probability (between 0 and 1)
     availability_options = {
@@ -294,7 +297,8 @@ def gen_apps(nb_apps, net_data):
     }
 
     # Maximum number of instances running at the same time-slot
-    max_instance_range = list(range(1, len(net_data['nodes']) + 1))
+    # max_instance_range = list(range(1, len(net_data['nodes']) + 1))
+    max_instance_range = [len(net_data['nodes'])]
     max_instance_options = {
         'URLLC': max_instance_range,
         'MMTC': max_instance_range,
@@ -303,30 +307,36 @@ def gen_apps(nb_apps, net_data):
 
     # Linear demand for RAM resource (in byte)
     demand_ram_a_options = {
-        'URLLC': np.linspace(1, 10, num=10) * 1e+6,
-        'MMTC': np.linspace(1, 10, num=10) * 1e+6,
-        'EMBB': np.linspace(1, 100, num=10) * 1e+6,
+        'URLLC': np.linspace(0.1, 1, num=10) * 1e+6,
+        'MMTC': np.linspace(0.1, 1, num=10) * 1e+6,
+        'EMBB': np.linspace(1, 10, num=10) * 1e+6,
     }
-    demand_ram_b_options = demand_ram_a_options
+    demand_ram_b_options = {
+        'URLLC': np.linspace(10, 100, num=10) * 1e+6,
+        'MMTC': np.linspace(10, 100, num=10) * 1e+6,
+        'EMBB': np.linspace(100, 1000, num=10) * 1e+6,
+    }
 
     # Linear demand for DISK resource (in byte)
     demand_disk_a_options = {
-        'URLLC': np.linspace(1, 10, num=10) * 1e+6,
-        'MMTC': np.linspace(1, 10, num=10) * 1e+6,
-        'EMBB': np.linspace(1, 100, num=10) * 1e+6,
+        'URLLC': np.linspace(0.1, 1, num=10) * 1e+6,
+        'MMTC': np.linspace(0.1, 1, num=10) * 1e+6,
+        'EMBB': np.linspace(1, 10, num=10) * 1e+6,
     }
     demand_disk_b_options = {
         'URLLC': np.linspace(10, 100, num=10) * 1e+6,
         'MMTC': np.linspace(10, 100, num=10) * 1e+6,
-        'EMBB': np.linspace(100, 500, num=10) * 1e+6,
+        'EMBB': np.linspace(100, 1000, num=10) * 1e+6,
     }
 
     app_type_options = ['URLLC', 'MMTC', 'EMBB']
+    selected_type = copy.copy(app_type_options)
+    selected_type += list(np.random.choice(app_type_options, size=nb_apps - len(selected_type)))
 
     # Generate applications
     json_data = {'apps': []}
     for index in range(nb_apps):
-        app_type = random.choice(app_type_options)
+        app_type = selected_type[index]
 
         deadline = random.choice(deadline_options[app_type])
         cpu_work = random.choice(cpu_work_options[app_type])
@@ -428,10 +438,6 @@ def distribute_users(nb_users, apps_data, net_data):
     users_distribution = [app_type_distribution[a['type']] / float(nb_apps_per_type[a['type']])
                           for a in apps_data['apps']]
 
-    # # Use zipf (zeta) distribution to set number of users of each application
-    # zipf_alpha = 1.8
-    # users_distribution = sp_rnd.random_zipf(zipf_alpha, nb_apps)
-
     # Distribute users among all applications
     users_count = 0.0
     max_dist_app_id = None
@@ -467,19 +473,26 @@ def distribute_load(min_load, max_load, time_start, time_end, time_step):
     nb_steps = int(math.floor((time_end - time_start) / float(time_step)))
 
     # Different load patterns
+    # rnd_funcs = [
+    #     (sp_rnd.random_beta_pdf, {'alpha': 2, 'beta': 3}),
+    #     (sp_rnd.random_beta_pdf, {'alpha': 1, 'beta': 5}),
+    #     (sp_rnd.random_beta_pdf, {'alpha': 3, 'beta': 2}),
+    #     (sp_rnd.random_beta_pdf, {'alpha': 5, 'beta': 1}),
+    #     (sp_rnd.random_beta_pdf, {'alpha': 0.5, 'beta': 0.5}),
+    #     # (sp_rnd.random_burst, {'normal_transition': 0.2, 'burst_transition': 0.8}),
+    #     # (sp_rnd.random_burst, {'normal_transition': 0.3, 'burst_transition': 0.8}),
+    #     (sp_rnd.random_burst, {'normal_transition': 0.4, 'burst_transition': 0.8}),
+    #     (sp_rnd.random_cycle, {'period': nb_steps}),
+    #     (sp_rnd.random_cycle, {'period': nb_steps / 2.0}),
+    #     # (sp_rnd.random_cycle, {'period': nb_steps / 4.0}),
+    #     (sp_rnd.random_linear, {}),
+    #     # (sp_rnd.random_uniform, {}),
+    # ]
+
     rnd_funcs = [
-        (sp_rnd.random_beta_pdf, {'alpha': 2, 'beta': 3}),
-        (sp_rnd.random_beta_pdf, {'alpha': 1, 'beta': 5}),
-        (sp_rnd.random_beta_pdf, {'alpha': 3, 'beta': 2}),
-        (sp_rnd.random_beta_pdf, {'alpha': 5, 'beta': 1}),
-        (sp_rnd.random_burst, {'normal_transition': 0.2, 'burst_transition': 0.8}),
-        (sp_rnd.random_burst, {'normal_transition': 0.3, 'burst_transition': 0.8}),
-        (sp_rnd.random_burst, {'normal_transition': 0.4, 'burst_transition': 0.8}),
         (sp_rnd.random_cycle, {'period': nb_steps}),
         (sp_rnd.random_cycle, {'period': nb_steps / 2.0}),
-        (sp_rnd.random_cycle, {'period': nb_steps / 4.0}),
         (sp_rnd.random_linear, {}),
-        (sp_rnd.random_uniform, {}),
     ]
 
     # Choose a load pattern
@@ -488,7 +501,8 @@ def distribute_load(min_load, max_load, time_start, time_end, time_step):
     func_kwargs = func_data[1]
 
     # Generate load along the simulation according to the selected pattern
-    noise = 0.05
+    # noise = 0.05
+    noise = 0.01
     samples = func(nb_samples=nb_steps, noise=noise, **func_kwargs)
     loads = []
     for step in range(nb_steps):

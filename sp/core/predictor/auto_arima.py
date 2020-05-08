@@ -4,7 +4,7 @@ import warnings
 import math
 
 
-DEFAULT_ARIMA_PARAMS = {"suppress_warnings": True, 'error_action': 'ignore', 'stepwise': True}
+DEFAULT_INIT_PARAMS = {"suppress_warnings": True, 'error_action': 'ignore', 'stepwise': True}
 DEFAULT_PREDICT_PARAMS = {}
 DEFAULT_MAX_DATA_SIZE = math.inf
 
@@ -12,11 +12,10 @@ FIT_MIN_DATA_SIZE = 2
 
 
 class AutoARIMAPredictor(Predictor):
-    def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE,
-                 arima_params=None, predict_params=None):
+    def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE, predict_params=None, **kwargs):
         Predictor.__init__(self)
         self.max_data_size = max_data_size
-        self.arima_params = arima_params
+        self.init_params = kwargs
         self.predict_params = predict_params
 
         self._data = []
@@ -43,9 +42,9 @@ class AutoARIMAPredictor(Predictor):
                     warnings.simplefilter("ignore", category=Warning)
 
                     model_params = {}
-                    model_params.update(DEFAULT_ARIMA_PARAMS)
-                    if self.arima_params is not None:
-                        model_params.update(self.arima_params)
+                    model_params.update(DEFAULT_INIT_PARAMS)
+                    if self.init_params:
+                        model_params.update(self.init_params)
                     fit_results = pm.auto_arima(self._data, **model_params)
             except:
                 pass

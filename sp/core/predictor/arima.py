@@ -4,7 +4,7 @@ import warnings
 import math
 
 
-DEFAULT_ARIMA_PARAMS = {"order": (1, 1, 1)}
+DEFAULT_INIT_PARAMS = {"order": (1, 1, 1)}
 DEFAULT_FIT_PARAMS = {"disp": False}
 DEFAULT_PREDICT_PARAMS = {"typ": "levels"}
 DEFAULT_MAX_DATA_SIZE = math.inf
@@ -14,10 +14,10 @@ FIT_MIN_DATA_SIZE = 2
 
 class ARIMAPredictor(Predictor):
     def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE,
-                 arima_params=None, fit_params=None, predict_params=None):
+                 fit_params=None, predict_params=None, **kwargs):
         Predictor.__init__(self)
         self.max_data_size = max_data_size
-        self.arima_params = arima_params
+        self.init_params = kwargs
         self.fit_params = fit_params
         self.predict_params = predict_params
 
@@ -45,9 +45,9 @@ class ARIMAPredictor(Predictor):
                     warnings.simplefilter("ignore", category=Warning)
 
                     model_params = {}
-                    model_params.update(DEFAULT_ARIMA_PARAMS)
-                    if self.arima_params is not None:
-                        model_params.update(self.arima_params)
+                    model_params.update(DEFAULT_INIT_PARAMS)
+                    if self.init_params:
+                        model_params.update(self.init_params)
                     model = ARIMA(self._data, **model_params)
 
                     fit_params = {}

@@ -96,12 +96,37 @@ class CalcUtilTestCase(unittest.TestCase):
 
                     init_delay = util.calc_initialization_delay(app.id, dst_node.id,
                                                                 system, control_input, env_input)
+                    mig_delay = util.calc_migration_delay(app.id, dst_node.id,
+                                                          system, control_input, env_input)
                     if not curr_place:
                         self.assertEqual(init_delay, 0.0)
                     elif curr_place and prev_place:
                         self.assertEqual(init_delay, 0.0)
                     elif curr_place and not prev_place:
                         self.assertGreater(init_delay, 0.0)
+                        self.assertLessEqual(init_delay, mig_delay)
+
+    def test_calc_migration_delay(self):
+        for time in range(self.time_duration + 1):
+            system = self.systems[time]
+            control_input = self.control_inputs[time]
+            env_input = self.environment_inputs[time]
+
+            for app in system.apps:
+                for dst_node in system.nodes:
+                    curr_place = control_input.get_app_placement(app.id, dst_node.id)
+                    prev_place = False
+                    if system.control_input is not None:
+                        prev_place = system.control_input.get_app_placement(app.id, dst_node.id)
+
+                    mig_delay = util.calc_migration_delay(app.id, dst_node.id,
+                                                          system, control_input, env_input)
+                    if system.control_input is None:
+                        self.assertEqual(mig_delay, 0.0)
+                    elif curr_place and prev_place:
+                        self.assertEqual(mig_delay, 0.0)
+                    elif curr_place and not prev_place:
+                        self.assertGreater(mig_delay, 0.0)
 
     def test_calc_response_time(self):
         for time in range(self.time_duration + 1):

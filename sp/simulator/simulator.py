@@ -55,7 +55,7 @@ class Simulator:
         self.monitor(Monitor.actions.SIM_STARTED, self.start_time)
 
         current_time = self.start_time
-        while current_time < self.stop_time:
+        while current_time <= self.stop_time:
             system_state = self.physical_system.update(current_time)
             self.monitor(Monitor.actions.TIME_SLOT_STARTED, current_time, system=system_state)
 

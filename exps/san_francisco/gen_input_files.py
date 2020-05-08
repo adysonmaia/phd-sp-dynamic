@@ -150,16 +150,13 @@ def gen_network(bbox, topology, **kwargs):
     Returns:
          dict: network in json format
     """
-    distance = 2000.0
-    dist_tol = 200.0
-    # Bound Box of San Francisco, CA, US
-
+    # Nodes properties
     bs_properties = {
         'type': 'BS',
         'avail': 0.99,  # 99 %
         'capacity': {
-            'CPU': 5e+9,  # 5 GIPS (Giga Instructions Per Second),
-            'RAM': 4e+9,  # 4 GB (Giga Byte)
+            'CPU': 2 * 5e+9,  # 2 Core with 5 GIPS (Giga Instructions Per Second)
+            'RAM': 8e+9,  # 8 GB (Giga Byte)
             'DISK': 16e+9,  # 16 GB (Giga Byte)
         },
         'cost': {
@@ -173,9 +170,9 @@ def gen_network(bbox, topology, **kwargs):
         'type': 'CORE',
         'avail': 0.999,  # 99.9 %
         'capacity': {
-            'CPU': 10e+9,  # 10 GIPS
-            'RAM': 8e+9,  # 8 GB (Giga Byte)
-            'DISK': 32e+9  # 32 GB (Giga Byte)
+            'CPU': 4 * 5e+9,  # 4 Core with 5 GIPS (Giga Instructions Per Second)
+            'RAM': 16e+9,  # 16 GB (Giga Byte)
+            'DISK': 32e+9,  # 32 GB (Giga Byte)
         },
         'cost': {
             'CPU': [0.5e-12, 0.5e-12],  # cost for IPS / second
@@ -385,9 +382,9 @@ def gen_apps(nb_apps, net_data):
     }
     # Request generation rate (request / second)
     request_rate_options = {
-        'URLLC': np.linspace(10, 100, num=10),
+        'URLLC': np.linspace(1, 100, num=10),
         'MMTC': np.linspace(0.1, 1.0, num=10),
-        'EMBB': np.linspace(1, 10, num=10),
+        'EMBB': np.linspace(1, 100, num=10),
     }
     # Availability probability (between 0 and 1)
     availability_options = {
@@ -397,7 +394,8 @@ def gen_apps(nb_apps, net_data):
     }
 
     # Maximum number of instances running at the same time-slot
-    max_instance_range = list(range(1, len(net_data['nodes']) + 1))
+    # max_instance_range = list(range(1, len(net_data['nodes']) + 1))
+    max_instance_range = [len(net_data['nodes'])]
     max_instance_options = {
         'URLLC': max_instance_range,
         'MMTC': max_instance_range,
@@ -406,25 +404,27 @@ def gen_apps(nb_apps, net_data):
 
     # Linear demand for RAM resource (in byte)
     demand_ram_a_options = {
-        'URLLC': np.linspace(1, 10, num=10) * 1e+6,
-        'MMTC': np.linspace(1, 10, num=10) * 1e+6,
-        'EMBB': np.linspace(1, 100, num=10) * 1e+6,
+        'URLLC': np.linspace(0.1, 1, num=10) * 1e+6,
+        'MMTC': np.linspace(0.1, 1, num=10) * 1e+6,
+        'EMBB': np.linspace(1, 10, num=10) * 1e+6,
     }
-    demand_ram_b_options = demand_ram_a_options
+    demand_ram_b_options = {
+        'URLLC': np.linspace(10, 100, num=10) * 1e+6,
+        'MMTC': np.linspace(10, 100, num=10) * 1e+6,
+        'EMBB': np.linspace(100, 1000, num=10) * 1e+6,
+    }
 
     # Linear demand for DISK resource (in byte)
     demand_disk_a_options = {
-        'URLLC': np.linspace(1, 10, num=10) * 1e+6,
-        'MMTC': np.linspace(1, 10, num=10) * 1e+6,
-        'EMBB': np.linspace(1, 100, num=10) * 1e+6,
+        'URLLC': np.linspace(0.1, 1, num=10) * 1e+6,
+        'MMTC': np.linspace(0.1, 1, num=10) * 1e+6,
+        'EMBB': np.linspace(1, 10, num=10) * 1e+6,
     }
     demand_disk_b_options = {
         'URLLC': np.linspace(10, 100, num=10) * 1e+6,
         'MMTC': np.linspace(10, 100, num=10) * 1e+6,
-        'EMBB': np.linspace(100, 500, num=10) * 1e+6,
+        'EMBB': np.linspace(100, 1000, num=10) * 1e+6,
     }
-
-    app_type_options = ['URLLC', 'MMTC', 'EMBB']
 
     # Generate applications
     json_data = {'apps': []}

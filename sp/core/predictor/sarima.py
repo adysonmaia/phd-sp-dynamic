@@ -5,7 +5,7 @@ import warnings
 import math
 
 
-DEFAULT_SARIMA_PARAMS = {"order": (1, 1, 1)}
+DEFAULT_INIT_PARAMS = {"order": (1, 1, 1)}
 DEFAULT_FIT_PARAMS = {"disp": False}
 DEFAULT_PREDICT_PARAMS = {"typ": "levels"}
 DEFAULT_MAX_DATA_SIZE = math.inf
@@ -14,11 +14,10 @@ FIT_MIN_DATA_SIZE = 2
 
 
 class SARIMAPredictor(Predictor):
-    def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE,
-                 sarima_params=None, fit_params=None, predict_params=None):
+    def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE, fit_params=None, predict_params=None, **kwargs):
         Predictor.__init__(self)
         self.max_data_size = max_data_size
-        self.sarima_params = sarima_params
+        self.init_params = kwargs
         self.fit_params = fit_params
         self.predict_params = predict_params
 
@@ -46,9 +45,9 @@ class SARIMAPredictor(Predictor):
                     warnings.simplefilter("ignore", category=Warning)
 
                     model_params = {}
-                    model_params.update(DEFAULT_SARIMA_PARAMS)
-                    if self.sarima_params is not None:
-                        model_params.update(self.sarima_params)
+                    model_params.update(DEFAULT_INIT_PARAMS)
+                    if self.init_params:
+                        model_params.update(self.init_params)
 
                     seasonal_period = None
                     if 'seasonal_order' in model_params and len(model_params['seasonal_order']) >= 4:

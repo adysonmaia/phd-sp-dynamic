@@ -105,8 +105,8 @@ def plot_metrics(scenario, optimizers, output_path, nb_runs):
         metric_df = df.pivot(columns='opt', values=value_col)
         error_df = df.pivot(columns='opt', values=error_col)
 
-        metric_df.plot(ax=ax, yerr=error_df, legend=False)
-        # metric_df.plot(ax=ax, legend=False)
+        # metric_df.plot(ax=ax, yerr=error_df, legend=False)
+        metric_df.plot(ax=ax, legend=False)
 
     axes[0, 0].legend()
     for row in range(nb_rows):
@@ -172,11 +172,12 @@ def plot_placement(scenario, optimizers, output_path, nb_runs):
 def main():
     scenario_filename = 'input/san_francisco/scenario.json'
     scenario = None
-    with open(scenario_filename) as json_file:
-        data = json.load(json_file)
-        scenario = Scenario.from_json(data)
+    # with open(scenario_filename) as json_file:
+    #     data = json.load(json_file)
+    #     scenario = Scenario.from_json(data)
 
-    output_path = 'output/san_francisco/exp/'
+    # output_path = 'output/san_francisco/exp/'
+    output_path = 'output/synthetic/exp/n9_a10_u10000/'
     optimizers = [
         # {'id': 'CloudOptimizer', 'label': 'Cloud'},
         # {'id': 'MOGAOptimizer', 'label': 'MOGA'},
@@ -188,12 +189,13 @@ def main():
         # {'id': 'LLCOptimizer_sga_w2', 'label': 'LLC SGA W=2'},
         {'id': 'LLCOptimizer_ssga_w0', 'label': 'LLC SSGA W=0'},
         {'id': 'LLCOptimizer_ssga_w1', 'label': 'LLC SSGA W=1'},
-        {'id': 'LLCOptimizer_ssga_w2', 'label': 'LLC SSGA W=2'},
+        # {'id': 'LLCOptimizer_ssga_w2', 'label': 'LLC SSGA W=2'},
     ]
 
     # run_dirs = glob(os.path.join(output_path, '[0-9]*/'))
     # nb_runs = len(run_dirs)
-    nb_runs = 30
+    # nb_runs = 30
+    nb_runs = 1
 
     plot_metrics(scenario, optimizers, output_path, nb_runs)
     # plot_placement(scenario, optimizers, output_path, nb_runs)

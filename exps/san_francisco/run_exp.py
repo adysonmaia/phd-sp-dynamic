@@ -137,6 +137,19 @@ class ControlMonitor(Monitor):
                 len(places), places, deadline_violation
             ))
 
+        print('available resources')
+        for node in system.nodes:
+            free_str = 'node {:2d}, '.format(node.id)
+            for resource in system.resources:
+                capacity = node.capacity[resource.name]
+                alloc = sum([control_input.get_allocated_resource(a.id, node.id, resource.name) for a in system.apps])
+                free = 1.0
+                if capacity > 0.0 and not math.isinf(capacity):
+                    free = (capacity - alloc) / float(capacity)
+                    free = round(free, 3)
+                free_str += '{} {:6.3f}, '.format(resource.name, free)
+            print(free_str)
+
         print("--")
 
     def on_sim_ended(self, sim_time):
@@ -200,8 +213,10 @@ def main():
 
     #
     dominance_func = util.preferred_dominates
-    pool_size = 8
+    pool_size = 4
+    # pool_size = 8
     # pool_size = 0
+    timeout = 3 * 60  # 3 min
 
     # Set optimizer solutions
 
@@ -209,17 +224,18 @@ def main():
     opt = CloudOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Single-Objective Heuristic optimizer config
     opt = SOHeuristicOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Single-Objective GA optimizer config
     opt = SOGAOptimizer()
     opt.objective = single_objective
+    opt.timeout = timeout
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
     # optimizers.append(item)
@@ -228,6 +244,7 @@ def main():
     opt = MOGAOptimizer()
     opt.objective = multi_objective
     opt.pool_size = pool_size
+    opt.timeout = timeout
     opt.dominance_func = dominance_func
     opt_id = format(opt.__class__.__name__)
     item = (opt_id, opt)
@@ -235,13 +252,30 @@ def main():
 
     # LLC (control input and plan) finders versions
     llc_finders = [
-        {'input': input_finder.SSGAInputFinder, 'plan': None, 'key': 'ssga'},
-        {'input': input_finder.SGAInputFinder, 'plan': None, 'key': 'sga'},
-        {'input': input_finder.MGAInputFinder, 'plan': plan_finder.GAPlanFinder, 'key': 'mga'},
+        {
+            'key': 'ssga',
+            'input': input_finder.SSGAInputFinder,
+            'input_params': {'timeout': timeout},
+            'plan': None
+        },
+        {
+            'key': 'sga',
+            'input': input_finder.SGAInputFinder,
+            'input_params': {'timeout': timeout},
+            'plan': None
+        },
+        {
+            'key': 'mga',
+            'input': input_finder.MGAInputFinder,
+            'input_params': {'timeout': timeout},
+            'plan': plan_finder.GAPlanFinder,
+            'plan_params': {'timeout': timeout},
+        },
     ]
 
     # LLC optimizer with different parameters
-    prediction_windows = [0, 1, 2]
+    # prediction_windows = [0, 1, 2]
+    prediction_windows = [0]
     for window in prediction_windows:
         for llc_finder in llc_finders:
             opt = LLCOptimizer()
@@ -250,11 +284,13 @@ def main():
             opt.dominance_func = dominance_func
             opt.objective = multi_objective
             opt.input_finder_class = llc_finder['input']
+            opt.input_finder_params = llc_finder['input_params'] if 'input_params' in llc_finder else None
             opt.plan_finder_class = llc_finder['plan']
+            opt.plan_finder_params = llc_finder['plan_params'] if 'plan_params' in llc_finder else None
 
             # Set environment forecasting
             seasonal_period = int(round(1 * 24 * 60 * 60 / float(time_step)))  # Seasonal of 1 day
-            sarima_params = {'sarima_params': {'seasonal_order': (1, 0, 1, seasonal_period)}}
+            sarima_params = {'seasonal_order': (1, 0, 1, seasonal_period)}
             env_predictor = DefaultEnvironmentPredictor()
             env_predictor.net_predictor_class = SARIMAPredictor
             env_predictor.net_predictor_params = sarima_params

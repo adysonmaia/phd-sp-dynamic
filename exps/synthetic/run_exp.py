@@ -9,6 +9,8 @@ import json
 import math
 import os
 import time
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 
 def get_app_deadline_violation(app, system, control_input, environment_input):
@@ -25,6 +27,24 @@ def get_app_deadline_violation(app, system, control_input, environment_input):
                                              system, control_input, environment_input)
                 if rt > app.deadline:
                     violation += rt - app.deadline
+
+                    # if app.type == 'EMBB':
+                    #     ld = control_input.get_load_distribution(app.id, src_node.id, dst_node.id)
+                    #     net_delay = util.calc_network_delay(app.id, src_node.id, dst_node.id,
+                    #                                         system, control_input, environment_input)
+                    #     proc_delay = util.calc_processing_delay(app.id, dst_node.id,
+                    #                                             system, control_input, environment_input)
+                    #     init_delay = util.calc_initialization_delay(app.id, dst_node.id,
+                    #                                                 system, control_input, environment_input)
+                    #     print('app {:3d}, src {:3d}, dst {:3d}, '
+                    #           'load {:9.3f}, ld {:6.3f}, '
+                    #           'net {:6.3f}, proc {:6.3f}, init {:6.3f}, '
+                    #           'rt {:6.3f}, deadline {:6.3f}'.format(
+                    #         app.id, src_node.id, dst_node.id,
+                    #         load, ld,
+                    #         net_delay, proc_delay, init_delay,
+                    #         rt, app.deadline
+                    #     ))
     return violation
 
 
@@ -128,6 +148,19 @@ class ControlMonitor(Monitor):
                 len(places), places, deadline_violation
             ))
 
+        print(' ')
+        for node in system.nodes:
+            free_str = 'node {:2d}, '.format(node.id)
+            for resource in system.resources:
+                capacity = node.capacity[resource.name]
+                alloc = sum([control_input.get_allocated_resource(a.id, node.id, resource.name) for a in system.apps])
+                free = 1.0
+                if capacity > 0.0 and not math.isinf(capacity):
+                    free = (capacity - alloc) / float(capacity)
+                    free = round(free, 3)
+                free_str += '{} {:6.3f}, '.format(resource.name, free)
+            print(free_str)
+
         print("--")
 
     def on_sim_ended(self, sim_time):
@@ -154,6 +187,17 @@ class ControlMonitor(Monitor):
 def main():
     """Main function
     """
+    # Load simulation parameters
+    root_output_path = 'output/synthetic/exp/'
+    simulation_filename = 'input/synthetic/simulation.json'
+    simulation_data = None
+    with open(simulation_filename) as json_file:
+        simulation_data = json.load(json_file)
+
+    time_start = simulation_data['time']['start']
+    time_stop = simulation_data['time']['stop']
+    time_step = simulation_data['time']['step']
+
     # Set objectives and metrics functions
     optimizers = []
     metrics = [
@@ -180,8 +224,10 @@ def main():
 
     #
     dominance_func = util.preferred_dominates
-    pool_size = 8
+    pool_size = 4
+    # pool_size = 8
     # pool_size = 0
+    timeout = 3 * 60  # 3 min
 
     # Set optimizer solutions
 
@@ -195,11 +241,12 @@ def main():
     opt = SOHeuristicOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Single-Objective GA optimizer config
     opt = SOGAOptimizer()
     opt.objective = single_objective
+    opt.timeout = timeout
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
     # optimizers.append(item)
@@ -208,6 +255,7 @@ def main():
     opt = MOGAOptimizer()
     opt.objective = multi_objective
     opt.pool_size = pool_size
+    opt.timeout = timeout
     opt.dominance_func = dominance_func
     opt_id = format(opt.__class__.__name__)
     item = (opt_id, opt)
@@ -215,13 +263,20 @@ def main():
 
     # LLC (control input and plan) finders versions
     llc_finders = [
-        {'input': input_finder.SSGAInputFinder, 'plan': None, 'key': 'ssga'},
+        {
+            'key': 'ssga',
+            'input': input_finder.SSGAInputFinder,
+            'input_params': {'timeout': timeout},
+            'plan': None
+        },
         # {'input': input_finder.SGAInputFinder, 'plan': None, 'key': 'sga'},
     ]
 
     # LLC optimizer with different parameters
     # prediction_windows = [0, 1, 2]
-    prediction_windows = [1]
+    prediction_windows = [0, 1]
+    # prediction_windows = [1]
+    # prediction_windows = [0]
     for window in prediction_windows:
         for llc_finder in llc_finders:
             opt = LLCOptimizer()
@@ -230,28 +285,20 @@ def main():
             opt.dominance_func = dominance_func
             opt.objective = multi_objective
             opt.input_finder_class = llc_finder['input']
+            opt.input_finder_params = llc_finder['input_params'] if 'input_params' in llc_finder else None
             opt.plan_finder_class = llc_finder['plan']
+            opt.plan_finder_params = llc_finder['plan_params'] if 'plan_params' in llc_finder else None
 
             # Set environment forecasting
             env_predictor = DefaultEnvironmentPredictor()
-            # env_predictor.net_predictor_class = AutoARIMAPredictor
-            env_predictor.net_predictor_class = ARIMAPredictor
+            env_predictor.net_predictor_class = AutoARIMAPredictor
+            env_predictor.net_predictor_params = {'maxiter': 2}
+            # env_predictor.net_predictor_class = ARIMAPredictor
             opt.environment_predictor = env_predictor
 
             opt_id = '{}_{}_w{}'.format(opt.__class__.__name__, llc_finder['key'], window)
             item = (opt_id, opt)
-            # optimizers.append(item)
-
-    # Load simulation parameters
-    root_output_path = 'output/synthetic/exp/'
-    simulation_filename = 'input/synthetic/simulation.json'
-    simulation_data = None
-    with open(simulation_filename) as json_file:
-        simulation_data = json.load(json_file)
-
-    time_start = simulation_data['time']['start']
-    time_stop = simulation_data['time']['stop']
-    time_step = simulation_data['time']['step']
+            optimizers.append(item)
 
     # Create a simulation for each loaded scenario
     for scenario_data in simulation_data['scenarios']:
@@ -286,6 +333,7 @@ def main():
             sim.run()
             elapsed_time = time.perf_counter() - perf_count
             print('scenario {}, run {}, opt {} - sim exec time: {}s'.format(scenario_id, run, opt_id, elapsed_time))
+            print('-' * 10)
 
 
 if __name__ == '__main__':
