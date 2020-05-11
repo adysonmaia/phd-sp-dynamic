@@ -5,6 +5,7 @@ from future.utils import iteritems
 
 class TimeSeries:
     """A Time Series Collection
+
     In this series, each item is attached to a timestamp
     """
 
@@ -15,6 +16,7 @@ class TimeSeries:
 
     def __getitem__(self, time):
         """Get value at a specific time
+
         Args:
             time (float): time
         Returns:
@@ -26,6 +28,7 @@ class TimeSeries:
 
     def __setitem__(self, time, value):
         """Set a value at a specific time
+
         Args:
             time (float): time
             value (object): value
@@ -33,8 +36,9 @@ class TimeSeries:
         self.set_value(time, value)
 
     def __iter__(self):
-        """Returns time series's iterator
+        """Returns time series's iterator.
         Each item during the iteration is a tuple (time, value)
+
         Returns:
             Iterator: time series's iterator
         """
@@ -46,8 +50,9 @@ class TimeSeries:
 
     @property
     def items(self):
-        """Get all items in the time series
+        """Get all items in the time series.
         An item is a tuple (time, value)
+
         Returns:
             Iterable: items as list, iterator or view
         """
@@ -55,6 +60,7 @@ class TimeSeries:
 
     def get_value(self, time, **kwargs):
         """Get an item's value at the specified time
+
         Args:
             time (float): time
             **kwargs: kwargs
@@ -67,6 +73,7 @@ class TimeSeries:
 
     def set_value(self, time, value):
         """Set value of an item at the specified time
+
         Args:
             time (float): time
             value (object): item's value

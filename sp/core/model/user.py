@@ -3,12 +3,13 @@ from sp.core import mobility
 
 class User:
     """User Model Class
+
     It is used to store properties of a user
 
     Attributes:
         id (int): Unique identification of the user
         app_id (int): Id of the application requested by the user
-        mobility (sp.core.mobility.Mobility): user's mobility pattern
+        mobility (sp.core.mobility.mobility.Mobility): user's mobility pattern
     """
     def __init__(self):
         self.id = -1
@@ -17,6 +18,7 @@ class User:
 
     def get_position(self, time, *args, **kwargs):
         """ Get the user's position in specific time
+
         Args:
             time (float): simulation time
             *args: args
@@ -32,7 +34,9 @@ class User:
     @staticmethod
     def from_json(json_data):
         """Create a User object from a json data
+
         See :py:func:`sp.core.model.user.from_json`
+
         Args:
             json_data (dict): data loaded from a json
         Returns:
@@ -44,8 +48,9 @@ class User:
 def from_json(json_data):
     """Create a User object from a json data
 
-    The user's positions can be passed according to its mobility pattern and coordinate system
-    See :py:func:`sp.core.mobility.from_json` and :py:func:`sp.core.geometry.point.from_json` for more detail
+    The user's positions can be passed according to its mobility pattern and coordinate system.
+    See :py:func:`sp.core.mobility.mobility.from_json`
+    and :py:func:`sp.core.geometry.point.point.from_json` for more detail.
     In addition, the position can be passed as a external json file
 
     If a user is mobile, its position trace is passed a list of positions where each position is associated with a time

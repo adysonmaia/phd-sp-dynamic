@@ -13,8 +13,27 @@ FIT_MIN_DATA_SIZE = 2
 
 
 class ARIMAPredictor(Predictor):
+    """AutoRegressive Integrated Moving Average (ARIMA) Forecasting Model
+
+    See Also:
+
+    * https://otexts.com/fpp2/arima.html
+    * https://www.statsmodels.org/stable/generated/statsmodels.tsa.arima_model.ARIMA.html#statsmodels.tsa.arima_model.ARIMA
+    """
+
     def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE,
                  fit_params=None, predict_params=None, **kwargs):
+        """Initialization
+
+        Args:
+            max_data_size (int): maximum data size
+            fit_params (dict): parameters of fit method.
+                See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.arima_model.ARIMA.fit.html#statsmodels.tsa.arima_model.ARIMA.fit
+            predict_params (dict): parameters of predict method.
+                See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.arima_model.ARIMAResults.predict.html#statsmodels.tsa.arima_model.ARIMAResults.predict
+            **kwargs: initialization parameters of :py:class:`ARIMA` class.
+                See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.arima_model.ARIMA.html#statsmodels.tsa.arima_model.ARIMA
+        """
         Predictor.__init__(self)
         self.max_data_size = max_data_size
         self.init_params = kwargs
@@ -25,10 +44,17 @@ class ARIMAPredictor(Predictor):
         self._fit_results = None
 
     def clear(self):
+        """Clear forecasting information
+        """
         self._data.clear()
         self._fit_results = None
 
     def update(self, datum):
+        """Update time series data
+
+        Args:
+            datum (Union[list, float]): new item (datum) in the data or the complete data
+        """
         if isinstance(datum, list):
             self._data = datum
         else:
@@ -61,6 +87,13 @@ class ARIMAPredictor(Predictor):
         self._fit_results = fit_results
 
     def predict(self, steps=1):
+        """Predict next values
+
+        Args:
+            steps (int): number of values to predict
+        Returns:
+            list: predicted data
+        """
         prediction = None
         if self._fit_results is not None:
             try:

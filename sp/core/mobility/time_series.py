@@ -6,6 +6,7 @@ import copy
 
 class TimeSeriesMobility(InterpolatedTimeSeries, Mobility):
     """Time Series Mobility
+
     It stores a time series of positions
     """
     def position(self, time, time_tolerance=None, **kwargs):
@@ -30,6 +31,18 @@ class TimeSeriesMobility(InterpolatedTimeSeries, Mobility):
 
     @staticmethod
     def interpolate(time_1, value_1, time_2, value_2, time):
+        """Interpolate a value between two others.
+        The values should support the arithmetic operations
+
+        Args:
+            time_1 (float): time of first value
+            value_1 (object): first value
+            time_2 (float): time of second value
+            value_2 (object): second value
+            time (float): a time between the other two. It interpolates the values for this time
+        Returns:
+            object: interpolated value
+        """
         inter_value = None
         delta_time = abs(float(time_2 - time_1))
         if delta_time != 0.0:
@@ -42,7 +55,9 @@ class TimeSeriesMobility(InterpolatedTimeSeries, Mobility):
     @staticmethod
     def from_json(json_data):
         """Create a Time Series Mobility from a json data
+
         See :py:func:`sp.core.mobility.time_series.from_json`
+
         Args:
             json_data (list): data loaded from a json
         Returns:
@@ -53,6 +68,7 @@ class TimeSeriesMobility(InterpolatedTimeSeries, Mobility):
 
 def from_json(json_data):
     """Create a Time Series Mobility from a json data
+
     Args:
         json_data (list): loaded data from json
     Returns:
@@ -69,6 +85,7 @@ def from_json(json_data):
 
 def _get_item_from_json(json_data):
     """Get an item (time, position) of time series from a json data
+
     Args:
         json_data (Union[list, dict]): loaded data from json
     Returns:

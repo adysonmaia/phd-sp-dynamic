@@ -4,9 +4,13 @@ import math
 
 class PolynomialEstimator(Estimator):
     """Polynomial Function Estimator
-    f(x)= a_n * x^n + a_(n−1) * x^(n−1) + ... + a_2 * x^2 + a_1 * x + a_0
 
-    Estimator can be used as a function or calling the method :py:meth:`PolynomialEstimator.calc` directly
+    .. math::
+
+        f(x)= a_n * x^n + a_{n−1} * x^{n−1} + \cdots + a_2 * x^2 + a_1 * x + a_0
+
+
+    Estimator can be used as a function or calling the method :py:meth:`PolynomialEstimator.calc` directly.
     E.g.
 
     .. code-block:: python
@@ -23,6 +27,7 @@ class PolynomialEstimator(Estimator):
     """
     def __init__(self, coefficients=None):
         """Initialization
+
         Args:
             coefficients (list): list of coefficients
         """
@@ -33,6 +38,7 @@ class PolynomialEstimator(Estimator):
 
     def calc(self, x):
         """Calculate the polynomial function f(x)
+
         Args:
             x (float): variable
         Returns:
@@ -46,11 +52,18 @@ class PolynomialEstimator(Estimator):
 
 class LinearEstimator(Estimator):
     """Linear Function Estimator
-    f(x) = a * x + b
+
+    .. math::
+
+        f(x) = a * x + b
+
     """
 
-    K1 = "a"  # Slope constant of a linear function f(x) = ax + b
-    K2 = "b"  # Intercept constant of a linear function f(x) = ax + b
+    _K1 = "a"
+    """Slope constant of a linear function :math:`f(x) = a*x + b`"""
+
+    _K2 = "b"
+    """Intercept constant of a linear function :math:`f(x) = a*x + b`"""
 
     def __init__(self, coefficients=None):
         Estimator.__init__(self)
@@ -60,7 +73,8 @@ class LinearEstimator(Estimator):
 
     @property
     def coefficients(self):
-        """Get linear coefficients a, b where f(x) = a*x + b
+        """Get linear coefficients a, b where :math:`f(x) = a*x + b`
+
         Returns:
             tuple: coefficients
         """
@@ -68,7 +82,7 @@ class LinearEstimator(Estimator):
 
     @coefficients.setter
     def coefficients(self, value):
-        """Set linear coefficients a, b where f(x) = a*x + b
+        """Set linear coefficients a, b where :math:`f(x) = a*x + b`
 
         E.g.:
 
@@ -97,13 +111,14 @@ class LinearEstimator(Estimator):
             else:
                 self._coefficients = [0.0, 0.0]
         elif isinstance(value, dict):
-            self._coefficients = [float(value[self.K1]), float(value[self.K2])]
+            self._coefficients = [float(value[self._K1]), float(value[self._K2])]
         else:
             raise KeyError
 
     @property
     def slope_const(self):
-        """Get the slope constant 'a' of the linear function f(x) = a*x + b
+        """Get the slope constant 'a' of the linear function :math:`f(x) = a*x + b`
+
         Returns:
             float: slope constant
         """
@@ -111,7 +126,8 @@ class LinearEstimator(Estimator):
 
     @property
     def intercept_const(self):
-        """Get the intercept constant 'b' of the linear function f(x) = a*x + b
+        """Get the intercept constant 'b' of the linear function :math:`f(x) = a*x + b`
+
         Returns:
             float: intercept constant
         """
@@ -119,6 +135,7 @@ class LinearEstimator(Estimator):
 
     def calc(self, x):
         """Calculate the linear function
+
         Args:
             x (float): value
         Returns:
@@ -129,13 +146,15 @@ class LinearEstimator(Estimator):
 
 class ConstEstimator(Estimator):
     """Constant Estimator
-    f(x) = c, where c is a constant
+
+    :math:`f(x) = c`, where c is a constant
 
     Attributes:
         const (float): constant
     """
     def __init__(self, const=0.0):
         """Initialization
+
         Args:
             const (float): constant
         """
@@ -144,6 +163,7 @@ class ConstEstimator(Estimator):
 
     def calc(self, x):
         """Calculate the function
+
         Args:
             x (float): value
         Returns:
@@ -155,7 +175,7 @@ class ConstEstimator(Estimator):
 def from_json(json_data):
     """Create Polynomial, Linear or Constant Estimator from a json data
 
-    The type of estimator is based on length of coefficients specified in the json data
+    The type of estimator is based on length of coefficients specified in the json data.
     E.g.:
 
         .. code-block:: python

@@ -14,6 +14,7 @@ class GpsPoint(Point):
 
     def __init__(self, lon=0.0, lat=0.0):
         """Initialization
+
         Args:
             lon (float): longitude
             lat (float): latitude
@@ -26,6 +27,7 @@ class GpsPoint(Point):
     @property
     def values(self):
         """Get GPS position (longitude, latitude)
+
         Returns:
             list: position [longitude, latitude]
         """
@@ -34,6 +36,7 @@ class GpsPoint(Point):
     @values.setter
     def values(self, v):
         """Set GPS position
+
         Args:
             v (Union[list, tuple]): position (longitude, latitude)
         """
@@ -42,6 +45,7 @@ class GpsPoint(Point):
     @property
     def lat(self):
         """Get position's latitude
+
         Returns:
             float: latitude
         """
@@ -50,6 +54,7 @@ class GpsPoint(Point):
     @lat.setter
     def lat(self, v):
         """Set position's latitude
+
         Args:
             v (float): latitude
         """
@@ -58,6 +63,7 @@ class GpsPoint(Point):
     @property
     def lon(self):
         """Get position's longitude
+
         Returns:
             float: longitude
         """
@@ -66,6 +72,7 @@ class GpsPoint(Point):
     @lon.setter
     def lon(self, v):
         """Set position's longitude
+
         Args:
             v (float): longitude
         """
@@ -74,6 +81,7 @@ class GpsPoint(Point):
     @property
     def lat_lon(self):
         """Get position as (latitude, longitude) tuple
+
         Returns:
             tuple: (latitude, longitude) tuple
         """
@@ -82,6 +90,7 @@ class GpsPoint(Point):
     @property
     def lon_lat(self):
         """Get position as (longitude, latitude) tuple
+
         Returns:
             tuple: (longitude, latitude) tuple
         """
@@ -89,6 +98,7 @@ class GpsPoint(Point):
 
     def distance(self, other):
         """Calculate distance (in meters) to other GPS position
+
         Args:
             other (GpsPoint): other position
         Returns:
@@ -109,10 +119,8 @@ class GpsPoint(Point):
         Args:
             other (GpsPoint): other point
             fraction (float): distance fraction (value between 0 and 1)
-
         Returns:
             GpsPoint: intermediate point
-
         Raises:
             TypeError: other point ins't a GpsPoint
         """
@@ -127,6 +135,7 @@ class GpsPoint(Point):
     @staticmethod
     def from_json(json_data):
         """Create a GpsPoint object from a json data
+
         See :py:func:`sp.core.geometry.point.gps.from_json`
 
         Args:

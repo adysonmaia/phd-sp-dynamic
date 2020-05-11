@@ -17,7 +17,7 @@ def main():
     """
     # Scenarios parameters
     scenarios = [
-        {'nb_bs': 25, 'nb_apps': 10, 'nb_users': 10000},
+        {'nb_bs': 25, 'nb_apps': 10, 'nb_users': 1000},
 
         # {'nb_bs': 25, 'nb_apps': 10, 'nb_users': 10000},
         # {'nb_bs': 25, 'nb_apps': 20, 'nb_users': 10000},
@@ -125,9 +125,9 @@ def gen_network(nb_bs):
         'type': 'BS',
         'avail': 0.99,  # 99 %
         'capacity': {
-            'CPU': 4 * 5e+9,  # 4 Core with 5 GIPS (Giga Instructions Per Second)
-            'RAM': 16e+9,  # 16 GB (Giga Byte)
-            'DISK': 32e+9,  # 32 GB (Giga Byte)
+            'CPU': 2 * 5e+9,  # 2 Core with 5 GIPS (Giga Instructions Per Second)
+            'RAM': 8e+9,  # 8 GB (Giga Byte)
+            'DISK': 16e+9,  # 16 GB (Giga Byte)
         },
         'cost': {
             'CPU': [1e-12, 1e-12],  # cost for IPS / second
@@ -140,9 +140,9 @@ def gen_network(nb_bs):
         'type': 'CORE',
         'avail': 0.999,  # 99.9 %
         'capacity': {
-            'CPU': 8 * 5e+9,  # 8 Core with 5 GIPS (Giga Instructions Per Second)
-            'RAM': 32e+9,  # 16 GB (Giga Byte)
-            'DISK': 64e+9,  # 64 GB (Giga Byte)
+            'CPU': 4 * 5e+9,  # 4 Core with 5 GIPS (Giga Instructions Per Second)
+            'RAM': 16e+9,  # 16 GB (Giga Byte)
+            'DISK': 32e+9,  # 32 GB (Giga Byte)
         },
         'cost': {
             'CPU': [0.5e-12, 0.5e-12],  # cost for IPS / second
@@ -336,7 +336,8 @@ def gen_apps(nb_apps, net_data):
     # Generate applications
     json_data = {'apps': []}
     for index in range(nb_apps):
-        app_type = selected_type[index]
+        # app_type = selected_type[index]
+        app_type = 'URLLC'
 
         deadline = random.choice(deadline_options[app_type])
         cpu_work = random.choice(cpu_work_options[app_type])

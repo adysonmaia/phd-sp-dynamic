@@ -5,6 +5,7 @@ import math
 
 def create_grid_points(bbox, cell_side):
     """Create list of points in a 2D grid format
+
     Args:
         bbox (BoundBox): points are generated inside the bound box.
             The generated points use the same coordinate system of the bound box

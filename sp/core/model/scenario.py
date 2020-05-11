@@ -10,7 +10,8 @@ from collections import defaultdict
 
 class Scenario:
     """Scenario Model Class
-    It is used to store the scenario that will be used in the simulation
+
+    It is used to store the scenario that will be used in the simulation.
     A scenario is composed of the network, applications, users, and resources
     """
     def __init__(self):
@@ -33,6 +34,7 @@ class Scenario:
     @cached_property
     def apps(self):
         """List of all applications in the scenario
+
         Returns:
             list(Application): applications
         """
@@ -43,6 +45,7 @@ class Scenario:
     @cached_property
     def users(self):
         """List of all users in the scenario
+
         Returns:
             list(User): users
         """
@@ -51,6 +54,7 @@ class Scenario:
     @cached_property
     def resources(self):
         """List of all resources in the scenario
+
         Returns:
             list(Resource): resources
         """
@@ -59,6 +63,7 @@ class Scenario:
     @property
     def network(self):
         """Get network of the scenario
+
         Returns:
             Network: scenario's network
         """
@@ -74,6 +79,7 @@ class Scenario:
     @property
     def apps_id(self):
         """Get id of all applications
+
         Returns:
             list(int): list of ids
         """
@@ -82,6 +88,7 @@ class Scenario:
     @property
     def users_id(self):
         """Get id of all users
+
         Returns:
             list(int): list of ids
         """
@@ -90,6 +97,7 @@ class Scenario:
     @property
     def resources_name(self):
         """Get all types of resources
+
         Returns:
             list(str): name of each resource type
         """
@@ -97,6 +105,7 @@ class Scenario:
 
     def add_app(self, app):
         """Add an application in the scenario
+
         Args:
             app (Application): new application
         """
@@ -105,6 +114,7 @@ class Scenario:
 
     def get_app(self, app_id):
         """Get an application by its id
+
         Args:
             app_id (int): application's id
         Returns:
@@ -116,6 +126,7 @@ class Scenario:
 
     def get_user(self, user_id):
         """Get a user by its id
+
         Args:
             user_id (int): user's id
         Returns:
@@ -127,6 +138,7 @@ class Scenario:
 
     def add_user(self, user):
         """Add a user in the scenario
+
         Args:
             user (User): new user
         """
@@ -135,6 +147,7 @@ class Scenario:
 
     def get_resource(self, resource_name):
         """Get a resource bt its type/name
+
         Args:
             resource_name (str): name of the resource type
         Returns:
@@ -146,6 +159,7 @@ class Scenario:
 
     def add_resource(self, resource):
         """Add a resource in the scenario
+
         Args:
             resource (Resource): new resource
         """
@@ -154,27 +168,31 @@ class Scenario:
 
     def get_load_estimator(self, app_id, node_id):
         """Get load estimator for an application in a node
+
         Args:
             app_id (int): application's id
             node_id (int): node's id
         Returns:
-            load_estimator.LoadEstimator: load estimator
+            sp.core.estimator.load.LoadEstimator: load estimator
         """
         return self._load_estimators[app_id][node_id]
 
     def add_load_estimator(self, app_id, node_id, estimator):
         """Add a load estimator in the scenario
+
         Args:
             app_id (int): application's id
             node_id (int): node's id
-            estimator (load_estimator.LoadEstimator): load estimator
+            estimator (sp.core.estimator.load.LoadEstimator): load estimator
         """
         self._load_estimators[app_id][node_id] = estimator
 
     @staticmethod
     def from_json(json_data):
         """Create a Scenario object from a json data
+
         See :py:func:`sp.core.model.scenario.from_json`
+
         Args:
             json_data (dict): data loaded from a json
         Returns:
@@ -186,12 +204,13 @@ class Scenario:
 
 
 def from_json(json_data):
-    """Create a Scenario object from a json data
+    """Create a Scenario object from a json data.
     Each scenario properties (resources, network, apps, and users) can be directly passed inside the json data
-        or as external json files
+    or as external json files.
     If the resources is not informed, it is inferred through the properties of the network nodes
 
     See the following functions to more details about scenario's properties specifications
+
     * :py:func:`sp.core.model.resource.from_json`
     * :py:func:`sp.core.model.network.from_json`
     * :py:func:`sp.core.model.application.from_json`
@@ -247,7 +266,7 @@ def from_json(json_data):
         scenario = sp.core.model.scenario.from_json(json_data)
 
     Args:
-        json_data:
+        json_data (dict): data loaded from a json
     Returns:
          Scenario: loaded scenario
     Raises:

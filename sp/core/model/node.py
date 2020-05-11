@@ -9,7 +9,8 @@ from functools import total_ordering
 @total_ordering
 class Node:
     """Node Model Class
-    it it used to store properties of a node. A node can act as a network, access point, and/or computer node
+
+    It it used to store properties of a node. A node can act as a network, access point, and/or computer node
 
     Attributes:
         id (int): Unique identification of the node
@@ -20,9 +21,8 @@ class Node:
             The dictionary's keys are the resource names and the values are floats
         cost (dict): For each resource, it presents a function to calculate the cost for allocating a specified
             amount of resources. The dictionary's keys are the resource names and the values are
-            estimator :py:class:`sp.core.estimator.Estimator` objects.
-            Use :py:meth:`sp.core.estimator.Estimator.calc` or :py:meth:`sp.core.estimator.Estimator.__call__`
-            to obtain the cost. E.g.:
+            estimator :py:class:`sp.core.estimator.estimator.Estimator` objects.
+            Use :py:meth:`sp.core.estimator.estimator.Estimator.calc` to obtain the cost. E.g.:
 
             .. code-block:: python
 
@@ -36,7 +36,7 @@ class Node:
 
         power_consumption (sp.core.estimator.power.PowerEstimator): it is a estimator of the power consumption of the
             node based on the CPU utilization.
-        position (sp.core.geometry.point.Point): node's position
+        position (sp.core.geometry.point.point.Point): node's position
 
     """
     BS_TYPE = "BS"
@@ -63,6 +63,7 @@ class Node:
     @property
     def cpu_capacity(self):
         """Get the CPU capacity of the node
+
         Returns:
              float: capacity value
         """
@@ -70,6 +71,7 @@ class Node:
 
     def is_base_station(self):
         """Check if the node is a base station
+
         Returns:
             bool: True if the node is a base station
         """
@@ -77,6 +79,7 @@ class Node:
 
     def is_core(self):
         """Check if the node's type is CORE
+
         Returns:
             bool: True if the node is a core node
         """
@@ -84,6 +87,7 @@ class Node:
 
     def is_cloud(self):
         """Check if the node is a cloud data center
+
         Returns:
             bool: True if the node is a cloud data center
         """
@@ -92,7 +96,9 @@ class Node:
     @staticmethod
     def from_json(json_data):
         """Create a node object from a json data
+
         See :py:func:`sp.core.model.node.from_json`
+
         Args:
             json_data (dict): data loaded from a json
         Returns:
@@ -107,7 +113,7 @@ def from_json(json_data):
     It loads the power consumption as a linear function using :py:class:`sp.core.estimator.power.LinearPowerEstimator`
 
     The node's position can be either on point in a cartesian plan
-        :py:class:`sp.core.geometry.point.cartesian.CartesianPoint`
+    :py:class:`sp.core.geometry.point.cartesian.CartesianPoint`
 
     .. code-block:: python
 
@@ -125,7 +131,7 @@ def from_json(json_data):
         json_data = {'position': {'lat': latitude, 'lon': longitude}}
 
     The resource costs are loaded as a polynomial, linear or constant function
-        using the :py:mod:`sp.core.estimator.polynomial` module
+    using the :py:mod:`sp.core.estimator.polynomial` module
 
     E.g.:
 

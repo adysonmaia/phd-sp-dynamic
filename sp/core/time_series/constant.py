@@ -7,6 +7,7 @@ class ConstantTimeSeries(TimeSeries):
 
     def __init__(self, value=None):
         """Initialization
+
         Args:
             value (object): constant value
         """
@@ -16,6 +17,7 @@ class ConstantTimeSeries(TimeSeries):
     @property
     def items(self):
         """Get time series's items
+
         Returns:
             list: list of a single element as a tuple (None, constant value)
         """
@@ -23,6 +25,7 @@ class ConstantTimeSeries(TimeSeries):
 
     def get_value(self, *args, **kwargs):
         """Get constant value
+
         Args:
             *args: args
             **kwargs: kwargs
@@ -33,6 +36,7 @@ class ConstantTimeSeries(TimeSeries):
 
     def set_value(self, time=None, value=None):
         """Set constant value
+
         Args:
             time (float): time
             value (object): constant value

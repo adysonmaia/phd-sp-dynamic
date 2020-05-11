@@ -2,11 +2,31 @@ import math
 
 
 class KMedoids:
+    """K-Metoids Clustering Algorithm
+
+    See Also: https://www.sciencedirect.com/science/article/abs/pii/S095741740800081X
+    """
+
     def __init__(self, max_iterations=300):
+        """Initialization
+
+        Args:
+            max_iterations (int): maximum number of iterations
+        """
         self.max_iterations = max_iterations
         self.last_metoids = []
 
     def fit(self, nb_clusters, data, distances):
+        """Execute clustering algorithm
+
+        Args:
+            nb_clusters (int): number of clusters
+            data (list): data points
+            distances (list(list)): distance between points in the data.
+                It is a NxN matrix where N is the number of points in the data
+        Returns:
+            list(list): clustered data
+        """
         r_clusters = range(nb_clusters)
 
         labels = {v: -1 for v in data}
@@ -48,9 +68,23 @@ class KMedoids:
         return clusters
 
     def get_last_metoids(self):
+        """Get metoids (i.e., center of each cluster) found in the last execution of the algorithm
+
+        Returns:
+            list: list of metoids points
+        """
         return self.last_metoids
 
     def _initial_metoids(self, nb_clusters, data, distances):
+        """Get metoids (i.e., center of each cluster) of the first iteration
+
+        Args:
+            nb_clusters (int): number of clusters
+            data (list): data points
+            distances (list(list)):  distance between points in the cluster
+        Returns:
+            list: metoids
+        """
         r_data = range(len(data))
         priority = {v: 0.0 for v in data}
         sum_dist = [sum([distances[i][l] for l in data]) for i in data]
@@ -67,6 +101,16 @@ class KMedoids:
         return metoids
 
     def silhouette_score(self, clusters, distances):
+        """Calculate Silhouette Score of the clustered data
+
+        See Also: https://www.sciencedirect.com/science/article/pii/0377042787901257
+
+        Args:
+            clusters (list(list)): clustered data
+            distances (list(list)): distance between points in the data
+        Returns:
+            float: score between -1 and 1
+        """
         nb_clusters = len(clusters)
         r_clusters = range(nb_clusters)
         if nb_clusters <= 1:
@@ -76,6 +120,15 @@ class KMedoids:
         return s
 
     def _cluster_silhouette(self, label, clusters, distances):
+        """Calculate silhouette score of a specific cluster
+
+        Args:
+            label (int): index of the cluster
+            clusters (list(list)): clustered data
+            distances (list(list): distance between points the data
+        Returns:
+            float: score between -1 and 1
+        """
         c = clusters[label]
         cluster_size = len(c)
         if cluster_size <= 1:
@@ -85,6 +138,16 @@ class KMedoids:
         return s
 
     def _datum_silhouette(self, datum, label, clusters, distances):
+        """Calculate silhoutte score of a point (datum) in a specific cluster
+
+        Args:
+            datum (int): index of point in the data
+            label (int): index of the cluster
+            clusters (list(list)): clustered data
+            distances (list(list)): distance between points in the data
+        Returns:
+            float: score between -1 and 1
+        """
         cluster = clusters[label]
         if len(cluster) <= 1 or len(clusters) <= 1:
             return 0.0

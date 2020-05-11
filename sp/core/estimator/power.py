@@ -4,9 +4,11 @@ from .estimator import Estimator, abstractmethod
 class PowerEstimator(Estimator):
     """CPU Power Consumption Estimator
     """
+
     @abstractmethod
     def calc(self, utilization):
         """Estimate cpu power consumption
+
         Args:
             utilization (float): cpu utilization
         Returns:
@@ -17,13 +19,18 @@ class PowerEstimator(Estimator):
 
 class LinearPowerEstimator(PowerEstimator):
     """Linear CPU Power Consumption Estimator
-    f(x) = idle + (max - idle) * x
-    where
-        * x (0 <= x <= 1) is the cpu utilization
-        * idle is power consumption when 0% of cpu is been used
-        * max is power consumption when 100% of cpu is been used
 
-    Estimator can be used as a function or calling the method :py:meth:`LinearPowerEstimator.calc` directly
+    .. math::
+
+        f(x) = idle + (max - idle) * x
+
+    where
+
+    * x (0 <= x <= 1) is the cpu utilization
+    * idle is power consumption when 0% of cpu is been used
+    * max is power consumption when 100% of cpu is been used
+
+    Estimator can be used as a function or calling the method :py:meth:`LinearPowerEstimator.calc` directly.
     E.g.
 
     .. code-block:: python
@@ -35,11 +42,12 @@ class LinearPowerEstimator(PowerEstimator):
             value = estimator.calc(0.5)
     """
 
-    K1 = "idle"  # Slope constant of a linear function f(x) = ax + b
-    K2 = "max"  # Intercept constant of a linear function f(x) = ax + b
+    _K1 = "idle"
+    _K2 = "max"
 
     def __init__(self, coefficients=None):
         """Initialization
+
         Args:
             coefficients (list): two linear coefficients
         """
@@ -51,6 +59,7 @@ class LinearPowerEstimator(PowerEstimator):
     @property
     def coefficients(self):
         """Get coefficients (idle, max)
+
         Returns:
             tuple: coefficients
         """
@@ -58,7 +67,7 @@ class LinearPowerEstimator(PowerEstimator):
 
     @coefficients.setter
     def coefficients(self, value):
-        """Set coefficients idle, max where f(x) = idle + (max - idle) * x
+        """Set coefficients idle, max where :math:`f(x) = idle + (max - idle) * x`
 
         E.g.:
 
@@ -85,13 +94,14 @@ class LinearPowerEstimator(PowerEstimator):
             else:
                 self._coefficients = [0.0, 0.0]
         elif isinstance(value, dict):
-            self._coefficients = [float(value[self.K1]), float(value[self.K2])]
+            self._coefficients = [float(value[self._K1]), float(value[self._K2])]
         else:
             raise KeyError
 
     @property
     def idle_const(self):
         """Get idle coefficient
+
         Returns:
             float: coefficient
         """
@@ -100,6 +110,7 @@ class LinearPowerEstimator(PowerEstimator):
     @property
     def max_const(self):
         """Get max coefficient
+
         Returns:
             float: coefficient
         """
@@ -107,6 +118,7 @@ class LinearPowerEstimator(PowerEstimator):
 
     def calc(self, utilization):
         """Calculate cpu power consumption
+
         Args:
             utilization (float): cpu utilization
         Returns:
@@ -117,6 +129,7 @@ class LinearPowerEstimator(PowerEstimator):
 
 def from_json(json_data):
     """Create linear cpu power consumption estimator from json data
+
     Args:
         json_data (Union[list, tuple, dict]): loaded data from json
     Returns:

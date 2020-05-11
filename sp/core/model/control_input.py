@@ -3,6 +3,7 @@ from sp.core.model.resource import Resource
 
 class ControlInput:
     """Control Input Model Class
+
     It is used to store the control input to be applied in the system
     """
     def __init__(self):
@@ -14,6 +15,7 @@ class ControlInput:
 
     def get_app_placement(self, app_id, node_id):
         """Check if an application is placed on specific node
+
         Args:
             app_id (int): application's id
             node_id (int): node's id
@@ -25,7 +27,8 @@ class ControlInput:
     def get_load_distribution(self, app_id, src_node_id, dst_node_id):
         """Get the load distribution of application requests from a source node to a destination node.
         The distribution is a value between 0 and 1 as the percentage of requests from the source forwarded
-            to the destination node
+        to the destination node
+
         Args:
             app_id (int): application's id
             src_node_id (int): source node's id
@@ -37,6 +40,7 @@ class ControlInput:
 
     def get_allocated_resource(self, app_id, node_id, resource_name):
         """Get the amount of allocated resource to an application on a node
+
         Args:
             app_id (int): application's id
             node_id (int): node's id
@@ -48,6 +52,7 @@ class ControlInput:
 
     def get_allocated_cpu(self, app_id, node_id):
         """Get the amount of CPU allocated to an application on a node
+
         Args:
             app_id (int): application's id
             node_id (int): node's id

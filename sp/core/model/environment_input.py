@@ -3,6 +3,7 @@ import math
 
 class EnvironmentInput:
     """Environment Input Model Class
+
     It is used to store information about the environment.
     That is, system's parameters that are not directly controlled by the system controller
     """
@@ -14,6 +15,7 @@ class EnvironmentInput:
 
     def __copy__(self):
         """Shallow copy
+
         Returns:
             EnvironmentInput: the shallow copy
         """
@@ -26,6 +28,7 @@ class EnvironmentInput:
 
     def get_generated_load(self, app_id, node_id):
         """Get the amount of application requests generated from users attached to a node
+
         Args:
             app_id (int): application's id. Get the load from a specified application
             node_id (int): node's id
@@ -36,6 +39,7 @@ class EnvironmentInput:
 
     def get_net_delay(self, app_id, src_node_id, dst_node_id):
         """Get the network delay to transmit one request of an application from a source node to a destination node
+
         Args:
             app_id (int): application's id
             src_node_id (int): source node's id
@@ -47,6 +51,7 @@ class EnvironmentInput:
 
     def get_net_path(self, app_id, src_node_id, dst_node_id):
         """Get a network path from a source node to a destination node for a specific application
+
         Args:
             app_id (int): application's id
             src_node_id (int): source node's id
@@ -58,6 +63,7 @@ class EnvironmentInput:
 
     def get_attached_users(self):
         """Get all users after the attachment procedure
+
         Returns:
             list(sp.core.model.User): list of users
         """
@@ -65,6 +71,7 @@ class EnvironmentInput:
 
     def get_nb_users(self, app_id=None, node_id=None):
         """Get the number of users from an application and/or attached to a node
+
         Args:
             app_id (int, optional): application's id. If specified, it only counts users from the specified application
             node_id (int, optional): node's id. If specified, it only counts users attached to the specified node
@@ -82,6 +89,7 @@ class EnvironmentInput:
     @staticmethod
     def create_empty(system):
         """Create an empty environment input based on a system's state
+
         Args:
             system (sp.core.model.System): system's state
         Returns:

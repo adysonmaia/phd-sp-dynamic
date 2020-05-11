@@ -2,11 +2,12 @@ from abc import ABC, abstractmethod
 
 
 class Estimator(ABC):
-    """Estimator Class
+    """Estimator Abstract Class
     """
 
     def __call__(self, *args, **kwargs):
         """Call the estimator as a function
+
         See :py:meth:`Estimator.calc`
 
         Args:
@@ -20,6 +21,7 @@ class Estimator(ABC):
     @abstractmethod
     def calc(self, *args, **kwargs):
         """Calculate the estimation
+
         Args:
             *args: args
             **kwargs: kwargs

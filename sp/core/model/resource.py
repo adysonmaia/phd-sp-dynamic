@@ -1,5 +1,6 @@
 class Resource:
     """Resource Model Class
+
     It it used to store properties of a type of resource that can allocated in a Node
 
     Attributes:
@@ -23,14 +24,16 @@ class Resource:
     @property
     def id(self):
         """Unique identification of the resource, which it is its name
+
         Returns:
              str: resource's id
         """
         return self.name
 
     def __eq__(self, other):
-        """Check if a resource is equal to other
+        """Check if a resource is equal to other.
         Two resource are equals if they have the same identification
+
         Args:
             other (Resource): other resource
         Returns:
@@ -41,7 +44,9 @@ class Resource:
     @staticmethod
     def from_json(json_data):
         """Create a Resource object from a json data
+
         See :py:func:`sp.core.model.resource.from_json`
+
         Args:
            json_data (dict): data loaded from a json
         Returns:
@@ -51,10 +56,11 @@ class Resource:
 
 
 def from_json(json_data):
-    """Create a Resource object from a json data
+    """Create a Resource object from a json data.
     Only the 'name' key is required from the json dict data
 
     .. code-block:: python
+
         # Only the required properties
         json_data = {'name': 'CPU'}
         resource = sp.core.model.resource.from_json(json_data)

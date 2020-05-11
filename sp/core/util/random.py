@@ -5,6 +5,7 @@ import math
 
 def min_max_bound(y, min_value=0.0, max_value=1.0):
     """Bound a collection of values or a single value between an upper and lower limit
+
     Args:
         y (Union[Iterable, float]): collection of values or a single value
         min_value (float): minimum value
@@ -26,6 +27,7 @@ def min_max_bound(y, min_value=0.0, max_value=1.0):
 
 def add_white_noise(y, noise=None, bound=True, scale=False):
     """Add a gaussian white noise process with zero mean and constant variance to a list o values
+
     Args:
         y (Union[list, np.ndarray]): list of values between 0 and 1
         noise (float): standard deviation of the noise
@@ -47,8 +49,9 @@ def add_white_noise(y, noise=None, bound=True, scale=False):
 
 
 def add_samples(*ys):
-    """Add a list of list of values between 0 and 1
+    """Add a list of list of values between 0 and 1.
     The resulting added values are scaled to a range between 0 and 1
+
     Args:
         *ys: each parameter is a list of values
 
@@ -71,6 +74,7 @@ def add_samples(*ys):
 
 def scale_samples(y, min_scale=0.0, max_scale=1.0, min_value=None, max_value=None):
     """Scale a list of values to be in a range between min_scale and max_scale
+
     Args:
         y (Iterable): list of values
         min_scale (float): minimum value after the scale operation
@@ -99,6 +103,7 @@ def scale_samples(y, min_scale=0.0, max_scale=1.0, min_value=None, max_value=Non
 
 def random_birth_death_process(birth_rate=.5, death_rate=.5, nb_samples=None, noise=None):
     """Generate random samples according to a (Kendall) birth and death process.
+
     Args:
         birth_rate (float): birth rate (probability) as a value between 0 and 1
         death_rate (float): death rate (probability) as a value between 0 and 1
@@ -151,6 +156,7 @@ def random_burst(normal_value=None, burst_value=1.0, normal_transition=0.5, burs
     """Generate random samples according to a burst model.
     A burst model follows a markov chain with two states (normal and burst state), where each state is
     associated with a generated value.
+
     Args:
         normal_value (float): generated value during the normal state. If None, a random value is selected
         burst_value (float): generated value during the burst state
@@ -192,6 +198,7 @@ def random_burst(normal_value=None, burst_value=1.0, normal_transition=0.5, burs
 
 def random_linear(nb_samples=None, noise=None):
     """Generate random samples following a linear function
+
     Args:
         nb_samples (int): number of generated samples. If None, function returns only a single value
         noise (float): it adds a white noise to the generated values if this parameter is not None
@@ -218,6 +225,7 @@ def random_linear(nb_samples=None, noise=None):
 
 def random_constant(value=None, nb_samples=None, noise=None):
     """Generate a constant value
+
     Args:
         value (float): constant value between 0 and 1. If None, a random value is choose
         nb_samples (int): number of generated samples. If None, function returns only a single value
@@ -244,6 +252,7 @@ def random_constant(value=None, nb_samples=None, noise=None):
 
 def random_uniform(nb_samples=None, noise=None):
     """Generate random values following an uniform distribution
+
     Args:
         nb_samples (int): number of generated samples. If None, function returns only a single value
         noise (float): it adds a white noise to the generated values if this parameter is not None
@@ -264,6 +273,7 @@ def random_uniform(nb_samples=None, noise=None):
 
 def random_beta_pdf(alpha=2, beta=3, nb_samples=None, noise=None):
     """Generate values of the beta distribution's probability density function
+
     Args:
         alpha (float): alpha parameter of the beta distribution
         beta (float): beta parameter of the beta distribution
@@ -293,6 +303,7 @@ def random_beta_pdf(alpha=2, beta=3, nb_samples=None, noise=None):
 
 def random_cycle(period=None, nb_samples=None, noise=None):
     """Generate cycled values according to a trigonometric function
+
     Args:
         period (float): cycle's period
         nb_samples (int): number of generated samples. If None, function returns only a single value
@@ -327,6 +338,7 @@ def random_cycle(period=None, nb_samples=None, noise=None):
 
 def random_zipf(alpha=1.8, nb_samples=None, noise=None):
     """Generate random values according to a zeta (zipf) distribution
+
     Args:
         alpha (float): shape parameter, it must be greater than 1
         nb_samples (int): number of generated samples. If None, function returns only a single value

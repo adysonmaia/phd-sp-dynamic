@@ -2,26 +2,27 @@ from abc import ABC, abstractmethod
 
 
 class Mobility(ABC):
-    """Mobility Class
+    """Mobility Abstract Class
     """
 
     @abstractmethod
     def position(self, time, **kwargs):
         """Get position at a specific time and with certain tolerance
+
         Args:
             time (float): time
             **kwargs: kwargs
         Returns:
-            sp.core.geometry.point.Point: position or None if position is not found
+            sp.core.geometry.point.point.Point: position or None if position is not found
         """
         pass
 
 
 def from_json(json_data):
-    """Create a Mobility Pattern from a json data
+    """Create a Mobility Pattern from a json data.
     Mobility can be static or a time series
 
-    For a static mobility, the position should be passed as a dict
+    For a static mobility, the position should be passed as a dict.
     E.g.:
 
     .. code-block:: python
@@ -34,7 +35,7 @@ def from_json(json_data):
         json_data = {'lat': 37.75134, 'lon': -122.39488}
         static_mobility = sp.core.mobility.mobility.from_json(json_data)
 
-    For a time series mobility, positions with timestamp should be passed as a list
+    For a time series mobility, positions with timestamp should be passed as a list.
     E.g.:
 
     .. code-block:: python

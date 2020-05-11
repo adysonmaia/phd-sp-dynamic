@@ -14,7 +14,26 @@ FIT_MIN_DATA_SIZE = 2
 
 
 class SARIMAPredictor(Predictor):
+    """Seasonal AutoRegressive Integrated Moving Average (SARIMA) Forecasting Method
+
+    See Also:
+
+    * https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.sarimax.SARIMAX.html#statsmodels.tsa.statespace.sarimax.SARIMAX
+    * https://otexts.com/fpp2/seasonal-arima.html
+    """
+
     def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE, fit_params=None, predict_params=None, **kwargs):
+        """Initialization
+
+        Args:
+            max_data_size (int): maximum data size
+            fit_params (dict): parameters of fit method.
+                See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.sarimax.SARIMAX.fit.html#statsmodels.tsa.statespace.sarimax.SARIMAX.fit
+            predict_params (dict): parameters of predict method.
+                See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.mlemodel.MLEResults.predict.html#statsmodels.tsa.statespace.mlemodel.MLEResults.predict
+            **kwargs: initialization parameters of :py:class:`SARIMAX` class.
+                See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.sarimax.SARIMAX.html#statsmodels.tsa.statespace.sarimax.SARIMAX
+        """
         Predictor.__init__(self)
         self.max_data_size = max_data_size
         self.init_params = kwargs
@@ -25,10 +44,17 @@ class SARIMAPredictor(Predictor):
         self._fit_results = None
 
     def clear(self):
+        """Clear forecasting information
+        """
         self._data.clear()
         self._fit_results = None
 
     def update(self, datum):
+        """Update time series data
+
+        Args:
+            datum (Union[list, float]): new item (datum) in the data or the complete data
+        """
         if isinstance(datum, list):
             self._data = datum
         else:
@@ -72,6 +98,13 @@ class SARIMAPredictor(Predictor):
         self._fit_results = fit_results
 
     def predict(self, steps=1):
+        """Predict next values
+
+        Args:
+            steps (int): number of values to predict
+        Returns:
+            list: predicted data
+        """
         prediction = None
         if self._fit_results is not None:
             try:

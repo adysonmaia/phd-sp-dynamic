@@ -6,15 +6,20 @@ from sp.core.util.cached_property import cached_property
 
 class Network:
     """Network Class Model
-    It is store the network graph and its properties
-    A network graph is composed of Nodes (:py:class:`sp.core.model.Node`) and Links (:py:class:`sp.core.model.Link`)
+
+    It is store the network graph and its properties.
+    A network graph is composed of Nodes (:py:class:`sp.core.model.node.Node`)
+    and Links (:py:class:`sp.core.model.link.Link`).
 
     This class follows an Edge Computing topology for mobile networks that usually have three parts:
+
     Access Network <--> Core Network <--> Cloud Network
+
     * The access network is composed of base stations acting as access points and computing host (edge nodes).
-    The access network is connected to the core network or to the cloud network
+      The access network is connected to the core network or to the cloud network
     * The core network is an optional part that represents the core of a mobile network
     * The cloud network is composed of one single node representing a large cloud data center
+
 
     """
     def __init__(self):
@@ -34,6 +39,7 @@ class Network:
     @cached_property
     def nodes(self):
         """List of all node in the network
+
         Returns:
             list(Node): list of nodes
         """
@@ -44,6 +50,7 @@ class Network:
     @cached_property
     def links(self):
         """List of all links in the network
+
         Returns:
             list(Link): list of links
         """
@@ -52,6 +59,7 @@ class Network:
     @cached_property
     def cloud_node(self):
         """The cloud node of the network
+
         Returns:
              Node: cloud node
         """
@@ -64,6 +72,7 @@ class Network:
     @property
     def nodes_id(self):
         """List of ids of all nodes
+
         Returns:
            list: list of ids
         """
@@ -72,6 +81,7 @@ class Network:
     @property
     def bs_nodes(self):
         """List of all base station nodes
+
         Returns:
            list(Node): list of nodes
         """
@@ -79,6 +89,7 @@ class Network:
 
     def get_node(self, node_id):
         """"Get a node by its id
+
         Args:
             node_id (int): node's id
         Returns:
@@ -90,6 +101,7 @@ class Network:
 
     def get_nodes_by_type(self, node_type):
         """"Get a list of nodes with a specific type
+
         Args:
            node_type (str): type of the node
         Returns:
@@ -98,7 +110,7 @@ class Network:
         return list(filter(lambda i: i.type == node_type, self.nodes))
 
     def get_link(self, src_node_id, dst_node_id):
-        """"Get a link by its vertices (nodes)
+        """"Get a link by its vertices (nodes).
         A link is an undirected edge of the network graph
 
         Args:
@@ -120,6 +132,7 @@ class Network:
 
     def link_exists(self, src_node_id, dst_node_id):
         """Check if exists a link between two nodes
+
         Args:
             src_node_id (int): node's id
             dst_node_id (int): other node's id
@@ -132,6 +145,7 @@ class Network:
 
     def add_node(self, node):
         """Add a node to the network
+
         Args:
             node (Node): new node
         """
@@ -140,6 +154,7 @@ class Network:
 
     def add_link(self, link):
         """Add a link to the network
+
         Args:
             link (Link): new link
         """
@@ -149,7 +164,9 @@ class Network:
     @staticmethod
     def from_json(json_data):
         """Create a Network object from a json data
+
         See :py:func:`sp.core.model.network.from_json`
+
         Args:
             json_data (dict): data loaded from a json
         Returns:
@@ -159,11 +176,11 @@ class Network:
 
 
 def from_json(json_data):
-    """Create a Network object from a json data
+    """Create a Network object from a json data.
     The nodes and links data can be placed directly inside the json data or in external json files
 
     See :py:func:`sp.core.model.node.from_json` and :py:func:`sp.core.model.link.from_json` to have more detail
-        about nodes and links specifications
+    about nodes and links specifications.
 
     E.g.:
 

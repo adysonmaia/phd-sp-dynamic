@@ -4,6 +4,7 @@ import math
 
 class InterpolatedTimeSeries(TimeSeries):
     """Interpolate Time Series
+
     It is possible to interpolate values for times not defined in the series
     """
 
@@ -34,6 +35,7 @@ class InterpolatedTimeSeries(TimeSeries):
 
     def _get_interpolated_value(self, time, time_tolerance):
         """Get interpolate value of an time at the specified time
+
         Args:
             time (float): time
             time_tolerance (float): time tolerance
@@ -79,8 +81,9 @@ class InterpolatedTimeSeries(TimeSeries):
 
     @staticmethod
     def interpolate(time_1, value_1, time_2, value_2, time):
-        """Interpolate a value between two others
-        The values should support the arithmetic operations (+, -, and *)
+        """Interpolate a value between two others.
+        The values should support the arithmetic operations
+
         Args:
             time_1 (float): time of first value
             value_1 (object): first value

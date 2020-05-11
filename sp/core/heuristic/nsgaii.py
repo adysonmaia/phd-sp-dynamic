@@ -7,10 +7,10 @@ MAX_CRWD_DIST = 1.0
 def pareto_dominates(fitness_1, fitness_2):
     """Check if the first individual dominates the second individual based on their fitness.
     It uses the classical Pareto dominance operator
+
     Args:
         fitness_1 (list): fitness of the first individual
         fitness_2 (list): fitness of the second individual
-
     Returns:
         bool: True if first individual dominates the second individual
     """
@@ -26,17 +26,19 @@ def pareto_dominates(fitness_1, fitness_2):
 
 class NSGAII(BRKGA):
     """Non-dominated Sorting Genetic Algorithm II
-    See also:
-    https://doi.org/10.1109/4235.996017
+
+    See Also: https://doi.org/10.1109/4235.996017
     """
+
     def __init__(self,
                  dominance_func=pareto_dominates,
                  stop_threshold=0.0,
                  **brkga_params):
-        """
+        """Initialization
+
         Args:
             dominance_func (function): dominance operator
-            stop_threshold (float): MGBM stopping threshold
+            stop_threshold (float): MGBM stopping threshold. See Also: https://doi.org/10.1016/j.ins.2016.07.025
             **brkga_params: initialization parameters for :py:class:`sp.core.heuristic.brkga.BRKGA` algorithm
         """
         BRKGA.__init__(self, **brkga_params)
@@ -60,6 +62,7 @@ class NSGAII(BRKGA):
 
     def should_stop(self, population):
         """Verify whether the GA should stop or not
+
         Args:
             population (list(GAIndividual)): population of the current generation
         Returns:
@@ -72,8 +75,8 @@ class NSGAII(BRKGA):
 
     def _should_stop_by_mgbm(self):
         """Calculate the MGBM stopping criteria based on Mutual Domination Rate (MDR) indicator 
-        and a simplified Kalman filter
-        See also: https://doi.org/10.1016/j.ins.2016.07.025
+        and a simplified Kalman filter.
+        See Also: https://doi.org/10.1016/j.ins.2016.07.025
         
         Returns:
             bool: True if algorithm should stop according to the MGBM criteria, False otherwise
@@ -109,6 +112,7 @@ class NSGAII(BRKGA):
 
     def sort_population(self, population):
         """Sorts individuals using fast non dominated and crowding distance sorting algorithm
+
         Args:
             population (list(GAIndividual)): list of individuals
         Returns:
@@ -137,6 +141,7 @@ class NSGAII(BRKGA):
 
 def fast_non_dominated_sort(fitnesses, dominance_func=pareto_dominates):
     """Fast non-dominated sorting algorithm
+
     Args:
         fitnesses (list): fitness of each individual in a population
         dominance_func (function): dominance operator function
@@ -187,6 +192,7 @@ def fast_non_dominated_sort(fitnesses, dominance_func=pareto_dominates):
 
 def crowding_distance(fitnesses, fronts):
     """Crowding Distance
+
     Args:
         fitnesses (list): fitness of each individual in a population
         fronts (list(list)): front of each individual in a population.

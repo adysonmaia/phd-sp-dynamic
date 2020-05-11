@@ -9,6 +9,7 @@ _brkga = None
 
 def _init_pool(genetic_algo):
     """Initialize a sub-process to calculate an individual fitness
+
     Args:
         genetic_algo (BRKGA): a genetic algorithm object
     """
@@ -18,6 +19,7 @@ def _init_pool(genetic_algo):
 
 def _evaluate(indiv):
     """Evaluate an individual and obtain its fitness
+
     Args:
         indiv (GAIndividual): individual
     Returns:
@@ -29,8 +31,8 @@ def _evaluate(indiv):
 
 class BRKGA:
     """ Biased Random Key Genetic Algorithm
-    See also:
-    https://link.springer.com/article/10.1007/s10732-010-9143-1
+
+    See Also: https://link.springer.com/article/10.1007/s10732-010-9143-1
     """
 
     def __init__(self,
@@ -43,6 +45,7 @@ class BRKGA:
                  timeout=None,
                  pool_size=0):
         """Initialize method
+
         Args:
             operator (GAOperator): genetic operator
             population_size (int): population size
@@ -135,6 +138,7 @@ class BRKGA:
 
     def should_stop(self, population):
         """Verify whether the GA should stop or not
+
         Args:
             population (list(GAIndividual)): population of the current generation
         Returns:
@@ -144,6 +148,7 @@ class BRKGA:
 
     def _should_stop_by_timeout(self):
         """Check if elapsed execution time of genetic algorithm exceeds the timeout
+
         Returns:
            bool: True if execution time exceeded the timeout, False otherwise
         """
@@ -164,6 +169,7 @@ class BRKGA:
 
     def rand_individual(self):
         """Generate a random individual
+
         Returns:
             GAIndividual: a new random individual
         """
@@ -171,6 +177,7 @@ class BRKGA:
 
     def first_population(self, apply_selection=True):
         """Generate the individuals of the first generation
+
         Args:
             apply_selection (bool): if the selection operation will be applied for the generated individuals
         Returns:
@@ -192,6 +199,7 @@ class BRKGA:
 
     def evaluate(self, individual):
         """Evaluate an individual and obtain its fitness
+
         Args:
             individual (GAIndividual): individual
         Returns:
@@ -206,6 +214,7 @@ class BRKGA:
 
     def evaluate_population(self, population):
         """Calculate the fitness of all individuals in a population
+
         Args:
             population (list(GAIndividual)): population
         Returns:
@@ -218,6 +227,7 @@ class BRKGA:
 
     def sort_population(self, population):
         """Sorts individuals by their fitness value
+
         Args:
             population (list(GAIndividual)): list of individuals
         Returns:
@@ -229,6 +239,7 @@ class BRKGA:
 
     def select_individuals(self, population):
         """Select best individuals in a population
+
         Args:
             population (list(GAIndividual)): list of individuals
         Returns:
@@ -239,6 +250,7 @@ class BRKGA:
 
     def crossover(self, indiv_1, indiv_2, prob_1, prob_2):
         """Create individuals through crossover operation
+
         Args:
             indiv_1 (GAIndividual): first individual
             indiv_2 (GAIndividual): second individual
@@ -251,6 +263,7 @@ class BRKGA:
 
     def next_population(self, population, apply_selection=True):
         """Generate the next population through crossover and mutation operations in the current population
+
         Args:
             population (list): sorted population
             apply_selection (bool): if the selection operation will be applied in the next population
@@ -287,6 +300,7 @@ class BRKGA:
 
     def solve(self):
         """Execute the genetic algorithm
+
         Returns:
             list(GAIndividual): list of best individuals found
         """
@@ -307,8 +321,10 @@ class BRKGA:
 class GAIndividual(UserList):
     """Individual of a genetic algorithm
     """
+
     def __init__(self, data=None):
         """Initialization
+
         Args:
             data (list): chromosome's data
         """
@@ -319,6 +335,7 @@ class GAIndividual(UserList):
 
     def is_fitness_valid(self):
         """Check if the individual's fitness is valid
+
         Returns:
             bool: True if the fitness is valid, False otherwise
         """
@@ -326,6 +343,7 @@ class GAIndividual(UserList):
 
     def clear_copy(self):
         """Copy individual with invalid fitness
+
         Returns:
             GAIndividual: copy
         """
@@ -336,6 +354,7 @@ class GAIndividual(UserList):
     @property
     def nb_genes(self):
         """ Number of genes of the chromosome
+
         Returns:
             int: number of genes
         """
@@ -344,6 +363,7 @@ class GAIndividual(UserList):
     @property
     def chromosome(self):
         """Individual's chromosome
+
         Returns:
             list: chromosome data
         """
@@ -351,10 +371,10 @@ class GAIndividual(UserList):
 
 
 class GAOperator(ABC):
-    """Abstract chromosome class
-       It is used to implement the decoding algorithm of BRKGA
-       for a specific problem
-       """
+    """Chromosome Operation Abstract Class
+
+    It is used to implement the decoding algorithm of BRKGA for a specific problem
+    """
 
     def __init__(self):
         """Initialization
@@ -365,6 +385,7 @@ class GAOperator(ABC):
     @abstractmethod
     def nb_genes(self):
         """Number of genes in the chromosome
+
         Returns:
             int: number of genes in a individual's chromosome
         """
@@ -377,6 +398,7 @@ class GAOperator(ABC):
 
     def rand_individual(self):
         """Generate a random individual
+
         Returns:
             individual (GAIndividual): a new individual
         """
@@ -384,17 +406,20 @@ class GAOperator(ABC):
         return GAIndividual(data)
 
     def first_population(self):
-        """Generate some individuals for the first population
+        """Generate some individuals for the first population.
         It is used to add bootstrap individual
+
         Returns:
             individuals (list(GAIndividual)): list of individuals
         """
         return []
 
     def crossover(self, indiv_1, indiv_2, prob_1, prob_2):
-        """Execute the crossover operation
-        Default: implement the Parameterized Uniform Crossover
+        """Execute the crossover operation.
+
+        It implements the Parameterized Uniform Crossover.
         See also: https://doi.org/10.21236/ADA293985
+
         Args:
             indiv_1 (GAIndividual): first individual
             indiv_2 (GAIndividual): second individual
@@ -419,6 +444,7 @@ class GAOperator(ABC):
 
     def should_stop(self, population):
         """Verify whether the GA should stop or not
+
         Args:
             population (list(GAIndividual)): population of the current generation
         Returns:
@@ -429,6 +455,7 @@ class GAOperator(ABC):
     @abstractmethod
     def evaluate(self, individual):
         """Evaluate an individual and obtain its fitness
+
         Args:
             individual (GAIndividual): individual
         Returns:

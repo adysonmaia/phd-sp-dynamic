@@ -12,6 +12,7 @@ class BoundBox:
 
     def __init__(self, *args):
         """Initialization
+
         The bound box has two extreme points that can be passed as a list or each point as an argument
 
         For a 2D bound box, the extreme points can be top left point and bottom right point. E.g.:
@@ -43,6 +44,7 @@ class BoundBox:
     @property
     def points(self):
         """Get extreme points of the bound box
+
         Returns:
             tuple: two extreme points
         """
@@ -51,6 +53,7 @@ class BoundBox:
     @points.setter
     def points(self, value):
         """Set extreme points
+
         Args:
             value (Union[list, tuple]): two extreme points
         Raises:
@@ -68,6 +71,7 @@ class BoundBox:
     def width(self):
         """Get bound box's width.
         That is, distance in X-axis of the extreme points
+
         Returns:
             float: width
         """
@@ -77,6 +81,7 @@ class BoundBox:
     def height(self):
         """Get bound box's height.
         That is, distance in Y-axis of the extreme points
+
         Returns:
             float: height
         """
@@ -86,6 +91,7 @@ class BoundBox:
     def length(self):
         """Get bound box's length.
         That is, distance in Z-axis of the extreme points
+
         Returns:
             float: length
         """
@@ -94,6 +100,7 @@ class BoundBox:
     @property
     def x_distance(self):
         """Get distance in X-axis of the extreme points
+
         Returns:
             float: distance
         """
@@ -102,6 +109,7 @@ class BoundBox:
     @property
     def y_distance(self):
         """Get distance in Y-axis of the extreme points
+
         Returns:
             float: distance
         """
@@ -110,6 +118,7 @@ class BoundBox:
     @property
     def z_distance(self):
         """Get distance in Z-axis of the extreme points
+
         Returns:
             float: distance
         """
@@ -118,6 +127,7 @@ class BoundBox:
     @property
     def x_min(self):
         """Get minimum value in the X-axis which is inside the bound box
+
         Returns:
             float: minimum value
         """
@@ -126,6 +136,7 @@ class BoundBox:
     @property
     def x_max(self):
         """Get maximum value in the X-axis which is inside the bound box
+
         Returns:
             float: maximum value
         """
@@ -134,6 +145,7 @@ class BoundBox:
     @property
     def y_min(self):
         """Get minimum value in the Y-axis which is inside the bound box
+
         Returns:
             float: minimum value
         """
@@ -142,6 +154,7 @@ class BoundBox:
     @property
     def y_max(self):
         """Get maximum value in the Y-axis which is inside the bound box
+
         Returns:
             float: maximum value
         """
@@ -150,6 +163,7 @@ class BoundBox:
     @property
     def z_min(self):
         """Get minimum value in the Z-axis which is inside the bound box
+
         Returns:
             float: minimum value
         """
@@ -158,6 +172,7 @@ class BoundBox:
     @property
     def z_max(self):
         """Get maximum value in the Z-axis which is inside the bound box
+
         Returns:
             float: maximum value
         """
@@ -179,6 +194,7 @@ class BoundBox:
 
     def get_distance(self, dim):
         """Get distance between the extreme points in a specific dimension (axis)
+
         Args:
             dim (int): dimension's index
         Returns:
@@ -196,6 +212,7 @@ class BoundBox:
 
     def get_delta_value(self, dim):
         """Get difference (delta) between the maximum and minimum values in a specific dimension (axis)
+
         Args:
             dim (index): dimension's index
         Returns:
@@ -205,6 +222,7 @@ class BoundBox:
 
     def get_min_value(self, dim):
         """Get minimum value inside the bound box for a specific dimension (axis)
+
         Args:
             dim (index): dimension's index
         Returns:
@@ -214,6 +232,7 @@ class BoundBox:
 
     def get_max_value(self, dim):
         """Get maximum value inside the bound box for a specific dimension (axis)
+
         Args:
             dim (index): dimension's index
         Returns:

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 
 class Point(ABC):
-    """An Abstract Geometric Point
+    """Abstract Geometric Point
     """
 
     def __init__(self):
@@ -12,6 +12,7 @@ class Point(ABC):
 
     def __getitem__(self, index):
         """Get coordinate's value of a specified dimension
+
         Args:
             index (int): coordinate dimension
         Returns:
@@ -21,6 +22,7 @@ class Point(ABC):
 
     def __setitem__(self, index, value):
         """Set coordinate's value of a specified dimension
+
         Args:
             index (int): coordinate dimension
             value (float): value
@@ -29,6 +31,7 @@ class Point(ABC):
 
     def __str__(self):
         """Get string representation of the object
+
         Returns:
             str: string representation
         """
@@ -38,6 +41,7 @@ class Point(ABC):
     @abstractmethod
     def values(self):
         """Get point's coordinates
+
         Returns:
             list: coordinates
         """
@@ -47,6 +51,7 @@ class Point(ABC):
     @abstractmethod
     def values(self, v):
         """Set point's coordinates
+
         Args:
             v (list): coordinates
         """
@@ -55,6 +60,7 @@ class Point(ABC):
     @abstractmethod
     def distance(self, other):
         """Calculate distance to other point
+
         Args:
             other (Point): other point
         Returns:
@@ -70,7 +76,6 @@ class Point(ABC):
         Args:
             other (Point): other point
             fraction (float): distance fraction (value between 0 and 1)
-
         Returns:
             Point: intermediate point
         """
@@ -78,7 +83,7 @@ class Point(ABC):
 
 
 def from_json(json_data, coord=None):
-    """Create a point from a json data
+    """Create a point from a json data.
     The created point can use Cartesian Coordinate System or GPS Coordinate System
 
     For a Cartesian Point, data can be a dict, list or tuple. E.g.:

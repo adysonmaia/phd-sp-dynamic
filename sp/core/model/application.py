@@ -7,6 +7,7 @@ from functools import total_ordering
 @total_ordering
 class Application:
     """Application Model Class
+
     It is used to store requirements and properties of an application
 
     Attributes:
@@ -20,10 +21,10 @@ class Application:
         availability (float): Probability that an application instance is working without failure, 0 <= value <= 1
         demand (dict): For each resource, it specifies a function to calculate the amount of resources required
             by an application instance with a certain workload. The dictionary's keys are the resource names
-            and the values are estimator :py:class:`sp.core.estimator.Estimator` objects.
+            and the values are estimator :py:class:`sp.core.estimator.estimator.Estimator` objects.
 
-            Use :py:meth:`sp.core.estimator.Estimator.calc` or :py:meth:`sp.core.estimator.Estimator.__call__`
-            to obtain the required amount of resource. E.g.:
+            Use :py:meth:`sp.core.estimator.estimator.Estimator.calc` to obtain the required amount of resource.
+            E.g.:
 
             .. code-block:: python
 
@@ -52,6 +53,7 @@ class Application:
 
     def __eq__(self, other):
         """Compare if two applications are equals by their ids
+
         Args:
             other (Application): other application
         Returns:
@@ -61,6 +63,7 @@ class Application:
 
     def __lt__(self, other):
         """Use the id attribute in the < operator
+
         Args:
             other (Application): other application
         Returns:
@@ -71,8 +74,9 @@ class Application:
     @property
     def cpu_demand(self):
         """Get the CPU demand estimator
+
         Returns:
-            sp.core.estimator.Estimator: The demand estimator
+            sp.core.estimator.estimator.Estimator: The demand estimator
         Raises:
             KeyError: Resource not found
         """
@@ -80,10 +84,11 @@ class Application:
 
     def get_demand(self, resource_name):
         """Get the demand estimator for a specific resource
+
         Args:
             resource_name (str): name of the resource
         Returns:
-            sp.core.estimator.Estimator: The demand estimator
+            sp.core.estimator.estimator.Estimator: The demand estimator
         Raises:
             KeyError: Resource not found
         """
@@ -92,7 +97,9 @@ class Application:
     @staticmethod
     def from_json(json_data):
         """Create an application object from a json data
+
         See :py:func:`sp.core.model.application.from_json`
+
         Args:
             json_data (dict): data loaded from a json
         Returns:

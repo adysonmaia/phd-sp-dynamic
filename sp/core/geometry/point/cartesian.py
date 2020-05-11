@@ -13,6 +13,7 @@ class CartesianPoint(Point):
 
     def __init__(self, *args):
         """Initialization
+
         Coordinate's value can be passed as a list or each value being a argument
 
         E.g.:
@@ -43,22 +44,25 @@ class CartesianPoint(Point):
     @property
     def values(self):
         """Get point's coordinates
+
         Returns:
-            np.ndarray: coordinates
+            numpy.ndarray: coordinates
         """
         return self._values
 
     @values.setter
     def values(self, v):
         """Set point's coordinates
+
         Args:
-            v (Union[list, tuple, np.ndarray]): coordinates
+            v (Union[list, tuple, numpy.ndarray]): coordinates
         """
         self._values = np.array(v)
 
     @property
     def x(self):
         """Get value in X-axis
+
         Returns:
             float: value
         """
@@ -67,6 +71,7 @@ class CartesianPoint(Point):
     @x.setter
     def x(self, v):
         """Set value in X-axis
+
         Args:
             v (float): value
         """
@@ -75,6 +80,7 @@ class CartesianPoint(Point):
     @property
     def y(self):
         """Get value in Y-axis
+
         Returns:
             float: value
         """
@@ -83,6 +89,7 @@ class CartesianPoint(Point):
     @y.setter
     def y(self, v):
         """Set value in Y-axis
+
         Args:
             v (float): value
         """
@@ -91,6 +98,7 @@ class CartesianPoint(Point):
     @property
     def z(self):
         """Set value in Z-axis
+
         Returns:
             float: value
         """
@@ -99,6 +107,7 @@ class CartesianPoint(Point):
     @z.setter
     def z(self, v):
         """Set value in Z-axis
+
         Args:
             v (float): value
         Raises:
@@ -113,6 +122,7 @@ class CartesianPoint(Point):
 
     def distance(self, other):
         """Calculate distance to other point
+
         Args:
             other (Cartesian): other point
         Returns:
@@ -148,6 +158,7 @@ class CartesianPoint(Point):
     @staticmethod
     def from_json(json_data):
         """Create a CartesianPoint object from a json data
+
         See :py:func:`sp.core.geometry.point.cartesian.from_json`
 
         Args:

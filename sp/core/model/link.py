@@ -1,5 +1,6 @@
 class Link:
-    """"Link Model Class
+    """Link Model Class
+
     It is used to store properties of a network link.
     A link connects two node and its represents an undirected edge in the graph
 
@@ -16,8 +17,9 @@ class Link:
         self.propagation_delay = 0.0
 
     def __eq__(self, other):
-        """Check if a link is equal to other
+        """Check if a link is equal to other.
         The comparison takes into consideration that links are undirected edges in a graph
+
         Args:
             other (Link): other link
         Returns:
@@ -31,7 +33,9 @@ class Link:
     @staticmethod
     def from_json(json_data):
         """Create a link object from a json data
+
         See :py:func:`sp.core.model.link.from_json`
+
         Args:
            json_data (dict): data loaded from a json
         Returns:
@@ -59,7 +63,7 @@ def _nodes_from_json(json_data):
         json_data = {'nodes': {'s': 0, 'd': 0}}
         nodes_id = _nodes_from_json(json_data['nodes'])
 
-     Args:
+    Args:
         json_data (Union[list, tuple, dict]): data loaded from a json
     Returns:
         tuple: nodes' id

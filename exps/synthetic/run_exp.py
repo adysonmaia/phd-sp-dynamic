@@ -274,8 +274,8 @@ def main():
 
     # LLC optimizer with different parameters
     # prediction_windows = [0, 1, 2]
-    prediction_windows = [0, 1]
-    # prediction_windows = [1]
+    # prediction_windows = [0, 1]
+    prediction_windows = [1]
     # prediction_windows = [0]
     for window in prediction_windows:
         for llc_finder in llc_finders:

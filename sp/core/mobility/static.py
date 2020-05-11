@@ -5,6 +5,7 @@ from sp.core.geometry import point
 class StaticMobility(Mobility):
     """Static Mobility
     """
+
     def __init__(self, position=None):
         """
         Args:
@@ -15,6 +16,7 @@ class StaticMobility(Mobility):
 
     def position(self, *args, **kwargs):
         """Get position
+
         Args:
             *args: args
             **kwargs: kwargs
@@ -26,6 +28,7 @@ class StaticMobility(Mobility):
     @staticmethod
     def from_json(json_data):
         """Create a static mobility from a json data
+
         See :py:func:`sp.core.mobility.static.from_json`
 
         Args:
@@ -38,6 +41,7 @@ class StaticMobility(Mobility):
 
 def from_json(json_data):
     """Create a static mobility from a json data
+
     See :py:func:`sp.core.geometry.point.point.from_json`
 
     Args:

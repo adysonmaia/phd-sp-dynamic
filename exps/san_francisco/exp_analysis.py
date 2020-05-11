@@ -177,7 +177,7 @@ def main():
     #     scenario = Scenario.from_json(data)
 
     # output_path = 'output/san_francisco/exp/'
-    output_path = 'output/synthetic/exp/n9_a10_u10000/'
+    output_path = 'output/synthetic/exp/n25_a10_u1000/'
     optimizers = [
         # {'id': 'CloudOptimizer', 'label': 'Cloud'},
         # {'id': 'MOGAOptimizer', 'label': 'MOGA'},

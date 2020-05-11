@@ -9,6 +9,7 @@ class LoadEstimator(Estimator):
     @abstractmethod
     def calc(self, time, *args, **kwargs):
         """Estimate load at a specific time
+
         Args:
             time (float): time
             *args: args
@@ -34,6 +35,7 @@ class TimeSeriesLoadEstimator(LoadEstimator):
 
     def calc(self, time, *args, **kwargs):
         """Estimate load at a specific time
+
         Args:
             time (float): time
             *args: args
@@ -51,7 +53,7 @@ class TimeSeriesLoadEstimator(LoadEstimator):
 
 
 class ConstantLoadEstimator(LoadEstimator):
-    """Load Estimator as constant function
+    """Load Estimator as a Constant Function
 
     Attributes:
         load (float): constant load
@@ -59,6 +61,7 @@ class ConstantLoadEstimator(LoadEstimator):
 
     def __init__(self, load=0.0):
         """Initialization
+
         Args:
             load (float): constant load
         """
@@ -67,6 +70,7 @@ class ConstantLoadEstimator(LoadEstimator):
 
     def calc(self, *args, **kwargs):
         """Estimate load
+
         Args:
             *args: args
             **kwargs: kwargs
@@ -79,8 +83,8 @@ class ConstantLoadEstimator(LoadEstimator):
 def from_json(json_data):
     """Create a Load Estimator from a json data
 
-    The estimator can be a constant function or based on a time series
-    For a constant function, the constant value can be passed as argument
+    The estimator can be a constant function or based on a time series.
+    For a constant function, the constant value can be passed as argument.
     E.g.:
 
     .. code-block:: python
@@ -90,7 +94,7 @@ def from_json(json_data):
         estimator = sp.core.estimator.load.from_json(json_data)
 
     For the estimator based on a time series, a list of items can be passed as argument.
-    Each item can be a dist, list or tuple
+    Each item can be a dist, list or tuple.
     E.g.:
 
 
@@ -150,6 +154,7 @@ def from_json(json_data):
 
 def _get_ts_item(json_data):
     """Parse a time series's item
+
     Args:
         json_data (Union[list, tuple, dict]): json data
     Returns:

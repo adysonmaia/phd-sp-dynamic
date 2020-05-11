@@ -12,7 +12,23 @@ FIT_MIN_DATA_SIZE = 2
 
 
 class AutoARIMAPredictor(Predictor):
+    """Auto ARIMA Forecasting Method
+
+    It automatically discovers the optimal order for an ARIMA model
+
+    See Also: https://alkaline-ml.com/pmdarima/index.html
+    """
+
     def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE, predict_params=None, **kwargs):
+        """
+
+        Args:
+            max_data_size (int): maximum data size
+            predict_params (dict): parameters of predict method.
+                See Also: https://alkaline-ml.com/pmdarima/modules/generated/pmdarima.arima.ARIMA.html#pmdarima.arima.ARIMA.predict
+            **kwargs: parameters of :py:func:`pm.auto_arima` function.
+                See Also: https://alkaline-ml.com/pmdarima/modules/generated/pmdarima.arima.auto_arima.html#pmdarima.arima.auto_arima
+        """
         Predictor.__init__(self)
         self.max_data_size = max_data_size
         self.init_params = kwargs
@@ -22,10 +38,17 @@ class AutoARIMAPredictor(Predictor):
         self._fit_results = None
 
     def clear(self):
+        """Clear forecasting information
+        """
         self._data.clear()
         self._fit_results = None
 
     def update(self, datum):
+        """Update time series data
+
+        Args:
+            datum (Union[list, float]): new item (datum) in the data or the complete data
+        """
         if isinstance(datum, list):
             self._data = datum
         else:
@@ -45,6 +68,10 @@ class AutoARIMAPredictor(Predictor):
                     model_params.update(DEFAULT_INIT_PARAMS)
                     if self.init_params:
                         model_params.update(self.init_params)
+                    if "m" in model_params and model_params["m"] >= len(self._data):
+                        del model_params["m"]
+                        model_params["seasonal"] = False
+
                     fit_results = pm.auto_arima(self._data, **model_params)
             except:
                 pass
@@ -52,6 +79,13 @@ class AutoARIMAPredictor(Predictor):
         self._fit_results = fit_results
 
     def predict(self, steps=1):
+        """Predict next values
+
+        Args:
+            steps (int): number of values to predict
+        Returns:
+            list: predicted data
+        """
         prediction = None
         if self._fit_results is not None:
             try:
