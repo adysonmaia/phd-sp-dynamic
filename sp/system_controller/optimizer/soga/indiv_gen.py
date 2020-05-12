@@ -1,11 +1,13 @@
 from sp.core.heuristic.kmedoids import KMedoids
 from sp.system_controller.util import calc_load_before_distribution
 from sp.core.heuristic.brkga import GAIndividual
+from .ga_operator import SOGAOperator
 import math
 
 
 def create_empty_individual(ga_operator):
     """Create a default individual
+
     Args:
         ga_operator (SOGAOperator): genetic operator
     Returns:
@@ -17,6 +19,7 @@ def create_empty_individual(ga_operator):
 
 def create_individual_cloud(ga_operator):
     """Create an individual that prioritizes the cloud node
+
     Args:
         ga_operator (SOGAOperator): genetic operator
     Returns:
@@ -28,6 +31,7 @@ def create_individual_cloud(ga_operator):
 
 def create_individual_current(ga_operator):
     """Create an individual based on current state and control input
+
     Args:
         ga_operator (SOGAOperator): genetic operator
     Returns:
@@ -55,6 +59,7 @@ def create_individual_current(ga_operator):
 def create_individual_net_delay(ga_operator):
     """Create an individual that prioritizes nodes having shorter avg. net delays to other nodes
     and requests with strict deadlines
+
     Args:
         ga_operator (SOGAOperator): genetic operator
     Returns:
@@ -95,6 +100,7 @@ def create_individual_cluster_metoids(ga_operator, use_sc=False):
     """Create an individual based on k-medoids clustering.
     The idea is the users of an application are grouped and central nodes of each group are prioritized.
     It also prioritizes requests with strict deadlines
+
     Args:
         ga_operator (SOGAOperator): genetic operator
         use_sc (bool): whether to use the silhouette score method to find the number of clusters
@@ -152,6 +158,7 @@ def create_individual_cluster_metoids_sc(ga_operator):
     """Create an individual based on k-medoids clustering with silhouette score.
     The idea is the users of an application are grouped and central nodes of each group are prioritized.
     It also prioritizes requests with strict deadlines
+
     Args:
         ga_operator (SOGAOperator): genetic operator
     Returns:
@@ -162,6 +169,7 @@ def create_individual_cluster_metoids_sc(ga_operator):
 
 def create_individual_load(ga_operator):
     """Create an individual that prioritizes nodes with large load
+
     Args:
         ga_operator (SOGAOperator): genetic operator
     Returns:
@@ -206,6 +214,7 @@ def create_individual_load(ga_operator):
 
 def create_individual_capacity(ga_operator):
     """Create an individual that prioritizes nodes with high capacity of resources
+
     Args:
         ga_operator (SOGAOperator): genetic operator
     Returns:
@@ -248,6 +257,7 @@ def create_individual_capacity(ga_operator):
 
 def create_individual_deadline(ga_operator):
     """Create an individual that prioritizes request with strict response deadline
+
     Args:
         ga_operator (SOGAOperator): genetic operator
     Returns:
@@ -278,6 +288,7 @@ def create_individual_deadline(ga_operator):
 
 def invert_individual(ga_operator, individual):
     """Invert a individual representation
+
     Args:
         ga_operator (SOGAOperator): genetic operator
         individual (GAIndividual): encoded individual
@@ -291,6 +302,7 @@ def invert_individual(ga_operator, individual):
 
 def merge_population(ga_operator, population, weights=None):
     """Merge a list of individuals into a single one
+
     Args:
         ga_operator (SOGAOperator): genetic operator
         population (list(GAIndividual)): list of individuals
@@ -315,6 +327,7 @@ def merge_population(ga_operator, population, weights=None):
 
 def merge_creation_functions(ga_operator, functions, weights=None):
     """Create an individual by merging the results of a list of creation functions
+
     Args:
         ga_operator (SOGAOperator): genetic operator
         functions (list(function)): list of creation functions

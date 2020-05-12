@@ -17,7 +17,7 @@ def main():
     """
     # Scenarios parameters
     scenarios = [
-        {'nb_bs': 25, 'nb_apps': 10, 'nb_users': 1000},
+        {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 1000},
 
         # {'nb_bs': 25, 'nb_apps': 10, 'nb_users': 10000},
         # {'nb_bs': 25, 'nb_apps': 20, 'nb_users': 10000},
@@ -66,6 +66,7 @@ def main():
 
 def gen_scenario(nb_bs, nb_apps, nb_users, time_start, time_stop, time_step, scenario_path):
     """It generates a scenario with specific parameters
+
     Args:
         nb_bs (int): number of base stations (edge nodes)
         nb_apps (int): number of applications
@@ -116,6 +117,7 @@ def gen_scenario(nb_bs, nb_apps, nb_users, time_start, time_stop, time_step, sce
 
 def gen_network(nb_bs):
     """Generate the network graph with a specific topology
+
     Args:
         nb_bs (int): number of base stations (edge nodes)
     Returns:
@@ -218,6 +220,7 @@ def gen_network(nb_bs):
 
 def gen_bs_network(nb_nodes):
     """Generate base stations with 2D grid topology
+
     Args:
         nb_nodes (int): number of nodes (points) in the grid
     Returns:
@@ -259,6 +262,7 @@ def gen_bs_network(nb_nodes):
 
 def gen_apps(nb_apps, net_data):
     """Generate applications
+
     Args:
         nb_apps (int): number of applications
         net_data (dict): network's data
@@ -330,8 +334,12 @@ def gen_apps(nb_apps, net_data):
     }
 
     app_type_options = ['URLLC', 'MMTC', 'EMBB']
-    selected_type = copy.copy(app_type_options)
-    selected_type += list(np.random.choice(app_type_options, size=nb_apps - len(selected_type)))
+    selected_type = None
+    if nb_apps >= len(app_type_options):
+        selected_type = copy.copy(app_type_options)
+        selected_type += list(np.random.choice(app_type_options, size=nb_apps - len(selected_type)))
+    else:
+        selected_type = list(np.random.choice(app_type_options, size=nb_apps))
 
     # Generate applications
     json_data = {'apps': []}
@@ -378,6 +386,7 @@ def gen_apps(nb_apps, net_data):
 
 def gen_loads(nb_users, time_start, time_stop, time_step, apps_data, net_data):
     """Generate loads for each application in each node along the simulation
+
     Args:
         nb_users (int): total number of users in the system
         time_start (float): simulation start time (in seconds)
@@ -416,6 +425,7 @@ def gen_loads(nb_users, time_start, time_stop, time_step, apps_data, net_data):
 
 def distribute_users(nb_users, apps_data, net_data):
     """Distribute a specific amount of users among the applications
+
     Args:
         nb_users (int): total number of users
         apps_data (dict): applications' data
@@ -434,10 +444,17 @@ def distribute_users(nb_users, apps_data, net_data):
 
     # Set users percentage for each application based on its type
     app_type_distribution = {'URLLC': 0.1, 'EMBB': 0.2, 'MMTC': 0.7}
+    app_types = list(app_type_distribution.keys())
     nb_apps_per_type = {app_type: sum(map(lambda a: a['type'] == app_type, apps_data['apps']))
-                        for app_type in ['URLLC', 'MMTC', 'EMBB']}
-    users_distribution = [app_type_distribution[a['type']] / float(nb_apps_per_type[a['type']])
-                          for a in apps_data['apps']]
+                        for app_type in app_types}
+    nb_types_with_app = len([t for t in app_types if nb_apps_per_type[t] > 0])
+    users_distribution = None
+    if nb_types_with_app > 1:
+        users_distribution = [app_type_distribution[a['type']] / float(nb_apps_per_type[a['type']])
+                              for a in apps_data['apps']]
+    else:
+        zipf_alpha = 1.6
+        users_distribution = sp_rnd.random_zipf(zipf_alpha, nb_apps)
 
     # Distribute users among all applications
     users_count = 0.0
@@ -462,6 +479,7 @@ def distribute_users(nb_users, apps_data, net_data):
 
 def distribute_load(min_load, max_load, time_start, time_end, time_step):
     """Distribute load in a range along the simulation time
+
     Args:
         min_load (float): minimum load
         max_load (float): maximum load
@@ -474,26 +492,16 @@ def distribute_load(min_load, max_load, time_start, time_end, time_step):
     nb_steps = int(math.floor((time_end - time_start) / float(time_step)))
 
     # Different load patterns
-    # rnd_funcs = [
-    #     (sp_rnd.random_beta_pdf, {'alpha': 2, 'beta': 3}),
-    #     (sp_rnd.random_beta_pdf, {'alpha': 1, 'beta': 5}),
-    #     (sp_rnd.random_beta_pdf, {'alpha': 3, 'beta': 2}),
-    #     (sp_rnd.random_beta_pdf, {'alpha': 5, 'beta': 1}),
-    #     (sp_rnd.random_beta_pdf, {'alpha': 0.5, 'beta': 0.5}),
-    #     # (sp_rnd.random_burst, {'normal_transition': 0.2, 'burst_transition': 0.8}),
-    #     # (sp_rnd.random_burst, {'normal_transition': 0.3, 'burst_transition': 0.8}),
-    #     (sp_rnd.random_burst, {'normal_transition': 0.4, 'burst_transition': 0.8}),
-    #     (sp_rnd.random_cycle, {'period': nb_steps}),
-    #     (sp_rnd.random_cycle, {'period': nb_steps / 2.0}),
-    #     # (sp_rnd.random_cycle, {'period': nb_steps / 4.0}),
-    #     (sp_rnd.random_linear, {}),
-    #     # (sp_rnd.random_uniform, {}),
-    # ]
-
     rnd_funcs = [
+        (sp_rnd.random_burst, {'normal_transition': 0.4, 'burst_transition': 0.8}),
+        (sp_rnd.random_beta_pdf, {'alpha': 2, 'beta': 3}),
+        (sp_rnd.random_beta_pdf, {'alpha': 3, 'beta': 2}),
+        (sp_rnd.random_beta_pdf, {'alpha': 1, 'beta': 5}),
+        (sp_rnd.random_beta_pdf, {'alpha': 5, 'beta': 1}),
         (sp_rnd.random_cycle, {'period': nb_steps}),
         (sp_rnd.random_cycle, {'period': nb_steps / 2.0}),
         (sp_rnd.random_linear, {}),
+        (sp_rnd.random_uniform, {}),
     ]
 
     # Choose a load pattern
@@ -502,8 +510,7 @@ def distribute_load(min_load, max_load, time_start, time_end, time_step):
     func_kwargs = func_data[1]
 
     # Generate load along the simulation according to the selected pattern
-    # noise = 0.05
-    noise = 0.01
+    noise = 0.05
     samples = func(nb_samples=nb_steps, noise=noise, **func_kwargs)
     loads = []
     for step in range(nb_steps):

@@ -1,6 +1,7 @@
 from sp.core.model import Scenario
-from sp.core.predictor import AutoARIMAPredictor, ARIMAPredictor
-from sp.simulator import Simulator, Monitor
+from sp.core.predictor import AutoARIMAPredictor
+from sp.simulator import Simulator
+from sp.simulator.monitor import OptimizerMonitor
 from sp.system_controller import metric, util
 from sp.system_controller.optimizer.llc import LLCOptimizer, plan_finder, input_finder
 from sp.system_controller.optimizer import SOGAOptimizer, MOGAOptimizer, CloudOptimizer, SOHeuristicOptimizer
@@ -48,95 +49,45 @@ def get_app_deadline_violation(app, system, control_input, environment_input):
     return violation
 
 
-class ControlMonitor(Monitor):
+class ExpRunMonitor(OptimizerMonitor):
     """Simulation monitor
     """
+
     def __init__(self, metrics_func, output_path=None, debug_prefix=None):
         """Initialization
+
         Args:
              metrics_func (list): list of metric functions
              output_path (str): path to save the logs
+             debug_prefix (str): debug print prefix
         """
-        Monitor.__init__(self)
-        self.metrics_func = metrics_func  # metric functions
-        self.metrics_data = list()  # log of metric data
-        self.control_data = dict()  # log of control data
-        self.perf_count = 0  # last performance count
-        self.output_path = output_path
+        OptimizerMonitor.__init__(self, metrics_func, output_path)
         self.debug_prefix = debug_prefix
-
-    def on_sim_started(self, sim_time):
-        """Event dispatched when the simulation started
-        Args:
-            sim_time (float): current simulation time
-        """
-        self.metrics_data.clear()
-        self.control_data = {'place': [], 'alloc': [], 'ld': []}
-        self.perf_count = 0
-
-    def on_sys_ctrl_started(self, sim_time, system, environment_input):
-        """Event dispatched when the system controller update started
-        Args:
-            sim_time (float): current simulation time
-            system (sp.core.model.System): current system state
-            environment_input (sp.core.model.EnvironmentInput): current environment input
-        """
-        self.perf_count = time.perf_counter()
 
     def on_sys_ctrl_ended(self, sim_time, system, control_input, environment_input):
         """Event dispatched when the system controller update ended
+
         Args:
             sim_time (float): current simulation time
             system (sp.core.model.System): current system state
             control_input (sp.core.model.ControlInput): new control input after the controller update
             environment_input (sp.core.model.EnvironmentInput): current environment input
         """
-        opt_name = self.simulator.optimizer.__class__.__name__
-        elapsed_time = time.perf_counter() - self.perf_count
+        OptimizerMonitor.on_sys_ctrl_ended(self, sim_time, system, control_input, environment_input)
 
         time_slot = (sim_time - self.simulator.start_time) / float(self.simulator.step_time)
         time_slot = int(math.floor(time_slot)) + 1
         total_time_slot = (self.simulator.stop_time - self.simulator.start_time) / float(self.simulator.step_time)
         total_time_slot = int(math.floor(total_time_slot)) + 1
 
+        datum = self.metrics_data[-1]
+        elapsed_time = datum['elapsed_time']
+
         print_prefix = '{}: '.format(self.debug_prefix) if self.debug_prefix else ''
         print('{}{}/{} - {}s'.format(print_prefix, time_slot, total_time_slot, elapsed_time))
-
-        valid = util.is_solution_valid(system, control_input, environment_input)
-        datum = {'time': sim_time, 'opt': opt_name, 'elapsed_time': elapsed_time, 'valid': valid}
-        for func in self.metrics_func:
-            key = func.__name__
-            value = func(system, control_input, environment_input)
-            datum[key] = value
-        self.metrics_data.append(datum)
         print(datum)
 
-        place_datum = []
-        alloc_datum = []
-        ld_datum = []
-        for app in system.apps:
-            for dst_node in system.nodes:
-                value = control_input.get_app_placement(app.id, dst_node.id)
-                item = {'time': sim_time, 'app': app.id, 'node': dst_node.id, 'place': value}
-                place_datum.append(item)
-
-                item = {'time': sim_time, 'app': app.id, 'node': dst_node.id}
-                for resource in system.resources:
-                    value = control_input.get_allocated_resource(app.id, dst_node.id, resource.name)
-                    item[resource.name] = value
-                alloc_datum.append(item)
-
-                for src_node in system.nodes:
-                    load = util.calc_load_before_distribution(app.id, src_node.id, system, environment_input)
-                    ld = control_input.get_load_distribution(app.id, src_node.id, dst_node.id)
-                    item = {'time': sim_time, 'app': app.id,
-                            'src_node': src_node.id, 'dst_node': dst_node.id, 'ld': ld, 'load': load}
-                    ld_datum.append(item)
-
-        self.control_data['place'] += place_datum
-        self.control_data['ld'] += ld_datum
-        self.control_data['alloc'] += alloc_datum
-
+        print(' ')
         for app in system.apps:
             places = [n.id for n in system.nodes if control_input.get_app_placement(app.id, n.id)]
             load = sum([util.calc_load_before_distribution(app.id, node.id, system, environment_input)
@@ -162,26 +113,6 @@ class ControlMonitor(Monitor):
             print(free_str)
 
         print("--")
-
-    def on_sim_ended(self, sim_time):
-        if self.output_path is None:
-            return
-
-        metrics_filename = os.path.join(self.output_path, 'metrics.json')
-        place_filename = os.path.join(self.output_path, 'placement.json')
-        alloc_filename = os.path.join(self.output_path, 'allocation.json')
-        ld_filename = os.path.join(self.output_path, 'load_distribution.json')
-
-        files_data = [
-            (metrics_filename, self.metrics_data),
-            (place_filename, self.control_data['place']),
-            (alloc_filename, self.control_data['alloc']),
-            (ld_filename, self.control_data['ld']),
-        ]
-
-        for (filename, data) in files_data:
-            with open(filename, 'w') as file:
-                json.dump(data, file, indent=2)
 
 
 def main():
@@ -275,8 +206,8 @@ def main():
     # LLC optimizer with different parameters
     # prediction_windows = [0, 1, 2]
     # prediction_windows = [0, 1]
-    prediction_windows = [1]
-    # prediction_windows = [0]
+    # prediction_windows = [1]
+    prediction_windows = [0]
     for window in prediction_windows:
         for llc_finder in llc_finders:
             opt = LLCOptimizer()
@@ -293,7 +224,6 @@ def main():
             env_predictor = DefaultEnvironmentPredictor()
             env_predictor.net_predictor_class = AutoARIMAPredictor
             env_predictor.net_predictor_params = {'maxiter': 2}
-            # env_predictor.net_predictor_class = ARIMAPredictor
             opt.environment_predictor = env_predictor
 
             opt_id = '{}_{}_w{}'.format(opt.__class__.__name__, llc_finder['key'], window)
@@ -326,7 +256,7 @@ def main():
             sim = Simulator(scenario=scenario)
             sim.set_time(stop=time_stop, start=time_start, step=time_step)
             sim.optimizer = opt
-            sim.monitor = ControlMonitor(metrics_func=metrics, output_path=output_path, debug_prefix=debug_prefix)
+            sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=output_path, debug_prefix=debug_prefix)
 
             # Run simulation
             perf_count = time.perf_counter()

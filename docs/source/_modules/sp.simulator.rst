@@ -1,16 +1,15 @@
 sp.simulator package
 ====================
 
+Subpackages
+-----------
+
+.. toctree::
+
+   sp.simulator.monitor
+
 Submodules
 ----------
-
-sp.simulator.monitor module
----------------------------
-
-.. automodule:: sp.simulator.monitor
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 sp.simulator.simulator module
 -----------------------------

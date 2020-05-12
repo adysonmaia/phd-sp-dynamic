@@ -3,11 +3,9 @@ from sp.core.heuristic.brkga import GAOperator, GAIndividual
 from sp.system_controller.model import OptSolution
 from sp.system_controller.util import make_solution_feasible
 from sp.system_controller.util import calc_response_time, calc_load_before_distribution
-from . import indiv_gen
 import numpy as np
 import math
 import copy
-import time
 
 
 DEFAULT_STALL_WINDOW = 30
@@ -21,10 +19,11 @@ class SOGAOperator(GAOperator):
 
     def __init__(self, objective, system, environment_input, use_heuristic=True, first_population=None):
         """Initialization
+
         Args:
             objective (function): objective function to be optimized
-            system (sp.core.model.System): system's state
-            environment_input (sp.core.mode.EnvironmentInput): environment input
+            system (sp.core.model.system.System): system's state
+            environment_input (sp.core.mode.environment_input.EnvironmentInput): environment input
             use_heuristic (bool): use heuristic algorithms to generate the first population
             first_population (list(GAIndividual)): list of individuals to be added in the first population
         """
@@ -49,6 +48,7 @@ class SOGAOperator(GAOperator):
     @property
     def nb_genes(self):
         """Number of genes of an individual's chromosome
+
         Returns:
             int: number of genes
         """
@@ -62,9 +62,12 @@ class SOGAOperator(GAOperator):
 
     def first_population(self):
         """Generate some specific individuals for the first population based on heuristic algorithms
+
         Returns:
             individuals (list(GAIndividual)): list of individuals
         """
+        from . import indiv_gen
+
         population = []
         if self.extended_first_population is not None:
             population += [indiv.clear_copy() for indiv in self.extended_first_population]
@@ -93,6 +96,7 @@ class SOGAOperator(GAOperator):
 
     def should_stop(self, population):
         """Verify whether genetic algorithm should stop or not
+
         Args:
            population (list(GAIndividual)): population of the current generation
         Returns:
@@ -101,7 +105,7 @@ class SOGAOperator(GAOperator):
         return self.should_stop_by_variance(population)
 
     def should_stop_by_variance(self, population):
-        """Verify whether genetic algorithm should stop or not
+        """Verify whether genetic algorithm should stop or not.
         It will stop if the best individuals' fitnesses do not change over generations
 
         Args:
@@ -124,6 +128,7 @@ class SOGAOperator(GAOperator):
 
     def evaluate(self, individual):
         """Evaluate an individual and obtain its fitness
+
         Args:
             individual (GAIndividual): individual
         Returns:
@@ -134,6 +139,7 @@ class SOGAOperator(GAOperator):
 
     def decode(self, individual):
         """Decode the individual's chromosome and obtain a valid solution for the optimization problem
+
         Args:
             individual (GAIndividual): individual
         Returns:
@@ -212,9 +218,10 @@ class SOGAOperator(GAOperator):
 
     def _alloc_resources(self, app, node, solution, load, increment=True):
         """Allocate resources for an application in a node based on current load distribution and application placement
+
         Args:
-            app (Application): application
-            node (Node): node
+            app (sp.core.model.application.Application): application
+            node (sp.core.model.node.Node): node
             solution (OptSolution): solution
             load (float): received load
             increment (bool): whether the passed load should be added to the current load in the solution
@@ -242,8 +249,9 @@ class SOGAOperator(GAOperator):
 
     def _check_capacity_constraint(self, node, solution):
         """Check if solution respects capacity constraint in a specific node
+
         Args:
-            node (Node):
+            node (sp.core.model.node.Node):
             solution (OptSolution): solution
         Returns:
             bool: constraint is satisfied or not
@@ -258,10 +266,11 @@ class SOGAOperator(GAOperator):
 
     def _calc_response_time(self, app, src_node, dst_node, solution):
         """Calculate response time of requests from src_node to dst_node
+
         Args:
-            app (Application): requested application
-            src_node (Node): source node
-            dst_node (Node): destination node
+            app (sp.core.model.application.Application): requested application
+            src_node (sp.core.model.node.Node): source node
+            dst_node (sp.core.model.node.Node): destination node
             solution (OptSolution): solution
         Returns:
             float: response time
