@@ -1,6 +1,6 @@
 from .node import Node
 from .link import Link
-from sp.core.util import json_util
+from sp.core.util import json_util, filter_util
 from sp.core.util.cached_property import cached_property
 
 
@@ -160,6 +160,31 @@ class Network:
         """
         self._links[link.nodes_id] = link
         self._clear_cache()
+
+    def filter(self, nodes_id=None, nodes_type=None):
+        """Create a network that only contains the specified nodes.
+        Only parameters that are not None are considered.
+
+        Args:
+            nodes_id (list): list of nodes' id that will be in the resulted network
+            nodes_type (list): list of nodes' type that will be in the resulted network
+        Returns:
+            Network: filtered network
+        """
+
+        filtered_net = None
+        if nodes_id is None and nodes_type is None:
+            filtered_net = self
+        else:
+            filtered_net = Network()
+            nodes = self._nodes
+            nodes = filter_util.filter_dict_by_key(nodes, nodes_id)
+            nodes = filter_util.filter_dict_by_value(nodes, nodes_type, "type")
+            filtered_net._nodes = nodes
+            # TODO: filter links
+            filtered_net._links = self._links
+
+        return filtered_net
 
     @staticmethod
     def from_json(json_data):

@@ -16,18 +16,28 @@ def main():
     It generates the simulation scenarios
     """
     # Scenarios parameters
+    # scenarios = [
+    #     {'nb_bs': 25, 'nb_apps': 10, 'nb_users': 10000},
+    #     {'nb_bs': 25, 'nb_apps': 20, 'nb_users': 10000},
+    #     {'nb_bs': 25, 'nb_apps': 30, 'nb_users': 10000},
+    #     {'nb_bs': 25, 'nb_apps': 40, 'nb_users': 10000},
+    #     {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 10000},
+    #
+    #     {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 1000},
+    #     {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 4000},
+    #     {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 7000},
+    # ]
+    # scenarios = [
+    #     {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 10000},
+    #     {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 10000},
+    #     {'nb_bs': 9, 'nb_apps': 15, 'nb_users': 10000},
+    #     {'nb_bs': 9, 'nb_apps': 20, 'nb_users': 10000},
+    # ]
     scenarios = [
         {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 1000},
-
-        # {'nb_bs': 25, 'nb_apps': 10, 'nb_users': 10000},
-        # {'nb_bs': 25, 'nb_apps': 20, 'nb_users': 10000},
-        # {'nb_bs': 25, 'nb_apps': 30, 'nb_users': 10000},
-        # {'nb_bs': 25, 'nb_apps': 40, 'nb_users': 10000},
-        # {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 10000},
-        #
-        # {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 1000},
-        # {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 4000},
-        # {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 7000},
+        {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 4000},
+        {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 7000},
+        {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 10000},
     ]
 
     # Simulation times
@@ -344,8 +354,8 @@ def gen_apps(nb_apps, net_data):
     # Generate applications
     json_data = {'apps': []}
     for index in range(nb_apps):
-        # app_type = selected_type[index]
-        app_type = 'URLLC'
+        app_type = selected_type[index]
+        # app_type = 'URLLC'
 
         deadline = random.choice(deadline_options[app_type])
         cpu_work = random.choice(cpu_work_options[app_type])

@@ -34,6 +34,7 @@ def main():
     # Scenarios parameters
     scenarios = [
         {'nb_apps': 10},
+        {'nb_apps': 5},
     ]
 
     # Simulation time

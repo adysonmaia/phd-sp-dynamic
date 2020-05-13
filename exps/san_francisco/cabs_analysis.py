@@ -51,13 +51,21 @@ def plot_count_forecasting(df):
     seasonal_frequency = len(count_df[start_time:stop_time])
     seasonal_model = pm.auto_arima(train_df,
                                    seasonal=True, m=seasonal_frequency, stepwise=True,
-                                   error_action='ignore', suppress_warnings=True, trace=True)
-    print(seasonal_model.summary())
+                                   error_action='ignore', suppress_warnings=True, trace=False)
+
+    # seasonal_model = pm.auto_arima(train_df, seasonal=True, m=seasonal_frequency,
+    #                                maxiter=2, max_p=3, max_q=3,
+    #                                stepwise=False, random=True, n_fits=2,
+    #                                suppress_warnings=True, error_action='ignore')
+
+    # print(seasonal_model.summary())
+    print(seasonal_model.get_params())
     seasonal_forecast = seasonal_model.predict(n_periods=len(valid_df))
     seasonal_forecast_df = pd.DataFrame(seasonal_forecast, index=valid_df.index, columns=['cab'])
 
-    model = pm.auto_arima(train_df, error_action='ignore', suppress_warnings=True, trace=True)
-    print(model.summary())
+    model = pm.auto_arima(train_df, error_action='ignore', suppress_warnings=True, trace=False)
+    # print(model.summary())
+    print(model.get_params())
     forecast = model.predict(n_periods=len(valid_df))
     forecast_df = pd.DataFrame(forecast, index=valid_df.index, columns=['cab'])
 
@@ -142,9 +150,8 @@ def main():
     for (key, value) in iteritems(bbox):
         df = df[df[key].between(*value)]
 
-
-    plot_count(df)
-    # plot_count_forecasting(df)
+    # plot_count(df)
+    plot_count_forecasting(df)
     # plot_on_map(df)
 
 

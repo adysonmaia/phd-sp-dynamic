@@ -12,6 +12,14 @@ sp.core.util.cached\_property module
    :undoc-members:
    :show-inheritance:
 
+sp.core.util.filter\_util module
+--------------------------------
+
+.. automodule:: sp.core.util.filter_util
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 sp.core.util.forecasting\_metrics module
 ----------------------------------------
 

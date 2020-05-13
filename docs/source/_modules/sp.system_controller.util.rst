@@ -44,6 +44,14 @@ sp.system\_controller.util.make module
    :undoc-members:
    :show-inheritance:
 
+sp.system\_controller.util.metric module
+----------------------------------------
+
+.. automodule:: sp.system_controller.util.metric
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 
 Module contents
 ---------------

@@ -2,10 +2,11 @@ from .resource import Resource
 from .network import Network
 from .application import Application
 from .user import User
-from sp.core.util import json_util
+from sp.core.util import json_util, filter_util
 from sp.core.util.cached_property import cached_property
 from sp.core.estimator import load as load_estimator
 from collections import defaultdict
+import copy
 
 
 class Scenario:
@@ -186,6 +187,31 @@ class Scenario:
             estimator (sp.core.estimator.load.LoadEstimator): load estimator
         """
         self._load_estimators[app_id][node_id] = estimator
+
+    def filter(self, apps_id=None, nodes_id=None, users_id=None, apps_type=None, nodes_type=None):
+        """Create a scenario that only contains the specified applications, nodes, and users.
+         Only parameters that are not None are considered.
+
+        Args:
+            apps_id (list): list of applications' id
+            nodes_id (list): list of nodes' id
+            users_id (list): list of users' id
+            apps_type (list): list of applications' type
+            nodes_type (list): list of nodes' type
+        Returns:
+            Scenario: filtered scenario
+        """
+        filtered_scenario = copy.copy(self)
+        apps = self._apps
+        apps = filter_util.filter_dict_by_key(apps, apps_id)
+        apps = filter_util.filter_dict_by_value(apps, apps_type, "type")
+        filtered_scenario._apps = apps
+        filtered_scenario._users = filter_util.filter_dict_by_key(self._users, users_id)
+        if self._network is not None:
+            filtered_scenario._network = self._network.filter(nodes_id, nodes_type)
+
+        filtered_scenario._clear_cache()
+        return filtered_scenario
 
     @staticmethod
     def from_json(json_data):

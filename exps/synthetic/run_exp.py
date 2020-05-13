@@ -10,43 +10,6 @@ import json
 import math
 import os
 import time
-import logging
-logging.basicConfig(level=logging.DEBUG)
-
-
-def get_app_deadline_violation(app, system, control_input, environment_input):
-    violation = 0.0
-    for dst_node in system.nodes:
-        if not control_input.get_app_placement(app.id, dst_node.id):
-            continue
-
-        for src_node in system.nodes:
-            load = util.calc_load_after_distribution(app.id, src_node.id, dst_node.id,
-                                                     system, control_input, environment_input)
-            if load > 0.0:
-                rt = util.calc_response_time(app.id, src_node.id, dst_node.id,
-                                             system, control_input, environment_input)
-                if rt > app.deadline:
-                    violation += rt - app.deadline
-
-                    # if app.type == 'EMBB':
-                    #     ld = control_input.get_load_distribution(app.id, src_node.id, dst_node.id)
-                    #     net_delay = util.calc_network_delay(app.id, src_node.id, dst_node.id,
-                    #                                         system, control_input, environment_input)
-                    #     proc_delay = util.calc_processing_delay(app.id, dst_node.id,
-                    #                                             system, control_input, environment_input)
-                    #     init_delay = util.calc_initialization_delay(app.id, dst_node.id,
-                    #                                                 system, control_input, environment_input)
-                    #     print('app {:3d}, src {:3d}, dst {:3d}, '
-                    #           'load {:9.3f}, ld {:6.3f}, '
-                    #           'net {:6.3f}, proc {:6.3f}, init {:6.3f}, '
-                    #           'rt {:6.3f}, deadline {:6.3f}'.format(
-                    #         app.id, src_node.id, dst_node.id,
-                    #         load, ld,
-                    #         net_delay, proc_delay, init_delay,
-                    #         rt, app.deadline
-                    #     ))
-    return violation
 
 
 class ExpRunMonitor(OptimizerMonitor):
@@ -84,7 +47,7 @@ class ExpRunMonitor(OptimizerMonitor):
         elapsed_time = datum['elapsed_time']
 
         print_prefix = '{}: '.format(self.debug_prefix) if self.debug_prefix else ''
-        print('{}{}/{} - {}s'.format(print_prefix, time_slot, total_time_slot, elapsed_time))
+        print('{}{}/{} - {:9.3f}s'.format(print_prefix, time_slot, total_time_slot, elapsed_time))
         print(datum)
 
         print(' ')
@@ -92,7 +55,9 @@ class ExpRunMonitor(OptimizerMonitor):
             places = [n.id for n in system.nodes if control_input.get_app_placement(app.id, n.id)]
             load = sum([util.calc_load_before_distribution(app.id, node.id, system, environment_input)
                         for node in system.nodes])
-            deadline_violation = get_app_deadline_violation(app, system, control_input, environment_input)
+            deadline_violation = util.filter_metric(metric.deadline.overall_deadline_violation,
+                                                    system, control_input, environment_input,
+                                                    apps_id=app.id)
             print('app {:2d} {:>5}, deadline {:6.1f}ms, max instances {:2d}, load {:10.3f}, '
                   'places {:2d}: {}, deadline violation {}s'.format(
                 app.id, app.type, 1000 * app.deadline, app.max_instances, load,
@@ -156,7 +121,6 @@ def main():
     #
     dominance_func = util.preferred_dominates
     pool_size = 4
-    # pool_size = 8
     # pool_size = 0
     timeout = 3 * 60  # 3 min
 
@@ -166,13 +130,13 @@ def main():
     opt = CloudOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # Single-Objective Heuristic optimizer config
     opt = SOHeuristicOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # Single-Objective GA optimizer config
     opt = SOGAOptimizer()
@@ -190,7 +154,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = format(opt.__class__.__name__)
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # LLC (control input and plan) finders versions
     llc_finders = [
@@ -200,14 +164,26 @@ def main():
             'input_params': {'timeout': timeout},
             'plan': None
         },
-        # {'input': input_finder.SGAInputFinder, 'plan': None, 'key': 'sga'},
+        {
+            'key': 'sga',
+            'input': input_finder.SGAInputFinder,
+            'input_params': {'timeout': timeout},
+            'plan': None
+        },
+        {
+            'key': 'mga',
+            'input': input_finder.MGAInputFinder,
+            'input_params': {'timeout': timeout},
+            'plan': plan_finder.GAPlanFinder,
+            'plan_params': {'timeout': timeout},
+        },
     ]
 
     # LLC optimizer with different parameters
-    # prediction_windows = [0, 1, 2]
+    prediction_windows = [0, 1, 2]
     # prediction_windows = [0, 1]
     # prediction_windows = [1]
-    prediction_windows = [0]
+    # prediction_windows = [0]
     for window in prediction_windows:
         for llc_finder in llc_finders:
             opt = LLCOptimizer()
@@ -223,7 +199,8 @@ def main():
             # Set environment forecasting
             env_predictor = DefaultEnvironmentPredictor()
             env_predictor.net_predictor_class = AutoARIMAPredictor
-            env_predictor.net_predictor_params = {'maxiter': 2}
+            env_predictor.net_predictor_params = {'maxiter': 2, 'max_p': 3, 'max_q': 3,
+                                                  'stepwise': False, 'random': True, 'n_fits': 2}
             opt.environment_predictor = env_predictor
 
             opt_id = '{}_{}_w{}'.format(opt.__class__.__name__, llc_finder['key'], window)

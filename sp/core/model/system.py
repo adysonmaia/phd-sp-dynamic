@@ -1,5 +1,6 @@
 from collections import defaultdict
 import math
+import copy
 
 ERROR_TOLERANCE = 0.01
 
@@ -282,3 +283,23 @@ class System:
             float: queue's size
         """
         return self.app_queue_size[app_id][node_id]
+
+    def filter(self, apps_id=None, nodes_id=None, users_id=None, apps_type=None, nodes_type=None):
+        """Create a system that only contains the specified applications, nodes, and users.
+        Only parameters that are not None are considered.
+
+        Args:
+            apps_id (list): list of applications' id
+            nodes_id (list): list of nodes' id
+            users_id (list): list of users' id
+            apps_type (list): list of applications' type
+            nodes_type (list): list of nodes' type
+        Returns:
+            System: filtered system
+        """
+
+        filtered_system = copy.copy(self)
+        if self.scenario is not None:
+            filtered_system.scenario = self.scenario.filter(apps_id, nodes_id, users_id, apps_type, nodes_type)
+
+        return filtered_system
