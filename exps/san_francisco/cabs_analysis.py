@@ -50,7 +50,7 @@ def plot_count_forecasting(df):
     stop_time = SF_TZ.localize(datetime(2008, 5, 24, 23, 59, 59))
     seasonal_frequency = len(count_df[start_time:stop_time])
     seasonal_model = pm.auto_arima(train_df,
-                                   seasonal=True, m=seasonal_frequency, stepwise=True,
+                                   seasonal=True, m=seasonal_frequency, stepwise=True, maxiter=10,
                                    error_action='ignore', suppress_warnings=True, trace=False)
 
     # seasonal_model = pm.auto_arima(train_df, seasonal=True, m=seasonal_frequency,

@@ -38,7 +38,6 @@ class SSGAInputFinder(InputFinder):
                                            pool_size=pool_size)
 
     def solve(self):
-        env_input = self.environment_inputs[0]
         ga_operator = SSGAOperator(plan_finder=self.plan_finder,
                                    sequence_length=self.nb_slots,
                                    use_heuristic=True,

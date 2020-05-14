@@ -1,1 +1,1 @@
-from .environment import EnvironmentPredictor, DefaultEnvironmentPredictor
+from .environment import EnvironmentPredictor, DefaultEnvironmentPredictor, MultiProcessingEnvironmentPredictor

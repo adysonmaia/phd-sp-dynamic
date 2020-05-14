@@ -1,11 +1,11 @@
 from sp.core.model import Scenario
-from sp.core.predictor import AutoARIMAPredictor
+from sp.core.predictor import AutoARIMAPredictor, NaivePredictor
 from sp.simulator import Simulator
 from sp.simulator.monitor import OptimizerMonitor
 from sp.system_controller import metric, util
 from sp.system_controller.optimizer.llc import LLCOptimizer, plan_finder, input_finder
 from sp.system_controller.optimizer import SOGAOptimizer, MOGAOptimizer, CloudOptimizer, SOHeuristicOptimizer
-from sp.system_controller.predictor import DefaultEnvironmentPredictor
+from sp.system_controller.predictor import MultiProcessingEnvironmentPredictor
 from datetime import datetime
 from pytz import timezone
 import json
@@ -54,7 +54,7 @@ class ExpRunMonitor(OptimizerMonitor):
 
         tz_time = datetime.fromtimestamp(sim_time, tz=UTC_TZ).astimezone(SF_TZ)
         print_prefix = '{}: '.format(self.debug_prefix) if self.debug_prefix else ''
-        print('{}{}/{} - {} - {}s'.format(print_prefix, time_slot, total_time_slot, tz_time, elapsed_time))
+        print('{}{}/{} - {} - {:9.3f}s'.format(print_prefix, time_slot, total_time_slot, tz_time, elapsed_time))
         print(datum)
 
         print(' ')
@@ -129,8 +129,8 @@ def main():
 
     #
     dominance_func = util.preferred_dominates
-    # pool_size = 12
-    pool_size = 4
+    pool_size = 12
+    # pool_size = 4
     # pool_size = 8
     # pool_size = 0
     timeout = 3 * 60  # 3 min
@@ -181,18 +181,19 @@ def main():
             'input_params': {'timeout': timeout},
             'plan': None
         },
-        {
-            'key': 'mga',
-            'input': input_finder.MGAInputFinder,
-            'input_params': {'timeout': timeout},
-            'plan': plan_finder.GAPlanFinder,
-            'plan_params': {'timeout': timeout},
-        },
+        # {
+        #     'key': 'mga',
+        #     'input': input_finder.MGAInputFinder,
+        #     'input_params': {'timeout': timeout},
+        #     'plan': plan_finder.GAPlanFinder,
+        #     'plan_params': {'timeout': timeout},
+        # },
     ]
 
     # LLC optimizer with different parameters
     prediction_windows = [0, 1, 2]
     # prediction_windows = [0]
+    # prediction_windows = [1]
     for window in prediction_windows:
         for llc_finder in llc_finders:
             opt = LLCOptimizer()
@@ -207,11 +208,12 @@ def main():
 
             # Set environment forecasting
             seasonal_period = int(round(1 * 24 * 60 * 60 / float(time_step)))  # Seasonal of 1 day
-            env_predictor = DefaultEnvironmentPredictor()
-            env_predictor.net_predictor_class = AutoARIMAPredictor
-            env_predictor.net_predictor_params = {'maxiter': 2, 'max_p': 3, 'max_q': 3,
-                                                  'stepwise': False, 'random': True, 'n_fits': 2,
-                                                  'seasonal': True, 'm': seasonal_period}
+            env_predictor = MultiProcessingEnvironmentPredictor()
+            env_predictor.pool_size = pool_size
+            env_predictor.load_predictor_class = AutoARIMAPredictor
+            env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': True, 'maxiter': 10,
+                                                   'seasonal': True, 'm': seasonal_period}
+            env_predictor.net_delay_predictor_class = NaivePredictor
             opt.environment_predictor = env_predictor
 
             opt_id = '{}_{}_w{}'.format(opt.__class__.__name__, llc_finder['key'], window)

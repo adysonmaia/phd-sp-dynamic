@@ -311,8 +311,8 @@ def gen_apps(nb_apps, net_data):
     }
 
     # Maximum number of instances running at the same time-slot
-    # max_instance_range = list(range(1, len(net_data['nodes']) + 1))
-    max_instance_range = [len(net_data['nodes'])]
+    max_instance_range = list(range(1, len(net_data['nodes']) + 1))
+    # max_instance_range = [len(net_data['nodes'])]
     max_instance_options = {
         'URLLC': max_instance_range,
         'MMTC': max_instance_range,

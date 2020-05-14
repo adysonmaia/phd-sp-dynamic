@@ -114,6 +114,6 @@ class OptimizerMonitor(Monitor):
             (ld_filename, self.control_data['ld']),
         ]
 
-        for (filename, data) in files_data:
-            with open(filename, 'w') as file:
-                json.dump(data, file, indent=2)
+        # for (filename, data) in files_data:
+        #     with open(filename, 'w') as file:
+        #         json.dump(data, file, indent=2)

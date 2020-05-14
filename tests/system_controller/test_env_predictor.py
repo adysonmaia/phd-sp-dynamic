@@ -66,7 +66,7 @@ class EnvPredictorTestCase(unittest.TestCase):
         for version in versions:
             predictor = DefaultEnvironmentPredictor()
             predictor.load_predictor_class = version
-            predictor.net_predictor_class = version
+            predictor.net_delay_predictor_class = version
 
             self.env_ctl.init_params()
             time_start = 0

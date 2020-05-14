@@ -1,11 +1,11 @@
 from sp.core.model import Scenario
-from sp.core.predictor import AutoARIMAPredictor
+from sp.core.predictor import AutoARIMAPredictor, NaivePredictor
 from sp.simulator import Simulator
 from sp.simulator.monitor import OptimizerMonitor
 from sp.system_controller import metric, util
 from sp.system_controller.optimizer.llc import LLCOptimizer, plan_finder, input_finder
 from sp.system_controller.optimizer import SOGAOptimizer, MOGAOptimizer, CloudOptimizer, SOHeuristicOptimizer
-from sp.system_controller.predictor import DefaultEnvironmentPredictor
+from sp.system_controller.predictor import MultiProcessingEnvironmentPredictor
 import json
 import math
 import os
@@ -170,13 +170,13 @@ def main():
             'input_params': {'timeout': timeout},
             'plan': None
         },
-        {
-            'key': 'mga',
-            'input': input_finder.MGAInputFinder,
-            'input_params': {'timeout': timeout},
-            'plan': plan_finder.GAPlanFinder,
-            'plan_params': {'timeout': timeout},
-        },
+        # {
+        #     'key': 'mga',
+        #     'input': input_finder.MGAInputFinder,
+        #     'input_params': {'timeout': timeout},
+        #     'plan': plan_finder.GAPlanFinder,
+        #     'plan_params': {'timeout': timeout},
+        # },
     ]
 
     # LLC optimizer with different parameters
@@ -197,10 +197,11 @@ def main():
             opt.plan_finder_params = llc_finder['plan_params'] if 'plan_params' in llc_finder else None
 
             # Set environment forecasting
-            env_predictor = DefaultEnvironmentPredictor()
-            env_predictor.net_predictor_class = AutoARIMAPredictor
-            env_predictor.net_predictor_params = {'maxiter': 2, 'max_p': 3, 'max_q': 3,
-                                                  'stepwise': False, 'random': True, 'n_fits': 2}
+            env_predictor = MultiProcessingEnvironmentPredictor()
+            env_predictor.pool_size = pool_size
+            env_predictor.load_predictor_class = AutoARIMAPredictor
+            env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': True, 'maxiter': 10}
+            env_predictor.net_delay_predictor_class = NaivePredictor
             opt.environment_predictor = env_predictor
 
             opt_id = '{}_{}_w{}'.format(opt.__class__.__name__, llc_finder['key'], window)
