@@ -8,18 +8,20 @@ class MOGAOperator(SOGAOperator):
     """Genetic Operator for MOGA optimizer
     """
 
-    def __init__(self, **soga_operator_params):
+    def __init__(self, *args, **kwargs):
         """Initialization
+
         Args:
-            **soga_operator_params: initialization parameters for
-                :py:class:`sp.system_controller.optimizer.static.soga.SOGAOperator` algorithm
+            *args: args
+            **kwargs: kwargs
         """
-        SOGAOperator.__init__(self, **soga_operator_params)
+        SOGAOperator.__init__(self, *args, **kwargs)
         if not isinstance(self.objective, list):
             self.objective = [self.objective]
 
     def should_stop(self, population):
         """Verify whether genetic algorithm should stop or not
+
         Args:
            population (list(GAIndividual)): population of the current generation
         Returns:
@@ -29,6 +31,7 @@ class MOGAOperator(SOGAOperator):
 
     def evaluate(self, individual):
         """Evaluate an individual and obtain its fitness
+
         Args:
             individual (GAIndividual): individual
         Returns:
@@ -39,7 +42,8 @@ class MOGAOperator(SOGAOperator):
 
 
 def preferred_dominates(fitness_1, fitness_2, dominance_tolerance=DEFAULT_DOMINANCE_TOLERANCE):
-    """ Preferred dominance operator
+    """Preferred dominance operator
+
     Args:
         fitness_1 (list): fitness of the first individual
         fitness_2 (list): fitness of the second individual

@@ -17,21 +17,26 @@ class AutoARIMAPredictor(Predictor):
     It automatically discovers the optimal order for an ARIMA model
 
     See Also: https://alkaline-ml.com/pmdarima/index.html
+
+    Attributes:
+        max_data_size (int): maximum data size
+        predict_params (dict): parameters of predict method.
+            See Also: https://alkaline-ml.com/pmdarima/modules/generated/pmdarima.arima.ARIMA.html#pmdarima.arima.ARIMA.predict
+        init_params (dict): parameters of :py:func:`pm.auto_arima` function.
+            See Also: https://alkaline-ml.com/pmdarima/modules/generated/pmdarima.arima.auto_arima.html#pmdarima.arima.auto_arima
     """
 
-    def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE, predict_params=None, **kwargs):
+    def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE, predict_params=None, **init_params):
         """
 
         Args:
             max_data_size (int): maximum data size
             predict_params (dict): parameters of predict method.
-                See Also: https://alkaline-ml.com/pmdarima/modules/generated/pmdarima.arima.ARIMA.html#pmdarima.arima.ARIMA.predict
-            **kwargs: parameters of :py:func:`pm.auto_arima` function.
-                See Also: https://alkaline-ml.com/pmdarima/modules/generated/pmdarima.arima.auto_arima.html#pmdarima.arima.auto_arima
+            **init_params: parameters of :py:func:`pm.auto_arima` function.
         """
         Predictor.__init__(self)
         self.max_data_size = max_data_size
-        self.init_params = kwargs
+        self.init_params = init_params
         self.predict_params = predict_params
 
         self._data = []

@@ -5,8 +5,13 @@ from sp.system_controller.optimizer.moga import MOGAOperator
 
 
 class SGAInputFinder(InputFinder):
-    """GA that generates sequences of control inputs
+    """Sequence of control inputs GA Input Finder
+
+    It is a genetic algorithm that generates sequences of control inputs.
     A sequence can be composed of different control inputs
+
+    Attributes:
+        ga_params (dict): initialization parameters of :py:class:`~sp.core.heuristic.nsgaii.NSGAII` class
     """
 
     def __init__(self,
@@ -19,6 +24,8 @@ class SGAInputFinder(InputFinder):
                  pool_size,
                  last_inputs,
                  **ga_params):
+        """Initialization
+        """
 
         InputFinder.__init__(self,
                              system=system,
@@ -30,16 +37,21 @@ class SGAInputFinder(InputFinder):
                              pool_size=pool_size,
                              last_inputs=last_inputs)
         self.ga_params = ga_params
-        self.plan_finder = EmptyPlanFinder(system=system,
-                                           environment_inputs=environment_inputs,
-                                           objective=objective,
-                                           objective_aggregator=objective_aggregator,
-                                           system_estimator=system_estimator,
-                                           dominance_func=dominance_func,
-                                           pool_size=pool_size)
+        self._plan_finder = EmptyPlanFinder(system=system,
+                                            environment_inputs=environment_inputs,
+                                            objective=objective,
+                                            objective_aggregator=objective_aggregator,
+                                            system_estimator=system_estimator,
+                                            dominance_func=dominance_func,
+                                            pool_size=pool_size)
 
     def solve(self):
-        ga_operator = SGAOperator(plan_finder=self.plan_finder,
+        """Execute the heuristic
+
+        Returns:
+            list(GAIndividual): list of encoded control inputs
+        """
+        ga_operator = SGAOperator(plan_finder=self._plan_finder,
                                   sequence_length=self.nb_slots,
                                   use_heuristic=True,
                                   first_population=self.last_inputs)
@@ -54,15 +66,16 @@ class SGAInputFinder(InputFinder):
 
 class SGAOperator(GAOperator):
     """Sequence of Control Inputs GA Operator
+
+    Attributes:
+        plan_finder (PlanFinder): plan finder
+        sequence_length (int): sequence length
+        use_heuristic (bool): use heuristic algorithms to generate the first population
+        extended_first_population (list(GAIndividual)): list of individuals to be added in the first population
     """
 
     def __init__(self, plan_finder, sequence_length, use_heuristic=True, first_population=None):
         """Initialization
-        Args:
-            plan_finder (PlanFinder): plan finder
-            sequence_length (int): sequence length
-            use_heuristic (bool): use heuristic algorithms to generate the first population
-            first_population (list(GAIndividual)): list of individuals to be added in the first population
         """
         GAOperator.__init__(self)
         self.plan_finder = plan_finder
@@ -79,6 +92,7 @@ class SGAOperator(GAOperator):
     @property
     def nb_genes(self):
         """Number of genes in the chromosome
+
         Returns:
             int: number of genes in a individual's chromosome
         """
@@ -96,6 +110,7 @@ class SGAOperator(GAOperator):
 
     def first_population(self):
         """Generate some specific individuals for the first population based on heuristic algorithms
+
         Returns:
             individuals (list(GAIndividual)): list of individuals
         """
@@ -118,6 +133,7 @@ class SGAOperator(GAOperator):
 
     def evaluate(self, individual):
         """Evaluate an individual and obtain its fitness
+
         Args:
             individual (GAIndividual): individual
         Returns:
@@ -129,6 +145,7 @@ class SGAOperator(GAOperator):
 
     def get_control_input(self, individual, slot=0):
         """Get the control input in a specific time slot stored in an individual
+
         Args:
             individual (GAIndividual): individual representing a sequence of control inputs
             slot (int): time slot

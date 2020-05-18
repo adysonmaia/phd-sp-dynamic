@@ -1,17 +1,12 @@
 sp.system\_controller.predictor package
 =======================================
 
-Submodules
-----------
+Subpackages
+-----------
 
-sp.system\_controller.predictor.environment module
---------------------------------------------------
+.. toctree::
 
-.. automodule:: sp.system_controller.predictor.environment
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
+   sp.system_controller.predictor.environment
 
 Module contents
 ---------------

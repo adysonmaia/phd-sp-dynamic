@@ -1,20 +1,36 @@
 from sp.system_controller.util.calc import calc_load_before_distribution
-from sp.system_controller.util.alloc import alloc_demanded_resources
 
 
 ROUND_PRECISION = 5
 
 
 def make_solution_feasible(system, solution, environment_input):
+    """It tries to make a solution feasible
+
+    Args:
+        system (sp.core.model.system.System): system
+        solution (sp.system_controller.model.opt_solution.OptSolution): optimization solution
+        environment_input (sp.core.model.environment_input.EnvironmentInput): environment input
+    Returns:
+        sp.system_controller.model.opt_solution.OptSolution: feasible solution
+    """
     # solution = _round_values(system, solution, environment_input)
     solution = make_min_instances_constraint_feasible(system, solution, environment_input)
     solution = make_max_instances_constraint_feasible(system, solution, environment_input)
     solution = make_load_distribution_constraint_feasible(system, solution, environment_input)
-    # solution = alloc_demanded_resources(system, solution, environment_input)
     return solution
 
 
 def make_min_instances_constraint_feasible(system, solution, environment_input):
+    """Satisfy the constraint of minimum number of instances
+
+    Args:
+        system (sp.core.model.system.System): system
+        solution (sp.system_controller.model.opt_solution.OptSolution): optimization solution
+        environment_input (sp.core.model.environment_input.EnvironmentInput): environment input
+    Returns:
+        sp.system_controller.model.opt_solution.OptSolution: feasible solution
+    """
     cloud_node = system.cloud_node
     for app in system.apps:
         instances = [n for n in system.nodes if solution.app_placement[app.id][n.id]]
@@ -35,6 +51,15 @@ def make_min_instances_constraint_feasible(system, solution, environment_input):
 
 
 def make_max_instances_constraint_feasible(system, solution, environment_input):
+    """Satisfy the constraint of maximum number of instances
+
+    Args:
+        system (sp.core.model.system.System): system
+        solution (sp.system_controller.model.opt_solution.OptSolution): optimization solution
+        environment_input (sp.core.model.environment_input.EnvironmentInput): environment input
+    Returns:
+        sp.system_controller.model.opt_solution.OptSolution: feasible solution
+    """
     cloud_node = system.cloud_node
     for app in system.apps:
         instances = [n for n in system.nodes if solution.app_placement[app.id][n.id]]
@@ -71,6 +96,15 @@ def make_max_instances_constraint_feasible(system, solution, environment_input):
 
 
 def make_load_distribution_constraint_feasible(system, solution, environment_input):
+    """Satisfy the constraint of load distribution
+
+    Args:
+        system (sp.core.model.system.System): system
+        solution (sp.system_controller.model.opt_solution.OptSolution): optimization solution
+        environment_input (sp.core.model.environment_input.EnvironmentInput): environment input
+    Returns:
+        sp.system_controller.model.opt_solution.OptSolution: feasible solution
+    """
     cloud_node = system.cloud_node
     for app in system.apps:
         instances = [n for n in system.nodes if solution.app_placement[app.id][n.id]]
@@ -106,6 +140,16 @@ def make_load_distribution_constraint_feasible(system, solution, environment_inp
 
 
 def _round_values(system, solution, environment_input=None):
+    """Round values of a solution
+
+    Args:
+        system (sp.core.model.system.System): system
+        solution (sp.system_controller.model.opt_solution.OptSolution): optimization solution
+        environment_input (sp.core.model.environment_input.EnvironmentInput): environment input
+    Returns:
+        sp.system_controller.model.opt_solution.OptSolution: rounded solution
+    """
+
     for app in system.apps:
         for dst_node in system.nodes:
             value = solution.received_load[app.id][dst_node.id]

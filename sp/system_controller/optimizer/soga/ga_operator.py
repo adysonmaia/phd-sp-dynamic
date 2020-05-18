@@ -14,7 +14,20 @@ DEFAULT_LOAD_CHUNK_PERCENT = 0.1
 
 
 class SOGAOperator(GAOperator):
-    """ Genetic Operator for SOGA optimizer
+    """Genetic Operator for SOGA optimizer
+
+    Attributes:
+        objective (function): objective function to be optimized
+        system (sp.core.model.system.System): system's state
+        environment_input (sp.core.mode.environment_input.EnvironmentInput): environment input
+        use_heuristic (bool): use heuristic algorithms to generate the first population
+        extended_first_population (list(GAIndividual)): list of individuals to be added in the first population
+        requests (list): source of requests for all applications
+        load_chunk_percent (float): load chunk percentage (value between 0 and 1).
+            Loads as distributed in chunks where its size is defined by this attribute
+        stall_window (int): stall window stopping criteria. That is, the algorithm stops if the best fitness value
+            over stall generations is less than or equal to this attribute
+        stall_threshold (float): stall threshold used in the stopping criteria
     """
 
     def __init__(self, objective, system, environment_input, use_heuristic=True, first_population=None):

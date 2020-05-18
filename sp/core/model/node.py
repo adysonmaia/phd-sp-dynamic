@@ -21,7 +21,7 @@ class Node:
             The dictionary's keys are the resource names and the values are floats
         cost (dict): For each resource, it presents a function to calculate the cost for allocating a specified
             amount of resources. The dictionary's keys are the resource names and the values are
-            estimator :py:class:`sp.core.estimator.estimator.Estimator` objects.
+            estimator :py:class:`~sp.core.estimator.estimator.Estimator` objects.
             Use :py:meth:`sp.core.estimator.estimator.Estimator.calc` to obtain the cost. E.g.:
 
             .. code-block:: python
@@ -110,10 +110,10 @@ class Node:
 def from_json(json_data):
     """Create a Node object from a json data.
 
-    It loads the power consumption as a linear function using :py:class:`sp.core.estimator.power.LinearPowerEstimator`
+    It loads the power consumption as a linear function using :py:class:`~sp.core.estimator.power.LinearPowerEstimator`
 
     The node's position can be either on point in a cartesian plan
-    :py:class:`sp.core.geometry.point.cartesian.CartesianPoint`
+    :py:class:`~sp.core.geometry.point.cartesian.CartesianPoint`
 
     .. code-block:: python
 
@@ -123,7 +123,7 @@ def from_json(json_data):
         json_data = {'position': [x, y, z]} # 3D Plan
         json_data = {'position': {'x': x, 'y': y, 'z': z}}
 
-    or a GPS geo-location point :py:class:`sp.core.geometry.point.gps.GpsPoint`
+    or a GPS geo-location point :py:class:`~sp.core.geometry.point.gps.GpsPoint`
 
     .. code-block:: python
 

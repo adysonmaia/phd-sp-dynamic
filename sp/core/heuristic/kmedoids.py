@@ -5,6 +5,10 @@ class KMedoids:
     """K-Metoids Clustering Algorithm
 
     See Also: https://www.sciencedirect.com/science/article/abs/pii/S095741740800081X
+
+    Attributes:
+        max_iterations (int): maximum number of iterations
+        last_metoids (list): metoids of the last execution
     """
 
     def __init__(self, max_iterations=300):

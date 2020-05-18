@@ -28,6 +28,10 @@ class NSGAII(BRKGA):
     """Non-dominated Sorting Genetic Algorithm II
 
     See Also: https://doi.org/10.1109/4235.996017
+
+    Attributes:
+        dominance_func (function): dominance operator
+        stop_threshold (float): MGBM stopping threshold. See Also: https://doi.org/10.1016/j.ins.2016.07.025
     """
 
     def __init__(self,
@@ -38,8 +42,8 @@ class NSGAII(BRKGA):
 
         Args:
             dominance_func (function): dominance operator
-            stop_threshold (float): MGBM stopping threshold. See Also: https://doi.org/10.1016/j.ins.2016.07.025
-            **brkga_params: initialization parameters for :py:class:`sp.core.heuristic.brkga.BRKGA` algorithm
+            stop_threshold (float): MGBM stopping threshold.
+            **brkga_params: initialization parameters for :py:class:`~sp.core.heuristic.brkga.BRKGA` class
         """
         BRKGA.__init__(self, **brkga_params)
         self.stop_threshold = stop_threshold
@@ -76,6 +80,7 @@ class NSGAII(BRKGA):
     def _should_stop_by_mgbm(self):
         """Calculate the MGBM stopping criteria based on Mutual Domination Rate (MDR) indicator 
         and a simplified Kalman filter.
+
         See Also: https://doi.org/10.1016/j.ins.2016.07.025
         
         Returns:

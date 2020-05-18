@@ -21,7 +21,7 @@ class Application:
         availability (float): Probability that an application instance is working without failure, 0 <= value <= 1
         demand (dict): For each resource, it specifies a function to calculate the amount of resources required
             by an application instance with a certain workload. The dictionary's keys are the resource names
-            and the values are estimator :py:class:`sp.core.estimator.estimator.Estimator` objects.
+            and the values are estimator :py:class:`~sp.core.estimator.estimator.Estimator` objects.
 
             Use :py:meth:`sp.core.estimator.estimator.Estimator.calc` to obtain the required amount of resource.
             E.g.:

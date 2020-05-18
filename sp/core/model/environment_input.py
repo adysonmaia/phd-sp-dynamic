@@ -65,7 +65,7 @@ class EnvironmentInput:
         """Get all users after the attachment procedure
 
         Returns:
-            list(sp.core.model.User): list of users
+            list(sp.core.model.user.User): list of users
         """
         return self.attached_users.values()
 
@@ -91,7 +91,7 @@ class EnvironmentInput:
         """Create an empty environment input based on a system's state
 
         Args:
-            system (sp.core.model.System): system's state
+            system (sp.core.model.system.System): system's state
         Returns:
             EnvironmentInput: an empty environment input
         """

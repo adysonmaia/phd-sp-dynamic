@@ -66,6 +66,11 @@ class LinearEstimator(Estimator):
     """Intercept constant of a linear function :math:`f(x) = a*x + b`"""
 
     def __init__(self, coefficients=None):
+        """Initialization
+
+        Args:
+            coefficients (Union[list, tuple, dict]): coefficients
+        """
         Estimator.__init__(self)
         self._coefficients = [0.0, 0.0]
         if coefficients is not None:

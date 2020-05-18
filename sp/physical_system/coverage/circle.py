@@ -4,10 +4,36 @@ import math
 
 
 class CircleCoverage(Coverage):
+    """Circle Coverage
+
+    It attaches an user to the nearest (edge/base station) node.
+    The attachment only occurs if the distance between user and node is less than the specified radius
+
+    Attributes:
+        radius (float): maximum distance between an user and a node. In meters if the GPS coordination system is used
+    """
+
     def __init__(self, radius=1000.0):
+        """Initialization
+
+        Args:
+            radius (float): circle's radius
+        """
         self.radius = radius
 
-    def update(self, system, environment, time_tolerance=None, distance_tolerance=None):
+    def update(self, system, environment_input, time_tolerance=None, distance_tolerance=None):
+        """Update attachment of users in a system's state and environment input
+
+        Args:
+            system (sp.core.model.system.System): system's state
+            environment_input (sp.core.model.environment_input.EnvironmentInput): environment input
+            time_tolerance (float): time tolerance (in seconds)
+            distance_tolerance (float): distance tolerance. In meters if the GPS coordination system is used
+
+        Returns:
+            dict: attached users indexed by their ids
+        """
+
         time = system.time
         distance_tolerance = distance_tolerance if distance_tolerance is not None else 0.0
         attachments = {}

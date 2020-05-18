@@ -6,6 +6,12 @@ from sp.system_controller.optimizer.moga import MOGAOperator
 
 class SSGAInputFinder(InputFinder):
     """Simple Sequence GA Input Finder
+
+    It is a genetic algorithm that generates sequences of control inputs.
+    A sequence is composed of the same control input
+
+    Attributes:
+        ga_params (dict): initialization parameters of :py:class:`~sp.core.heuristic.nsgaii.NSGAII` class
     """
 
     def __init__(self,
@@ -18,6 +24,8 @@ class SSGAInputFinder(InputFinder):
                  pool_size,
                  last_inputs,
                  **ga_params):
+        """Initialization
+        """
 
         InputFinder.__init__(self,
                              system=system,
@@ -38,6 +46,12 @@ class SSGAInputFinder(InputFinder):
                                            pool_size=pool_size)
 
     def solve(self):
+        """Execute the heuristic
+
+        Returns:
+            list(GAIndividual): list of encoded control inputs
+        """
+
         ga_operator = SSGAOperator(plan_finder=self.plan_finder,
                                    sequence_length=self.nb_slots,
                                    use_heuristic=True,
@@ -52,10 +66,15 @@ class SSGAInputFinder(InputFinder):
 
 class SSGAOperator(MOGAOperator):
     """Simple Sequence GA Operator
+
+    Attributes:
+        plan_finder (PlanFinder): plan finder
+        sequence_length (int): sequence length
     """
 
     def __init__(self, plan_finder, sequence_length, use_heuristic=True, first_population=None):
         """Initialization
+
         Args:
             plan_finder (PlanFinder): plan finder
             sequence_length (int): sequence length
@@ -75,6 +94,7 @@ class SSGAOperator(MOGAOperator):
 
     def evaluate(self, individual):
         """Evaluate an individual and obtain its fitness
+
         Args:
             individual (GAIndividual): individual
         Returns:

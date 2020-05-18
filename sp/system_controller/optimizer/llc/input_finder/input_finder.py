@@ -1,7 +1,23 @@
+from sp.core.model import System, EnvironmentInput
+from sp.core.heuristic.brkga import GAIndividual
+from sp.system_controller.estimator import SystemEstimator
 from abc import ABC, abstractmethod
 
 
 class InputFinder(ABC):
+    """Control Input Finder Abstract Class
+
+    Attributes:
+        system (System): current system's state
+        environment_inputs (list(EnvironmentInput)): list of predicted environment inputs
+        objective (list(function)): list of optimization objective functions
+        objective_aggregator (function): objective aggregator function
+        system_estimator (SystemEstimator): system estimator
+        dominance_func (function): multi-objective dominance function
+        pool_size (int): multi-processing pool size
+        last_inputs (list(GAIndividual)): list of last control inputs
+    """
+
     def __init__(self,
                  system,
                  environment_inputs,
@@ -12,6 +28,8 @@ class InputFinder(ABC):
                  pool_size=0,
                  last_inputs=None,
                  **kwargs):
+        """Initialization
+        """
 
         self.system = system
         self.environment_inputs = environment_inputs
@@ -24,11 +42,23 @@ class InputFinder(ABC):
 
     @property
     def nb_slots(self):
+        """Get number of predicted time slots.
+
+        Returns:
+            int: number of time slots
+        """
         return len(self.environment_inputs)
 
     def clear_params(self):
+        """Clear parameters
+        """
         pass
 
     @abstractmethod
     def solve(self):
+        """Execute the heuristic
+
+        Returns:
+            list(GAIndividual): list of encoded control inputs
+        """
         pass

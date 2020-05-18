@@ -28,6 +28,14 @@ sp.core.predictor.exp\_smoothing module
    :undoc-members:
    :show-inheritance:
 
+sp.core.predictor.naive module
+------------------------------
+
+.. automodule:: sp.core.predictor.naive
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 sp.core.predictor.predictor module
 ----------------------------------
 
@@ -40,6 +48,14 @@ sp.core.predictor.sarima module
 -------------------------------
 
 .. automodule:: sp.core.predictor.sarima
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+sp.core.predictor.simple\_exp\_smoothing module
+-----------------------------------------------
+
+.. automodule:: sp.core.predictor.simple_exp_smoothing
    :members:
    :undoc-members:
    :show-inheritance:

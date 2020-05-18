@@ -1,17 +1,41 @@
 from sp.core.estimator import Estimator
-from sp.core.model import System
+from sp.core.model import System, ControlInput, EnvironmentInput
 from sp.system_controller.estimator.processing import DefaultProcessingEstimator
 from abc import abstractmethod
 
 
 class SystemEstimator(Estimator):
+    """System State Estimator Abstract Class
+    """
+
     @abstractmethod
     def calc(self, system, control_input, environment_input):
+        """Estimate the next state of a system based on control and environment inputs
+
+        Args:
+            system (System): current system's state
+            control_input (ControlInput): control input
+            environment_input (EnvironmentInput): environment input
+        Returns:
+            System: estimated next system's state
+        """
         pass
 
 
 class DefaultSystemEstimator(SystemEstimator):
+    """Default System State Estimator
+    """
+
     def calc(self, system, control_input, environment_input):
+        """Estimate the next state of a system based on control and environment inputs
+
+        Args:
+            system (System): current system's state
+            control_input (ControlInput): control input
+            environment_input (EnvironmentInput): environment input
+        Returns:
+            System: estimated next system's state
+        """
         next_system = System()
         next_system.time = system.time + system.sampling_time
         next_system.sampling_time = system.sampling_time

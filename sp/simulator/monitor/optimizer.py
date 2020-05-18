@@ -7,6 +7,10 @@ import json
 
 class OptimizerMonitor(Monitor):
     """Simulation Monitor for Optimizer Events
+
+    Attributes:
+        metrics_func (list): list of metric functions
+        output_path (str): path to save the logs
     """
 
     def __init__(self, metrics_func, output_path=None):
@@ -18,10 +22,11 @@ class OptimizerMonitor(Monitor):
         """
         Monitor.__init__(self)
         self.metrics_func = metrics_func  # metric functions
-        self.metrics_data = list()  # log of metric data
-        self.control_data = dict()  # log of control data
-        self.perf_count = 0  # last performance count
         self.output_path = output_path
+
+        self._metrics_data = list()  # log of metric data
+        self._control_data = dict()  # log of control data
+        self._perf_count = 0  # last performance count
 
     def on_sim_started(self, sim_time):
         """Event dispatched when the simulation started
@@ -29,9 +34,9 @@ class OptimizerMonitor(Monitor):
         Args:
             sim_time (float): current simulation time
         """
-        self.metrics_data.clear()
-        self.control_data = {'place': [], 'alloc': [], 'ld': []}
-        self.perf_count = 0
+        self._metrics_data.clear()
+        self._control_data = {'place': [], 'alloc': [], 'ld': []}
+        self._perf_count = 0
 
     def on_sys_ctrl_started(self, sim_time, system, environment_input):
         """Event dispatched when the system controller update started
@@ -41,7 +46,7 @@ class OptimizerMonitor(Monitor):
             system (sp.core.model.system.System): current system state
             environment_input (sp.core.model.environment_input.EnvironmentInput): current environment input
         """
-        self.perf_count = time.perf_counter()
+        self._perf_count = time.perf_counter()
 
     def on_sys_ctrl_ended(self, sim_time, system, control_input, environment_input):
         """Event dispatched when the system controller update ended
@@ -53,14 +58,14 @@ class OptimizerMonitor(Monitor):
             environment_input (sp.core.model.environment_input.EnvironmentInput): current environment input
         """
         opt_name = self.simulator.optimizer.__class__.__name__
-        elapsed_time = time.perf_counter() - self.perf_count
+        elapsed_time = time.perf_counter() - self._perf_count
         valid = util.is_solution_valid(system, control_input, environment_input)
         datum = {'time': sim_time, 'opt': opt_name, 'elapsed_time': elapsed_time, 'valid': valid}
         for func in self.metrics_func:
             key = func.__name__
             value = func(system, control_input, environment_input)
             datum[key] = value
-        self.metrics_data.append(datum)
+        self._metrics_data.append(datum)
 
         place_datum = []
         alloc_datum = []
@@ -84,9 +89,9 @@ class OptimizerMonitor(Monitor):
                             'src_node': src_node.id, 'dst_node': dst_node.id, 'ld': ld, 'load': load}
                     ld_datum.append(item)
 
-        self.control_data['place'] += place_datum
-        self.control_data['ld'] += ld_datum
-        self.control_data['alloc'] += alloc_datum
+        self._control_data['place'] += place_datum
+        self._control_data['ld'] += ld_datum
+        self._control_data['alloc'] += alloc_datum
 
     def on_sim_ended(self, sim_time):
         """Event dispatched when the simulation ended
@@ -108,10 +113,10 @@ class OptimizerMonitor(Monitor):
         ld_filename = os.path.join(self.output_path, 'load_distribution.json')
 
         files_data = [
-            (metrics_filename, self.metrics_data),
-            (place_filename, self.control_data['place']),
-            (alloc_filename, self.control_data['alloc']),
-            (ld_filename, self.control_data['ld']),
+            (metrics_filename, self._metrics_data),
+            (place_filename, self._control_data['place']),
+            (alloc_filename, self._control_data['alloc']),
+            (ld_filename, self._control_data['ld']),
         ]
 
         for (filename, data) in files_data:

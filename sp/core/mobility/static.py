@@ -7,7 +7,8 @@ class StaticMobility(Mobility):
     """
 
     def __init__(self, position=None):
-        """
+        """Initialization
+
         Args:
             position (point.Point): static position
         """

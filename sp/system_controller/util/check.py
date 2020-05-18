@@ -1,4 +1,5 @@
-from sp.core.model import Resource
+from sp.core.model import Resource, System, ControlInput, EnvironmentInput
+from sp.system_controller.model import OptSolution
 from sp.system_controller.util.calc import calc_load_before_distribution
 import math
 import logging
@@ -7,6 +8,15 @@ ERROR_TOLERANCE = 0.001
 
 
 def is_solution_valid(system, solution, environment_input):
+    """Check if a solution is valid
+
+    Args:
+        system (System): system
+        solution (Union[ControlInput, OptSolution]): optimization solution
+        environment_input (EnvironmentInput): environment input
+    Returns:
+        bool: valid or not
+    """
     for app in system.apps:
         nb_instances = sum([solution.app_placement[app.id][n.id] for n in system.nodes])
         if nb_instances > app.max_instances or nb_instances == 0:
@@ -52,11 +62,12 @@ def is_solution_valid(system, solution, environment_input):
                     src_load = calc_load_before_distribution(app.id, src_node.id, system, environment_input)
                     dst_load += float(ld * src_load)
 
-                received_load = solution.received_load[app.id][dst_node.id]
-                if abs(dst_load - received_load) > ERROR_TOLERANCE:
-                    logging.debug("Invalid received load of node %d for app %d: %f (valid %f)",
-                                  dst_node.id, app.id, received_load, dst_load)
-                    return False
+                if isinstance(solution, OptSolution):
+                    received_load = solution.received_load[app.id][dst_node.id]
+                    if abs(dst_load - received_load) > ERROR_TOLERANCE:
+                        logging.debug("Invalid received load of node %d for app %d: %f (valid %f)",
+                                      dst_node.id, app.id, received_load, dst_load)
+                        return False
 
                 if dst_load > 0.0 and not solution.app_placement[app.id][dst_node.id]:
                     logging.debug("Invalid received load, node %d doesn't host app %d: %f",

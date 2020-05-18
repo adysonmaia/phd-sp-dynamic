@@ -1,9 +1,21 @@
-from sp.core.model import Resource
+from sp.core.model import Resource, System, ControlInput, EnvironmentInput
 from sp.system_controller.model import OptSolution
 import math
 
 
 def calc_response_time(app_id, src_node_id, dst_node_id, system, control_input, environment_input):
+    """Calculate average request response time
+
+    Args:
+        app_id (int): id of the requested application
+        src_node_id (int): source node's id of the request
+        dst_node_id (int): id of the node where the request is processed
+        system (System): system
+        control_input (ControlInput): control input
+        environment_input (EnvironmentInput): environment input
+    Returns:
+        float: response time
+    """
     net_delay = calc_network_delay(app_id, src_node_id, dst_node_id, system, control_input, environment_input)
     proc_delay = calc_processing_delay(app_id, dst_node_id, system, control_input, environment_input)
     init_delay = calc_initialization_delay(app_id, dst_node_id, system, control_input, environment_input)
@@ -12,6 +24,17 @@ def calc_response_time(app_id, src_node_id, dst_node_id, system, control_input, 
 
 
 def calc_processing_delay(app_id, node_id, system, control_input, environment_input):
+    """Calculate the average request processing delay
+
+    Args:
+        app_id (int): id of the requested application
+        node_id (int): id of the node where the request is processed
+        system (System): system
+        control_input (ControlInput): control input
+        environment_input (EnvironmentInput): environment input
+    Returns:
+        float: processing delay
+    """
     from sp.system_controller.estimator.processing import DefaultProcessingEstimator
     proc_delay = math.inf
 
@@ -26,10 +49,33 @@ def calc_processing_delay(app_id, node_id, system, control_input, environment_in
 
 
 def calc_network_delay(app_id, src_node_id, dst_node_id, system, control_input, environment_input):
+    """Calculate average request network delay
+
+    Args:
+        app_id (int): id of the requested application
+        src_node_id (int): source node's id of the request
+        dst_node_id (int): id of the node where the request is processed
+        system (System): system
+        control_input (ControlInput): control input
+        environment_input (EnvironmentInput): environment input
+    Returns:
+        float: network delay
+    """
     return environment_input.get_net_delay(app_id, src_node_id, dst_node_id)
 
 
 def calc_initialization_delay(app_id, node_id, system, control_input, environment_input):
+    """Calculate initialization delay of application instance in a node
+
+    Args:
+        app_id (int): application's id
+        node_id (int): node's id
+        system (System): system
+        control_input (ControlInput): control input
+        environment_input (EnvironmentInput): environment input
+    Returns:
+        float: initialization delay
+    """
     curr_control = system.control_input
     next_control = control_input
     init = (curr_control is not None
@@ -39,6 +85,7 @@ def calc_initialization_delay(app_id, node_id, system, control_input, environmen
     if not init:
         return 0.0
 
+    # TODO: create a estimator to calculate this delay
     init_delay = 0.0
     t = math.ceil(system.sampling_time)
     mig_delay = math.ceil(calc_migration_delay(app_id, node_id, system, control_input, environment_input))
@@ -54,6 +101,18 @@ def calc_initialization_delay(app_id, node_id, system, control_input, environmen
 
 
 def calc_migration_delay(app_id, dst_node_id, system, control_input, environment_input):
+    """Calculate migration/replication delay of an application that will be hosted in a destination node
+
+    Args:
+        app_id (int): application's id
+        dst_node_id (int): destination node's id
+        system (System): system
+        control_input (ControlInput): control input
+        environment_input (EnvironmentInput): environment input
+    Returns:
+        float: migration delay
+    """
+
     curr_control = system.control_input
     if curr_control is None:
         return 0.0
@@ -90,18 +149,53 @@ def calc_migration_delay(app_id, dst_node_id, system, control_input, environment
 
 
 def calc_load_before_distribution(app_id, node_id, system, environment_input):
+    """Calculate load before distribution
+
+    Args:
+        app_id (int): application's id
+        node_id (int): id of the node that is source of load
+        system (System): system
+        environment_input (EnvironmentInput): environment input
+    Returns:
+        float: load
+    """
     load = environment_input.get_generated_load(app_id, node_id)
     load += system.get_app_queue_size(app_id, node_id) / float(system.sampling_time)
     return load
 
 
 def calc_load_after_distribution(app_id, src_node_id, dst_node_id, system, control_input, environment_input):
+    """Calculate load after the distribution.
+    It the amount of load from a source node distributed to a destination node
+
+    Args:
+        app_id (id): application's id
+        src_node_id (int): source node's id
+        dst_node_id (int): destination node's id
+        system (System): system
+        control_input (ControlInput): control input
+        environment_input (EnvironmentInput): environment input
+    Returns:
+        float: load
+    """
     ld = control_input.get_load_distribution(app_id, src_node_id, dst_node_id)
     load = calc_load_before_distribution(app_id, src_node_id, system, environment_input)
     return load * ld
 
 
 def calc_received_load(app_id, node_id, system, control_input, environment_input, use_cache=True):
+    """Calculate the amount of load received by a node for an application
+
+    Args:
+        app_id (int): application's id
+        node_id (int): node's id
+        system (System): system
+        control_input (ControlInput): control input
+        environment_input (EnvironmentInput): environment input
+        use_cache (bool): use cached calculation
+    Returns:
+        float: load
+    """
     load = 0.0
     if isinstance(control_input, OptSolution) and use_cache:
         load = control_input.get_received_load(app_id, node_id)

@@ -44,7 +44,7 @@ class ExpRunMonitor(OptimizerMonitor):
         """
         OptimizerMonitor.on_sys_ctrl_ended(self, sim_time, system, control_input, environment_input)
 
-        datum = self.metrics_data[-1]
+        datum = self._metrics_data[-1]
         elapsed_time = datum['elapsed_time']
 
         time_slot = (sim_time - self.simulator.start_time) / float(self.simulator.step_time)

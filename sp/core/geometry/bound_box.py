@@ -10,7 +10,7 @@ class BoundBox:
     Y_INDEX = CartesianPoint.Y_INDEX
     Z_INDEX = CartesianPoint.Z_INDEX
 
-    def __init__(self, *args):
+    def __init__(self, *points):
         """Initialization
 
         The bound box has two extreme points that can be passed as a list or each point as an argument
@@ -30,16 +30,16 @@ class BoundBox:
             bbox = BoundBox(top_left, bottom_right)
 
         Args:
-            *args: extreme points of the box
+            *points: extreme points of the box
         """
         self_points = []
         self._min_values = []
         self._max_values = []
 
-        if len(args) == 1:
-            self.points = args[1]
-        elif len(args) > 1:
-            self.points = args
+        if len(points) == 1:
+            self.points = points[1]
+        elif len(points) > 1:
+            self.points = points
 
     @property
     def points(self):

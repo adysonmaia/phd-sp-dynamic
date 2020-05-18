@@ -2,15 +2,42 @@ from sp.core.model import ControlInput
 
 
 class OptSolution(ControlInput):
+    """Optimization Solution Class Model
+
+    A solution is a control input with cached attributes
+
+    Attributes:
+        received_load (dict): cached received load
+    """
+
     def __init__(self):
+        """Initialization
+        """
         ControlInput.__init__(self)
         self.received_load = {}
 
     def get_received_load(self, app_id, node_id):
+        """Get received load for an application in a node
+
+        Args:
+            app_id (int): application's id
+            node_id (int): node's id
+
+        Returns:
+            float: load
+        """
         return self.received_load[app_id][node_id]
 
     @staticmethod
     def create_empty(system):
+        """Create a empty solution for a system's scenario
+
+        Args:
+            system (sp.core.model.system.System): system
+
+        Returns:
+            OptSolution: solution
+        """
         solution = OptSolution()
 
         for app in system.apps:

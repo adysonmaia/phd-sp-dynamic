@@ -19,24 +19,29 @@ class ARIMAPredictor(Predictor):
 
     * https://otexts.com/fpp2/arima.html
     * https://www.statsmodels.org/stable/generated/statsmodels.tsa.arima_model.ARIMA.html#statsmodels.tsa.arima_model.ARIMA
+
+    Attributes:
+        max_data_size (int): maximum data size
+        fit_params (dict): parameters of fit method.
+            See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.arima_model.ARIMA.fit.html#statsmodels.tsa.arima_model.ARIMA.fit
+        predict_params (dict): parameters of predict method.
+            See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.arima_model.ARIMAResults.predict.html#statsmodels.tsa.arima_model.ARIMAResults.predict
+        init_params (dict): initialization parameters of :py:class:`ARIMA` class.
     """
 
     def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE,
-                 fit_params=None, predict_params=None, **kwargs):
+                 fit_params=None, predict_params=None, **init_params):
         """Initialization
 
         Args:
             max_data_size (int): maximum data size
             fit_params (dict): parameters of fit method.
-                See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.arima_model.ARIMA.fit.html#statsmodels.tsa.arima_model.ARIMA.fit
             predict_params (dict): parameters of predict method.
-                See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.arima_model.ARIMAResults.predict.html#statsmodels.tsa.arima_model.ARIMAResults.predict
-            **kwargs: initialization parameters of :py:class:`ARIMA` class.
-                See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.arima_model.ARIMA.html#statsmodels.tsa.arima_model.ARIMA
+            **init_params: initialization parameters of :py:class:`ARIMA` class.
         """
         Predictor.__init__(self)
         self.max_data_size = max_data_size
-        self.init_params = kwargs
+        self.init_params = init_params
         self.fit_params = fit_params
         self.predict_params = predict_params
 

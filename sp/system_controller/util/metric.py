@@ -1,5 +1,5 @@
 def filter_metric(metric_func, system, control_input, environment_input, apps_id=None, nodes_id=None):
-    """Filter a metric for specified applications and nodes
+    """Filter a metric for the specified applications and nodes
 
     Args:
         metric_func (function): metric function

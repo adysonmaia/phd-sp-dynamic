@@ -18,23 +18,29 @@ class ExpSmoothingPredictor(Predictor):
 
     * https://www.statsmodels.org/stable/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.html#statsmodels.tsa.holtwinters.ExponentialSmoothing
     * https://otexts.com/fpp2/expsmooth.html
+
+    Attributes:
+        max_data_size (int): maximum data size
+        fit_params (dict): parameters of fit method.
+            See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.fit.html#statsmodels.tsa.holtwinters.ExponentialSmoothing.fit
+        predict_params (dict): parameters of predict method.
+            See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.holtwinters.HoltWintersResults.predict.html#statsmodels.tsa.holtwinters.HoltWintersResults.predict
+        init_params (dict): initialization parameters of :py:class:`ExponentialSmoothing` class.
+            See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.html#statsmodels.tsa.holtwinters.ExponentialSmoothing
     """
 
-    def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE, fit_params=None, predict_params=None, **kwargs):
+    def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE, fit_params=None, predict_params=None, **init_params):
         """Initialization
 
         Args:
             max_data_size (int): maximum data size
             fit_params (dict): parameters of fit method.
-                See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.fit.html#statsmodels.tsa.holtwinters.ExponentialSmoothing.fit
             predict_params (dict): parameters of predict method.
-                See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.holtwinters.HoltWintersResults.predict.html#statsmodels.tsa.holtwinters.HoltWintersResults.predict
-            **kwargs: initialization parameters of :py:class:`ExponentialSmoothing` class.
-                See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.holtwinters.ExponentialSmoothing.html#statsmodels.tsa.holtwinters.ExponentialSmoothing
+            **init_params: initialization parameters of :py:class:`ExponentialSmoothing` class.
         """
         Predictor.__init__(self)
         self.max_data_size = max_data_size
-        self.init_params = kwargs
+        self.init_params = init_params
         self.fit_params = fit_params
         self.predict_params = predict_params
 

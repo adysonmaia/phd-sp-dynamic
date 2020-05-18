@@ -20,23 +20,29 @@ class SARIMAPredictor(Predictor):
 
     * https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.sarimax.SARIMAX.html#statsmodels.tsa.statespace.sarimax.SARIMAX
     * https://otexts.com/fpp2/seasonal-arima.html
+
+    Attributes:
+        max_data_size (int): maximum data size
+        fit_params (dict): parameters of fit method.
+            See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.sarimax.SARIMAX.fit.html#statsmodels.tsa.statespace.sarimax.SARIMAX.fit
+        predict_params (dict): parameters of predict method.
+            See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.mlemodel.MLEResults.predict.html#statsmodels.tsa.statespace.mlemodel.MLEResults.predict
+        init_params (dict): initialization parameters of :py:class:`SARIMAX` class.
+            See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.sarimax.SARIMAX.html#statsmodels.tsa.statespace.sarimax.SARIMAX
     """
 
-    def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE, fit_params=None, predict_params=None, **kwargs):
+    def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE, fit_params=None, predict_params=None, **init_params):
         """Initialization
 
         Args:
             max_data_size (int): maximum data size
             fit_params (dict): parameters of fit method.
-                See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.sarimax.SARIMAX.fit.html#statsmodels.tsa.statespace.sarimax.SARIMAX.fit
             predict_params (dict): parameters of predict method.
-                See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.mlemodel.MLEResults.predict.html#statsmodels.tsa.statespace.mlemodel.MLEResults.predict
-            **kwargs: initialization parameters of :py:class:`SARIMAX` class.
-                See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.sarimax.SARIMAX.html#statsmodels.tsa.statespace.sarimax.SARIMAX
+            **init_params: initialization parameters of :py:class:`SARIMAX` class.
         """
         Predictor.__init__(self)
         self.max_data_size = max_data_size
-        self.init_params = kwargs
+        self.init_params = init_params
         self.fit_params = fit_params
         self.predict_params = predict_params
 

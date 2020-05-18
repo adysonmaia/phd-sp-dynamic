@@ -1,11 +1,15 @@
-from .plan_finder import PlanFinder
+from .plan_finder import PlanFinder, GAIndividual
 
 
 class EmptyPlanFinder(PlanFinder):
+    """Empty Plan Finder
+    """
+
     def solve(self, control_inputs):
-        """Find random plans
+        """Find no plans
+
         Args:
-            control_inputs (list(list)): list of control inputs
+            control_inputs (list(GAIndividual)): list of control inputs
         Returns:
             list(Plan): list of plans
         """

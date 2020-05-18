@@ -8,8 +8,8 @@ class Network:
     """Network Class Model
 
     It is store the network graph and its properties.
-    A network graph is composed of Nodes (:py:class:`sp.core.model.node.Node`)
-    and Links (:py:class:`sp.core.model.link.Link`).
+    A network graph is composed of Nodes (:py:class:`~sp.core.model.node.Node`)
+    and Links (:py:class:`~sp.core.model.link.Link`).
 
     This class follows an Edge Computing topology for mobile networks that usually have three parts:
 

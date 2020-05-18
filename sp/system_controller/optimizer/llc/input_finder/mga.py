@@ -1,5 +1,5 @@
 from .input_finder import InputFinder
-from sp.core.heuristic.nsgaii import NSGAII
+from sp.core.heuristic.nsgaii import NSGAII, GAIndividual
 from sp.system_controller.optimizer.moga import MOGAOperator
 from multiprocessing.dummy import Pool as ThreadPool
 import multiprocessing as mp
@@ -7,6 +7,9 @@ import multiprocessing as mp
 
 class MGAInputFinder(InputFinder):
     """Multi GAs Input Finder
+
+    Attributes:
+        ga_params (dict): initialization parameters of :py:class:`~sp.core.heuristic.nsgaii.NSGAII` class
     """
 
     def __init__(self,
@@ -19,6 +22,8 @@ class MGAInputFinder(InputFinder):
                  pool_size,
                  last_inputs,
                  **ga_params):
+        """Initialization
+        """
 
         InputFinder.__init__(self,
                              system=system,
@@ -32,6 +37,11 @@ class MGAInputFinder(InputFinder):
         self.ga_params = ga_params
 
     def solve(self):
+        """Execute the heuristic
+
+        Returns:
+            list(GAIndividual): list of encoded control inputs
+        """
         map_func = map
         pool_size = int(min(self.pool_size, self.nb_slots, mp.cpu_count()))
         pool = None
@@ -53,6 +63,14 @@ class MGAInputFinder(InputFinder):
         return population
 
     def _exec_ga(self, index):
+        """Execute a genetic algorithm for a specific time-slot
+
+        Args:
+            index (int): index of the time-slot
+        Returns:
+            list(GAIndividual): list of encoded control inputs
+        """
+
         env_input = self.environment_inputs[index]
         ga_operator = MOGAOperator(system=self.system,
                                    environment_input=env_input,

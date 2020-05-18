@@ -43,7 +43,7 @@ class ExpRunMonitor(OptimizerMonitor):
         total_time_slot = (self.simulator.stop_time - self.simulator.start_time) / float(self.simulator.step_time)
         total_time_slot = int(math.floor(total_time_slot)) + 1
 
-        datum = self.metrics_data[-1]
+        datum = self._metrics_data[-1]
         elapsed_time = datum['elapsed_time']
 
         print_prefix = '{}: '.format(self.debug_prefix) if self.debug_prefix else ''

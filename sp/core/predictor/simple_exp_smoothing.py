@@ -19,21 +19,25 @@ class SimpleExpSmoothingPredictor(Predictor):
     * https://www.statsmodels.org/stable/generated/statsmodels.tsa.holtwinters.SimpleExpSmoothing.html#statsmodels.tsa.holtwinters.SimpleExpSmoothing
     * https://otexts.com/fpp2/expsmooth.html
 
+    Attributes:
+        max_data_size (int): maximum data size
+        predict_params (dict): parameters of predict method.
+            See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.holtwinters.HoltWintersResults.predict.html#statsmodels.tsa.holtwinters.HoltWintersResults.predict
+        fit_params (dict): fit parameters of :py:class:`SimpleExpSmoothing` class.
+            See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.holtwinters.SimpleExpSmoothing.fit.html#statsmodels.tsa.holtwinters.SimpleExpSmoothing.fit
     """
 
-    def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE, predict_params=None, **kwargs):
+    def __init__(self, max_data_size=DEFAULT_MAX_DATA_SIZE, predict_params=None, **fit_params):
         """Initialization
 
         Args:
             max_data_size (int): maximum data size
             predict_params (dict): parameters of predict method.
-                See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.holtwinters.HoltWintersResults.predict.html#statsmodels.tsa.holtwinters.HoltWintersResults.predict
-            **kwargs: fit parameters of :py:class:`SimpleExpSmoothing` class.
-                See Also: https://www.statsmodels.org/stable/generated/statsmodels.tsa.holtwinters.SimpleExpSmoothing.fit.html#statsmodels.tsa.holtwinters.SimpleExpSmoothing.fit
+            **fit_params: fit parameters of :py:class:`SimpleExpSmoothing` class.
         """
         Predictor.__init__(self)
         self.max_data_size = max_data_size
-        self.fit_params = kwargs
+        self.fit_params = fit_params
         self.predict_params = predict_params
 
         self._data = []

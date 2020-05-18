@@ -33,6 +33,17 @@ class BRKGA:
     """ Biased Random Key Genetic Algorithm
 
     See Also: https://link.springer.com/article/10.1007/s10732-010-9143-1
+
+    Attributes:
+        operator (GAOperator): genetic operator
+        population_size (int): population size
+        nb_generations (int): maximum number of generations
+        elite_proportion (float): proportion of the number of elite individuals in the population, value in [0, 1]
+        mutant_proportion (float): proportion of the number of mutant individuals in the population, value in [0, 1]
+        elite_probability (float): probability of a elite gene to be selected during crossover
+        timeout (float): timeout in seconds to stop the execution of the genetic algorithm
+        pool_size (int): number of processes for parallelisms
+
     """
 
     def __init__(self,
@@ -44,17 +55,7 @@ class BRKGA:
                  elite_probability=None,
                  timeout=None,
                  pool_size=0):
-        """Initialize method
-
-        Args:
-            operator (GAOperator): genetic operator
-            population_size (int): population size
-            nb_generations (int): maximum number of generations
-            elite_proportion (float): proportion of the number of elite individuals in the population, value in [0, 1]
-            mutant_proportion (float): proportion of the number of mutant individuals in the population, value in [0, 1]
-            elite_probability (float): probability of a elite gene to be selected during crossover
-            timeout (float): timeout in seconds to stop the execution of the genetic algorithm
-            pool_size (int): number of processes for parallelisms
+        """Initialization
         """
 
         self.operator = operator
@@ -320,6 +321,10 @@ class BRKGA:
 
 class GAIndividual(UserList):
     """Individual of a genetic algorithm
+
+    Attributes:
+        fitness (Union[float, list, object]): individual's fitness
+        data (list): chromosome's data
     """
 
     def __init__(self, data=None):
