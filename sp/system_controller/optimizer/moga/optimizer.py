@@ -77,7 +77,7 @@ class MOGAOptimizer(Optimizer):
                                    system=system,
                                    environment_input=environment_input,
                                    use_heuristic=self.use_heuristic,
-                                   first_population=self._last_population)
+                                   extra_first_population=self._last_population)
         mo_ga = NSGAII(operator=ga_operator,
                        nb_generations=self.nb_generations,
                        population_size=self.population_size,

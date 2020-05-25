@@ -20,6 +20,14 @@ sp.system\_controller.optimizer.llc.input\_finder.mga module
    :undoc-members:
    :show-inheritance:
 
+sp.system\_controller.optimizer.llc.input\_finder.pipeline module
+-----------------------------------------------------------------
+
+.. automodule:: sp.system_controller.optimizer.llc.input_finder.pipeline
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 sp.system\_controller.optimizer.llc.input\_finder.sga module
 ------------------------------------------------------------
 

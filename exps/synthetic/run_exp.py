@@ -55,13 +55,17 @@ class ExpRunMonitor(OptimizerMonitor):
             places = [n.id for n in system.nodes if control_input.get_app_placement(app.id, n.id)]
             load = sum([util.calc_load_before_distribution(app.id, node.id, system, environment_input)
                         for node in system.nodes])
-            deadline_violation = util.filter_metric(metric.deadline.overall_deadline_violation,
-                                                    system, control_input, environment_input,
-                                                    apps_id=app.id)
+            overall_violation = util.filter_metric(metric.deadline.overall_deadline_violation,
+                                                   system, control_input, environment_input,
+                                                   apps_id=app.id)
+            max_violation = util.filter_metric(metric.deadline.max_deadline_violation,
+                                               system, control_input, environment_input,
+                                               apps_id=app.id)
             print('app {:2d} {:>5}, deadline {:6.1f}ms, max instances {:2d}, load {:10.3f}, '
-                  'places {:2d}: {}, deadline violation {}s'.format(
+                  'max violation {:9.6f}s, overall violation {:9.6f}s, '
+                  'places {:2d}: {}'.format(
                 app.id, app.type, 1000 * app.deadline, app.max_instances, load,
-                len(places), places, deadline_violation
+                overall_violation, max_violation, len(places), places
             ))
 
         print(' ')
@@ -96,27 +100,29 @@ def main():
 
     # Set objectives and metrics functions
     optimizers = []
-    metrics = [
-        metric.deadline.overall_deadline_violation,
-        metric.cost.overall_cost,
-        metric.migration.overall_migration_cost,
-
-        metric.deadline.max_deadline_violation,
-        metric.deadline.avg_deadline_violation,
-        metric.deadline.deadline_satisfaction,
-        metric.migration.overall_migration_cost,
-        metric.availability.avg_unavailability,
-        metric.response_time.overall_response_time,
-        metric.response_time.avg_response_time,
-        metric.response_time.max_response_time,
-        metric.power.overall_power_consumption,
-    ]
     multi_objective = [
         metric.deadline.overall_deadline_violation,
         metric.cost.overall_cost,
         metric.migration.overall_migration_cost,
     ]
     single_objective = multi_objective[0]
+    metrics = [
+        metric.deadline.overall_deadline_violation,
+        metric.deadline.max_deadline_violation,
+        metric.deadline.avg_deadline_violation,
+        metric.deadline.deadline_satisfaction,
+        metric.cost.overall_cost,
+        metric.cost.max_cost,
+        metric.cost.avg_cost,
+        metric.migration.overall_migration_cost,
+        metric.migration.max_migration_cost,
+        metric.migration.avg_migration_cost,
+        metric.response_time.overall_response_time,
+        metric.response_time.max_response_time,
+        metric.response_time.avg_response_time,
+        metric.availability.avg_unavailability,
+        metric.power.overall_power_consumption,
+    ]
 
     #
     dominance_func = util.preferred_dominates
@@ -130,13 +136,13 @@ def main():
     opt = CloudOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Single-Objective Heuristic optimizer config
     opt = SOHeuristicOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Single-Objective GA optimizer config
     opt = SOGAOptimizer()
@@ -154,7 +160,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = format(opt.__class__.__name__)
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # LLC (control input and plan) finders versions
     llc_finders = [
@@ -164,12 +170,12 @@ def main():
             'input_params': {'timeout': timeout},
             'plan': None
         },
-        {
-            'key': 'sga',
-            'input': input_finder.SGAInputFinder,
-            'input_params': {'timeout': timeout},
-            'plan': None
-        },
+        # {
+        #     'key': 'sga',
+        #     'input': input_finder.SGAInputFinder,
+        #     'input_params': {'timeout': timeout},
+        #     'plan': None
+        # },
         # {
         #     'key': 'mga',
         #     'input': input_finder.MGAInputFinder,
@@ -180,9 +186,9 @@ def main():
     ]
 
     # LLC optimizer with different parameters
-    prediction_windows = [0, 1, 2]
+    # prediction_windows = [0, 1, 2]
     # prediction_windows = [0, 1]
-    # prediction_windows = [1]
+    prediction_windows = [1]
     # prediction_windows = [0]
     for window in prediction_windows:
         for llc_finder in llc_finders:
@@ -235,6 +241,7 @@ def main():
             sim.set_time(stop=time_stop, start=time_start, step=time_step)
             sim.optimizer = opt
             sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=output_path, debug_prefix=debug_prefix)
+            # sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=None, debug_prefix=debug_prefix)
 
             # Run simulation
             perf_count = time.perf_counter()

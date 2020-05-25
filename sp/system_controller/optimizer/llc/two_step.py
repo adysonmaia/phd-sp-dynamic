@@ -30,7 +30,11 @@ _PF_PARAMS = {
 _CIF_PARAMS = {
     cif.MGAInputFinder: _GA_PARAMS,
     cif.SSGAInputFinder: _GA_PARAMS,
-    cif.SGAInputFinder: _GA_PARAMS
+    cif.SGAInputFinder: _GA_PARAMS,
+    cif.PipelineInputFinder: {
+        "input_finder_class": [cif.SSGAInputFinder, cif.SGAInputFinder],
+        "input_finder_params": _GA_PARAMS
+    }
 }
 
 
@@ -56,7 +60,7 @@ class TwoStep:
         input_finder_class (class): input finder class
         input_finder_params (dict): initialization parameters of the input finder class
         dominance_func (function): multi-objective dominance function
-        last_population (list): list of last control inputs
+        last_population (list): control inputs of last time-slot
         pool_size (int): multi-processing pool size
     """
 

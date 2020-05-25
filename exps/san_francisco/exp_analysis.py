@@ -66,9 +66,11 @@ def calc_stats(df, columns, group_by='time'):
     return pd.DataFrame(data=data, index=stats_df.index)
 
 
-def plot_metrics(scenario, optimizers, output_path, nb_runs):
+def plot_metrics(optimizers, output_path, nb_runs):
     metrics = [
-        {'id': 'overall_deadline_violation', 'label': 'deadline violation - s'},
+        {'id': 'overall_deadline_violation', 'label': 'overall deadline violation - s'},
+        {'id': 'max_deadline_violation', 'label': 'max. deadline violation - s'},
+        {'id': 'deadline_satisfaction', 'label': 'deadline satisfaction - %'},
         {'id': 'overall_cost', 'label': 'allocation cost'},
         {'id': 'overall_migration_cost', 'label': 'migration cost'},
         {'id': 'elapsed_time', 'label': 'exec time - s'}
@@ -169,6 +171,37 @@ def plot_placement(scenario, optimizers, output_path, nb_runs):
     plt.show()
 
 
+def plot_placement_total(optimizers, output_path, nb_runs):
+    opts_df = load_opts_df(optimizers, output_path, 'placement.json', nb_runs)
+    list_df = []
+    for opt in optimizers:
+        opt_df = opts_df[opt['id']]
+        opt_df['place'] = opt_df['place'].astype(int)
+        opt_df = opt_df.groupby(['time', 'run'])['place'].sum()
+        opt_df = opt_df.reset_index(level=['run'])
+        opt_df = calc_stats(opt_df, 'place')
+        opt_df['opt'] = opt['label']
+        list_df.append(opt_df)
+
+    df = pd.concat(list_df)
+    df.sort_index(inplace=True)
+    df = df.tz_convert(SF_TZ_STR)
+
+    fig, ax = plt.subplots(figsize=(16, 9))
+
+    ax.set_ylabel('Number of instances')
+
+    place_df = df.pivot(columns='opt', values='place')
+    error_df = df.pivot(columns='opt', values='place_error')
+
+    # place_df.plot(ax=ax, yerr=error_df, legend=False)
+    place_df.plot(ax=ax, legend=False)
+
+    ax.legend()
+    fig.tight_layout()
+    plt.show()
+
+
 def main():
     scenario_filename = 'input/san_francisco/scenario.json'
     scenario = None
@@ -181,25 +214,25 @@ def main():
     # output_path = 'output/synthetic/exp/n25_a10_u1000/'
     optimizers = [
         # {'id': 'CloudOptimizer', 'label': 'Cloud'},
-        {'id': 'MOGAOptimizer', 'label': 'MOGA'},
+        # {'id': 'MOGAOptimizer', 'label': 'MOGA'},
         # {'id': 'SOHeuristicOptimizer', 'label': 'SOH'},
         # {'id': 'LLCOptimizer_mga_w0', 'label': 'LLC MGA W=0'},
         # {'id': 'LLCOptimizer_mga_w1', 'label': 'LLC MGA W=1'},
         # {'id': 'LLCOptimizer_mga_w2', 'label': 'LLC MGA W=2'},
-        # {'id': 'LLCOptimizer_sga_w0', 'label': 'LLC SGA W=0'},
-        # {'id': 'LLCOptimizer_sga_w1', 'label': 'LLC SGA W=1'},
+        {'id': 'LLCOptimizer_sga_w0', 'label': 'LLC SGA W=0'},
+        {'id': 'LLCOptimizer_sga_w1', 'label': 'LLC SGA W=1'},
         # {'id': 'LLCOptimizer_sga_w2', 'label': 'LLC SGA W=2'},
         {'id': 'LLCOptimizer_ssga_w0', 'label': 'LLC SSGA W=0'},
         {'id': 'LLCOptimizer_ssga_w1', 'label': 'LLC SSGA W=1'},
-        {'id': 'LLCOptimizer_ssga_w2', 'label': 'LLC SSGA W=2'},
+        # {'id': 'LLCOptimizer_ssga_w2', 'label': 'LLC SSGA W=2'},
     ]
 
     # run_dirs = glob(os.path.join(output_path, '[0-9]*/'))
     # nb_runs = len(run_dirs)
-    # nb_runs = 30
-    nb_runs = 10
+    nb_runs = 30
 
-    plot_metrics(scenario, optimizers, output_path, nb_runs)
+    plot_metrics(optimizers, output_path, nb_runs)
+    # plot_placement_total(optimizers, output_path, nb_runs)
     # plot_placement(scenario, optimizers, output_path, nb_runs)
 
 

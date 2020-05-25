@@ -54,7 +54,7 @@ class SGAInputFinder(InputFinder):
         ga_operator = SGAOperator(plan_finder=self._plan_finder,
                                   sequence_length=self.nb_slots,
                                   use_heuristic=True,
-                                  first_population=self.last_inputs)
+                                  extra_first_population=self.last_inputs)
         ga = NSGAII(operator=ga_operator,
                     dominance_func=self.dominance_func,
                     pool_size=self.pool_size,
@@ -69,19 +69,19 @@ class SGAOperator(GAOperator):
 
     Attributes:
         plan_finder (PlanFinder): plan finder
-        sequence_length (int): sequence length
+        sequence_length (int): control inputs sequence length
         use_heuristic (bool): use heuristic algorithms to generate the first population
-        extended_first_population (list(GAIndividual)): list of individuals to be added in the first population
+        extra_first_population (list(GAIndividual)): list of individuals to be added in the first population
     """
 
-    def __init__(self, plan_finder, sequence_length, use_heuristic=True, first_population=None):
+    def __init__(self, plan_finder, sequence_length, use_heuristic=True, extra_first_population=None):
         """Initialization
         """
         GAOperator.__init__(self)
         self.plan_finder = plan_finder
         self.sequence_length = sequence_length
         self.use_heuristic = use_heuristic
-        self.extended_first_population = first_population
+        self.extra_first_population = extra_first_population
 
         env_input = plan_finder.environment_inputs[0]
         self._input_ga_operator = MOGAOperator(objective=plan_finder.objective,
@@ -121,8 +121,8 @@ class SGAOperator(GAOperator):
             sequence = GAIndividual(indiv * self.sequence_length)
             population.append(sequence)
 
-        if self.extended_first_population is not None:
-            for indiv in self.extended_first_population:
+        if self.extra_first_population is not None:
+            for indiv in self.extra_first_population:
                 if len(indiv) == self.nb_genes:
                     population.append(indiv.clear_copy())
                 elif len(indiv) == self.nb_genes_per_input:

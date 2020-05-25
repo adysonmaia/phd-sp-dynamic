@@ -35,9 +35,9 @@ def main():
     # ]
     scenarios = [
         {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 1000},
-        {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 4000},
-        {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 7000},
-        {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 10000},
+        # {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 4000},
+        # {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 7000},
+        # {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 10000},
     ]
 
     # Simulation times
@@ -499,25 +499,42 @@ def distribute_load(min_load, max_load, time_start, time_end, time_step):
     Returns:
         list: distributed load in a json format
     """
+    time_step = min(10 * 60.0, time_step)  # 10 min
     nb_steps = int(math.floor((time_end - time_start) / float(time_step)))
 
     # Different load patterns
     rnd_funcs = [
-        (sp_rnd.random_burst, {'normal_transition': 0.4, 'burst_transition': 0.8}),
-        (sp_rnd.random_beta_pdf, {'alpha': 2, 'beta': 3}),
-        (sp_rnd.random_beta_pdf, {'alpha': 3, 'beta': 2}),
-        (sp_rnd.random_beta_pdf, {'alpha': 1, 'beta': 5}),
-        (sp_rnd.random_beta_pdf, {'alpha': 5, 'beta': 1}),
-        (sp_rnd.random_cycle, {'period': nb_steps}),
-        (sp_rnd.random_cycle, {'period': nb_steps / 2.0}),
-        (sp_rnd.random_linear, {}),
-        (sp_rnd.random_uniform, {}),
+        sp_rnd.random_burst,
+        sp_rnd.random_beta_pdf,
+        sp_rnd.random_cycle,
+        sp_rnd.random_linear,
+        sp_rnd.random_uniform
     ]
 
+    rnd_params = {
+        sp_rnd.random_burst: [
+            {'normal_transition': 0.1, 'burst_transition': 0.8},
+            {'normal_transition': 0.2, 'burst_transition': 0.8},
+            {'normal_transition': 0.4, 'burst_transition': 0.8}
+        ],
+        sp_rnd.random_beta_pdf: [
+            {'alpha': 2, 'beta': 2},
+            {'alpha': 2, 'beta': 3},
+            {'alpha': 3, 'beta': 2},
+            {'alpha': 1, 'beta': 5},
+            {'alpha': 5, 'beta': 1}
+        ],
+        sp_rnd.random_cycle: [
+            {'period': nb_steps},
+            {'period': nb_steps / 2.0}
+        ],
+        sp_rnd.random_linear: [{}],
+        sp_rnd.random_uniform: [{}]
+    }
+
     # Choose a load pattern
-    func_data = random.choice(rnd_funcs)
-    func = func_data[0]
-    func_kwargs = func_data[1]
+    func = random.choice(rnd_funcs)
+    func_kwargs = random.choice(rnd_params[func])
 
     # Generate load along the simulation according to the selected pattern
     noise = 0.05

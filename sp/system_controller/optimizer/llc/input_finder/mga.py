@@ -76,7 +76,7 @@ class MGAInputFinder(InputFinder):
                                    environment_input=env_input,
                                    objective=self.objective,
                                    use_heuristic=True,
-                                   first_population=self.last_inputs)
+                                   extra_first_population=self.last_inputs)
         ga = NSGAII(operator=ga_operator,
                     dominance_func=self.dominance_func,
                     pool_size=self.pool_size,

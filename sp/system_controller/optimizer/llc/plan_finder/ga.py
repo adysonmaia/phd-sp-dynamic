@@ -50,6 +50,7 @@ class GAPFOperator(GAOperator):
     """
     def __init__(self, control_inputs, sequence_length, plan_creator):
         """Initialization
+
         Args:
             control_inputs (list): list of control inputs
             sequence_length (int): sequence's length
@@ -63,6 +64,7 @@ class GAPFOperator(GAOperator):
     @property
     def nb_genes(self):
         """Number of genes of the chromosome
+
         Returns:
             int: number of genes
         """
@@ -70,6 +72,7 @@ class GAPFOperator(GAOperator):
 
     def rand_individual(self):
         """Generate a random individual
+
         Returns:
             individual (GAIndividual): a new individual
         """
@@ -82,6 +85,7 @@ class GAPFOperator(GAOperator):
 
     def evaluate(self, individual):
         """Evaluate an individual and obtain its fitness
+
         Args:
             individual (GAIndividual): individual
         Returns:
@@ -93,6 +97,7 @@ class GAPFOperator(GAOperator):
 
     def decode(self, individual):
         """Decode an individual's chromosome and obtain a sequence of control inputs
+
         Args:
             individual (GAIndividual): encoded individual
         Returns:

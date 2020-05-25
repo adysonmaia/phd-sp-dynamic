@@ -64,13 +64,17 @@ class ExpRunMonitor(OptimizerMonitor):
             users = list(filter(lambda u: u.app_id == app.id and u.node_id is not None, users))
             load = sum([util.calc_load_before_distribution(app.id, node.id, system, environment_input)
                         for node in system.nodes])
-            deadline_violation = util.filter_metric(metric.deadline.overall_deadline_violation,
-                                                    system, control_input, environment_input,
-                                                    apps_id=app.id)
+            overall_violation = util.filter_metric(metric.deadline.overall_deadline_violation,
+                                                   system, control_input, environment_input,
+                                                   apps_id=app.id)
+            max_violation = util.filter_metric(metric.deadline.max_deadline_violation,
+                                               system, control_input, environment_input,
+                                               apps_id=app.id)
             print('app {:2d} {:>5}, deadline {:6.1f}ms, max instances {:2d}, users {:4d}, load {:10.3f}, '
-                  'places {:2d}: {}, deadline violation {}s'.format(
+                  'max violation {:9.6f}s, overall violation {:9.6f}s, '
+                  'places {:2d}: {}'.format(
                 app.id, app.type, 1000 * app.deadline, app.max_instances, len(users), load,
-                len(places), places, deadline_violation
+                overall_violation, max_violation, len(places), places
             ))
 
         print(' ')
@@ -105,33 +109,35 @@ def main():
 
     # Set objectives and metrics functions
     optimizers = []
-    metrics = [
-        metric.deadline.overall_deadline_violation,
-        metric.cost.overall_cost,
-        metric.migration.overall_migration_cost,
-
-        metric.deadline.max_deadline_violation,
-        metric.deadline.avg_deadline_violation,
-        metric.deadline.deadline_satisfaction,
-        metric.migration.overall_migration_cost,
-        metric.availability.avg_unavailability,
-        metric.response_time.overall_response_time,
-        metric.response_time.avg_response_time,
-        metric.response_time.max_response_time,
-        metric.power.overall_power_consumption,
-    ]
     multi_objective = [
         metric.deadline.overall_deadline_violation,
         metric.cost.overall_cost,
         metric.migration.overall_migration_cost,
     ]
     single_objective = multi_objective[0]
+    metrics = [
+        metric.deadline.overall_deadline_violation,
+        metric.deadline.max_deadline_violation,
+        metric.deadline.avg_deadline_violation,
+        metric.deadline.deadline_satisfaction,
+        metric.cost.overall_cost,
+        metric.cost.max_cost,
+        metric.cost.avg_cost,
+        metric.migration.overall_migration_cost,
+        metric.migration.max_migration_cost,
+        metric.migration.avg_migration_cost,
+        metric.response_time.overall_response_time,
+        metric.response_time.max_response_time,
+        metric.response_time.avg_response_time,
+        metric.availability.avg_unavailability,
+        metric.power.overall_power_consumption,
+    ]
 
     #
     dominance_func = util.preferred_dominates
     pool_size = 12
-    # pool_size = 4
     # pool_size = 8
+    # pool_size = 4
     # pool_size = 0
     timeout = 3 * 60  # 3 min
 
@@ -187,6 +193,11 @@ def main():
         #     'input_params': {'timeout': timeout},
         #     'plan': plan_finder.GAPlanFinder,
         #     'plan_params': {'timeout': timeout},
+        # },
+        # {
+        #     'key': 'ssga_sga',
+        #     'input': input_finder.PipelineInputFinder,
+        #     'plan': None
         # },
     ]
 
@@ -247,6 +258,7 @@ def main():
             sim.set_time(stop=time_stop, start=time_start, step=time_step)
             sim.optimizer = opt
             sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=output_path, debug_prefix=debug_prefix)
+            # sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=None, debug_prefix=debug_prefix)
 
             # Run simulation
             perf_count = time.perf_counter()

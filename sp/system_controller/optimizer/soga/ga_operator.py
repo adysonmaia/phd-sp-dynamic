@@ -21,16 +21,15 @@ class SOGAOperator(GAOperator):
         system (sp.core.model.system.System): system's state
         environment_input (sp.core.mode.environment_input.EnvironmentInput): environment input
         use_heuristic (bool): use heuristic algorithms to generate the first population
-        extended_first_population (list(GAIndividual)): list of individuals to be added in the first population
-        requests (list): source of requests for all applications
+        extra_first_population (list(GAIndividual)): list of individuals to be added in the first population
         load_chunk_percent (float): load chunk percentage (value between 0 and 1).
-            Loads as distributed in chunks where its size is defined by this attribute
+            Loads are distributed in chunks where its size is defined by this attribute
         stall_window (int): stall window stopping criteria. That is, the algorithm stops if the best fitness value
             over stall generations is less than or equal to this attribute
         stall_threshold (float): stall threshold used in the stopping criteria
     """
 
-    def __init__(self, objective, system, environment_input, use_heuristic=True, first_population=None):
+    def __init__(self, objective, system, environment_input, use_heuristic=True, extra_first_population=None):
         """Initialization
 
         Args:
@@ -38,25 +37,34 @@ class SOGAOperator(GAOperator):
             system (sp.core.model.system.System): system's state
             environment_input (sp.core.mode.environment_input.EnvironmentInput): environment input
             use_heuristic (bool): use heuristic algorithms to generate the first population
-            first_population (list(GAIndividual)): list of individuals to be added in the first population
+            extra_first_population (list(GAIndividual)): list of individuals to be added in the first population
         """
         GAOperator.__init__(self)
         self.system = system
         self.environment_input = environment_input
         self.objective = objective
         self.use_heuristic = use_heuristic
-        self.extended_first_population = first_population
+        self.extra_first_population = extra_first_population
 
         nb_apps = len(self.system.apps)
         nb_nodes = len(self.system.nodes)
         self._nb_genes = nb_apps * (2 * nb_nodes + 1)
-        self.requests = [(app.id, node.id) for app in self.system.apps for node in self.system.nodes]
+        self._requests = [(app.id, node.id) for app in self.system.apps for node in self.system.nodes]
 
         self.load_chunk_percent = DEFAULT_LOAD_CHUNK_PERCENT
 
         self.stall_window = DEFAULT_STALL_WINDOW
         self.stall_threshold = DEFAULT_STALL_THRESHOLD
         self._best_values = []
+
+    @property
+    def requests(self):
+        """Get source of requests for all applications
+
+        Returns:
+            requests (list): list of tuples (application's id, node's id)
+        """
+        return self._requests
 
     @property
     def nb_genes(self):
@@ -82,8 +90,8 @@ class SOGAOperator(GAOperator):
         from . import indiv_gen
 
         population = []
-        if self.extended_first_population is not None:
-            population += [indiv.clear_copy() for indiv in self.extended_first_population]
+        if self.extra_first_population is not None:
+            population += [indiv.clear_copy() for indiv in self.extra_first_population]
 
         if self.use_heuristic:
             heuristic_population = [
@@ -153,6 +161,8 @@ class SOGAOperator(GAOperator):
     def decode(self, individual):
         """Decode the individual's chromosome and obtain a valid solution for the optimization problem
 
+        See Also: https://ieeexplore.ieee.org/document/9014303
+
         Args:
             individual (GAIndividual): individual
         Returns:
@@ -196,13 +206,11 @@ class SOGAOperator(GAOperator):
             nodes.append(cloud_node)
             nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution))
 
-            place_nodes = []
-
             total_load = calc_load_before_distribution(app.id, src_node.id, self.system, self.environment_input)
             chunk = total_load * self.load_chunk_percent
             remaining_load = total_load
 
-            while True:
+            while remaining_load > 0.0:
                 for dst_node in nodes:
                     if self._alloc_resources(app, dst_node, solution, chunk, increment=True):
                         solution.app_placement[app.id][dst_node.id] = True
@@ -211,13 +219,7 @@ class SOGAOperator(GAOperator):
 
                         remaining_load -= chunk
                         chunk = min(remaining_load, chunk)
-
-                        if dst_node not in place_nodes:
-                            place_nodes.append(dst_node)
                         break
-
-                if remaining_load <= 0.0:
-                    break
 
         for app in self.system.apps:
             for dst_node in selected_nodes[app.id]:
