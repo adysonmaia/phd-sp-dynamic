@@ -90,7 +90,7 @@ def calc_initialization_delay(app_id, node_id, system, control_input, environmen
     t = math.ceil(system.sampling_time)
     mig_delay = math.ceil(calc_migration_delay(app_id, node_id, system, control_input, environment_input))
     if mig_delay > 0.0 and t > 0.0:
-        init_delay = mig_delay * (mig_delay + 2.0) / (2.0 * t)
+        init_delay = mig_delay * (mig_delay + 1.0) / (2.0 * t)
 
     # init_delay = 0.0
     # mig_delay = math.ceil(calc_migration_delay(app_id, node_id, system, control_input, environment_input))

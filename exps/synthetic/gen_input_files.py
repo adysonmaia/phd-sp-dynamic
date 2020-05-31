@@ -34,10 +34,10 @@ def main():
     #     {'nb_bs': 9, 'nb_apps': 20, 'nb_users': 10000},
     # ]
     scenarios = [
-        {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 1000},
-        # {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 4000},
-        # {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 7000},
-        # {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 10000},
+        # {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 1000},
+        {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 4000},
+        {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 7000},
+        {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 10000},
     ]
 
     # Simulation times
@@ -54,12 +54,13 @@ def main():
 
     # Generate each scenario
     nb_runs = 30
-    for scenario_params in scenarios:
-        nb_bs = scenario_params['nb_bs']
-        nb_apps = scenario_params['nb_apps']
-        nb_users = scenario_params['nb_users']
-        scenario_id = 'n{}_a{}_u{}'.format(nb_bs, nb_apps, nb_users)
-        for run in range(nb_runs):
+    for run in range(nb_runs):
+        for scenario_params in scenarios:
+            nb_bs = scenario_params['nb_bs']
+            nb_apps = scenario_params['nb_apps']
+            nb_users = scenario_params['nb_users']
+            scenario_id = 'n{}_a{}_u{}'.format(nb_bs, nb_apps, nb_users)
+
             scenario_path = os.path.join(DATA_PATH, scenario_id, str(run))
             scenario_filename = gen_scenario(nb_bs, nb_apps, nb_users,
                                              time_start, time_stop, time_step,
@@ -515,7 +516,8 @@ def distribute_load(min_load, max_load, time_start, time_end, time_step):
         sp_rnd.random_burst: [
             {'normal_transition': 0.1, 'burst_transition': 0.8},
             {'normal_transition': 0.2, 'burst_transition': 0.8},
-            {'normal_transition': 0.4, 'burst_transition': 0.8}
+            {'normal_transition': 0.4, 'burst_transition': 0.8},
+            {'normal_transition': 0.05, 'burst_transition': 0.05}
         ],
         sp_rnd.random_beta_pdf: [
             {'alpha': 2, 'beta': 2},
