@@ -35,8 +35,8 @@ def main():
     scenarios = [
         # {'nb_apps': 10},
         # {'nb_apps': 7},
-        {'nb_apps': 4},
-        # {'nb_apps': 1},
+        # {'nb_apps': 4},
+        {'nb_apps': 1},
     ]
 
     # Simulation time
@@ -320,13 +320,6 @@ def gen_zipcode_bs_network(bbox, map_filename):
     map_gdf.sort_values('zip', inplace=True)
     map_gdf.reset_index(drop=True, inplace=True)
 
-    # print(map_gdf)
-    # import matplotlib.pyplot as plt
-    # fig, ax = plt.subplots()
-    # map_gdf.plot(ax=ax, color='white', edgecolor='black', zorder=0)
-    # map_gdf.centroid.plot(ax=ax, color='red', zorder=1, label='BS')
-    # plt.show()
-
     link_exists = defaultdict(lambda: defaultdict(bool))
     json_data = {'nodes': [], 'links': []}
     # Create a base station for each zip code area
@@ -397,8 +390,8 @@ def gen_apps(nb_apps, net_data):
     }
 
     # Maximum number of instances running at the same time-slot
-    max_instance_range = list(range(1, len(net_data['nodes']) + 1))
-    # max_instance_range = [len(net_data['nodes'])]
+    # max_instance_range = list(range(1, len(net_data['nodes']) + 1))
+    max_instance_range = [len(net_data['nodes'])]
     max_instance_options = {
         'URLLC': max_instance_range,
         'MMTC': max_instance_range,

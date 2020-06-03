@@ -122,7 +122,9 @@ class DefaultProcessingResult(ProcessingResult):
         """
         size = math.inf
         if self.service_rate > self.arrival_rate > 0.0:
-            size = self.arrival_rate / float(self.service_rate - self.arrival_rate)
+            p = self.arrival_rate / float(self.service_rate)
+            size = (p ** 2) / (1.0 - p)
+            # size = p / (1.0 - p)
         elif self.arrival_rate == 0.0:
             size = 0.0
         return size

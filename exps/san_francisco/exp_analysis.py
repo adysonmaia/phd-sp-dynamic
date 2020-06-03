@@ -107,10 +107,10 @@ def plot_metrics(optimizers, output_path, nb_runs):
         metric_df = df.pivot(columns='opt', values=value_col)
         error_df = df.pivot(columns='opt', values=error_col)
 
-        # metric_df.plot(ax=ax, yerr=error_df, legend=False)
-        metric_df.plot(ax=ax, legend=False)
+        metric_df.plot(ax=ax, yerr=error_df, legend=False)
+        # metric_df.plot(ax=ax, legend=False)
 
-    axes[0, 0].legend()
+    axes[0, 0].legend(ncol=2)
     for row in range(nb_rows):
         for col in range(nb_cols):
             index = row * nb_cols + col
@@ -157,8 +157,8 @@ def plot_placement(scenario, optimizers, output_path, nb_runs):
         place_df = app_df.pivot(columns='opt', values='place')
         error_df = app_df.pivot(columns='opt', values='place_error')
 
-        # place_df.plot(ax=ax, yerr=error_df, legend=False)
-        place_df.plot(ax=ax, legend=False)
+        place_df.plot(ax=ax, yerr=error_df, legend=False)
+        # place_df.plot(ax=ax, legend=False)
 
     axes[0, 0].legend()
     for row in range(nb_rows):
@@ -210,19 +210,21 @@ def main():
     #     scenario = Scenario.from_json(data)
 
     # output_path = 'output/san_francisco/exp/'
-    output_path = 'output/san_francisco/exp/a10_1211612400_1211698799/'
-    # output_path = 'output/synthetic/exp/n25_a10_u1000/'
+    # output_path = 'output/san_francisco/exp/a10_1211612400_1211698799/'
+    # output_path = 'output/san_francisco/exp/a4_1211612400_1211698799/'
+    output_path = 'output/san_francisco/exp/a1_1211612400_1211698799/'
+    # output_path = 'output/synthetic/exp/n9_a10_u1000/'
     optimizers = [
-        # {'id': 'CloudOptimizer', 'label': 'Cloud'},
-        # {'id': 'MOGAOptimizer', 'label': 'MOGA'},
-        # {'id': 'SOHeuristicOptimizer', 'label': 'SOH'},
+        {'id': 'CloudOptimizer', 'label': 'Cloud'},
+        {'id': 'MOGAOptimizer', 'label': 'MOGA'},
+        {'id': 'SOHeuristicOptimizer', 'label': 'SOH'},
         # {'id': 'LLCOptimizer_mga_w0', 'label': 'LLC MGA W=0'},
         # {'id': 'LLCOptimizer_mga_w1', 'label': 'LLC MGA W=1'},
         # {'id': 'LLCOptimizer_mga_w2', 'label': 'LLC MGA W=2'},
-        {'id': 'LLCOptimizer_sga_w0', 'label': 'LLC SGA W=0'},
+        # {'id': 'LLCOptimizer_sga_w0', 'label': 'LLC SGA W=0'},
         {'id': 'LLCOptimizer_sga_w1', 'label': 'LLC SGA W=1'},
         # {'id': 'LLCOptimizer_sga_w2', 'label': 'LLC SGA W=2'},
-        {'id': 'LLCOptimizer_ssga_w0', 'label': 'LLC SSGA W=0'},
+        # {'id': 'LLCOptimizer_ssga_w0', 'label': 'LLC SSGA W=0'},
         {'id': 'LLCOptimizer_ssga_w1', 'label': 'LLC SSGA W=1'},
         # {'id': 'LLCOptimizer_ssga_w2', 'label': 'LLC SSGA W=2'},
     ]

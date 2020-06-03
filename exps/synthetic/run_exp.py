@@ -126,6 +126,7 @@ def main():
 
     #
     dominance_func = util.preferred_dominates
+    # pool_size = 8
     pool_size = 4
     # pool_size = 0
     timeout = 3 * 60  # 3 min
@@ -136,13 +137,13 @@ def main():
     opt = CloudOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # Single-Objective Heuristic optimizer config
     opt = SOHeuristicOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # Single-Objective GA optimizer config
     opt = SOGAOptimizer()
@@ -160,7 +161,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = format(opt.__class__.__name__)
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # LLC (control input and plan) finders versions
     llc_finders = [
@@ -186,9 +187,8 @@ def main():
     ]
 
     # LLC optimizer with different parameters
-    # prediction_windows = [0, 1, 2]
-    # prediction_windows = [0, 1]
-    prediction_windows = [1]
+    prediction_windows = [0, 1, 2]
+    # prediction_windows = [1]
     # prediction_windows = [0]
     for window in prediction_windows:
         for llc_finder in llc_finders:
