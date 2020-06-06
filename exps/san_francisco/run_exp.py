@@ -102,10 +102,7 @@ def main():
     simulation_data = None
     with open(simulation_filename) as json_file:
         simulation_data = json.load(json_file)
-
-    time_start = simulation_data['time']['start']
-    time_stop = simulation_data['time']['stop']
-    time_step = simulation_data['time']['step']
+    simulation_time = simulation_data['time']
 
     # Set objectives and metrics functions
     optimizers = []
@@ -119,6 +116,8 @@ def main():
         metric.deadline.overall_deadline_violation,
         metric.deadline.max_deadline_violation,
         metric.deadline.avg_deadline_violation,
+        metric.deadline.avg_only_violated_deadline,
+        metric.deadline.weighted_avg_deadline_violation,
         metric.deadline.deadline_satisfaction,
         metric.cost.overall_cost,
         metric.cost.max_cost,
@@ -129,6 +128,7 @@ def main():
         metric.response_time.overall_response_time,
         metric.response_time.max_response_time,
         metric.response_time.avg_response_time,
+        metric.response_time.weighted_avg_response_time,
         metric.availability.avg_unavailability,
         metric.power.overall_power_consumption,
     ]
@@ -181,12 +181,12 @@ def main():
             'input_params': {'timeout': timeout},
             'plan': None
         },
-        {
-            'key': 'sga',
-            'input': input_finder.SGAInputFinder,
-            'input_params': {'timeout': timeout},
-            'plan': None
-        },
+        # {
+        #     'key': 'sga',
+        #     'input': input_finder.SGAInputFinder,
+        #     'input_params': {'timeout': timeout},
+        #     'plan': None
+        # },
         # {
         #     'key': 'mga',
         #     'input': input_finder.MGAInputFinder,
@@ -202,7 +202,8 @@ def main():
     ]
 
     # LLC optimizer with different parameters
-    prediction_windows = [0, 1, 2]
+    # prediction_windows = [0, 1, 2]
+    prediction_windows = [1, 2]
     # prediction_windows = [0]
     # prediction_windows = [1]
     for window in prediction_windows:
@@ -218,12 +219,14 @@ def main():
             opt.plan_finder_params = llc_finder['plan_params'] if 'plan_params' in llc_finder else None
 
             # Set environment forecasting
-            seasonal_period = int(round(1 * 24 * 60 * 60 / float(time_step)))  # Seasonal of 1 day
             env_predictor = MultiProcessingEnvironmentPredictor()
             env_predictor.pool_size = pool_size
             env_predictor.load_predictor_class = AutoARIMAPredictor
-            env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': True, 'maxiter': 10,
-                                                   'seasonal': True, 'm': seasonal_period}
+            # time_step = simulation_time['step']
+            # seasonal_period = int(round(1 * 24 * 60 * 60 / float(time_step)))  # Seasonal of 1 day
+            # env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': True, 'maxiter': 10,
+            #                                        'seasonal': True, 'm': seasonal_period}
+            env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': True, 'maxiter': 10}
             env_predictor.net_delay_predictor_class = NaivePredictor
             opt.environment_predictor = env_predictor
 
@@ -236,6 +239,9 @@ def main():
         scenario_filename = scenario_data['scenario']
         scenario_id = scenario_data['scenario_id']
         run = scenario_data['run']
+        time_data = simulation_time
+        if 'time' in scenario_data:
+            time_data.update(scenario_data['time'])
 
         scenario = None
         with open(scenario_filename) as json_file:
@@ -255,7 +261,7 @@ def main():
 
             # Set simulation parameters
             sim = Simulator(scenario=scenario)
-            sim.set_time(stop=time_stop, start=time_start, step=time_step)
+            sim.set_time(**time_data)
             sim.optimizer = opt
             sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=output_path, debug_prefix=debug_prefix)
             # sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=None, debug_prefix=debug_prefix)

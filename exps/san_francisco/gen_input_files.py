@@ -13,6 +13,7 @@ import copy
 import math
 import random
 import os
+import base64
 
 
 DATA_PATH = 'input/san_francisco/'
@@ -31,14 +32,6 @@ def main():
     map_filename = os.path.join(map_path, 'geo_export_2defef9a-b2e1-4ddd-84f6-1a131dd80410.shp')
     mobility_path = os.path.join(DATA_PATH, 'cabs')
 
-    # Scenarios parameters
-    scenarios = [
-        # {'nb_apps': 10},
-        # {'nb_apps': 7},
-        # {'nb_apps': 4},
-        {'nb_apps': 1},
-    ]
-
     # Simulation time
     time_start = SF_TZ.localize(datetime(2008, 5, 24, 0, 0, 0)).timestamp()
     time_stop = SF_TZ.localize(datetime(2008, 5, 24, 23, 59, 59)).timestamp()
@@ -48,13 +41,29 @@ def main():
         'scenarios': []
     }
 
+    # Scenarios parameters
+    # scenarios = [
+    #     # {'nb_apps': 10},
+    #     # {'nb_apps': 7},
+    #     {'nb_apps': 4},
+    #     # {'nb_apps': 1},
+    # ]
+
+    scenarios = [
+        {'nb_apps': 4, 'time': {'step': 15 * 60}},
+        {'nb_apps': 4, 'time': {'step': 30 * 60}},
+        {'nb_apps': 4, 'time': {'step': 45 * 60}},
+        {'nb_apps': 4, 'time': {'step': 60 * 60}},
+    ]
+
     # Generate each scenario
     nb_runs = 30
     cached_users_data = None
-    for scenario_params in scenarios:
-        nb_apps = scenario_params['nb_apps']
-        scenario_id = 'a{}_{}_{}'.format(nb_apps, int(time_start), int(time_stop))
-        for run in range(nb_runs):
+    for run in range(nb_runs):
+        for scenario_params in scenarios:
+            nb_apps = scenario_params['nb_apps']
+            scenario_id = base64.urlsafe_b64encode(bytes(json.dumps(scenario_params), 'utf-8')).decode('utf-8')
+            scenario_id = 'a{}_{}'.format(nb_apps, scenario_id)
             scenario_path = os.path.join(DATA_PATH, scenario_id, str(run))
             scenario_filename, scenario_data = gen_scenario(nb_apps=nb_apps,
                                                             time_start=time_start,
@@ -67,6 +76,7 @@ def main():
                 cached_users_data = scenario_data['users']
 
             item = {'scenario_id': scenario_id, 'scenario': scenario_filename, 'run': run}
+            item.update(scenario_params)
             simulation_data['scenarios'].append(item)
 
     # Save simulation configuration
@@ -390,8 +400,8 @@ def gen_apps(nb_apps, net_data):
     }
 
     # Maximum number of instances running at the same time-slot
-    # max_instance_range = list(range(1, len(net_data['nodes']) + 1))
-    max_instance_range = [len(net_data['nodes'])]
+    max_instance_range = list(range(1, len(net_data['nodes']) + 1))
+    # max_instance_range = [len(net_data['nodes'])]
     max_instance_options = {
         'URLLC': max_instance_range,
         'MMTC': max_instance_range,

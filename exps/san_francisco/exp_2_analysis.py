@@ -14,8 +14,13 @@ UTC_TZ = timezone('UTC')
 SF_TZ_STR = 'US/Pacific'
 SF_TZ = timezone(SF_TZ_STR)
 
+
 def s_to_ms(value):
     return 1000.0 * value
+
+
+def to_percent(value):
+    return 100.0 * value
 
 
 def load_opts_df(optimizers, output_path, filename, nb_runs):
@@ -47,7 +52,7 @@ def plot_metrics(optimizers, experiments, output_path, nb_runs):
     metrics = [
         {'id': 'overall_deadline_violation', 'label': 'overall deadline violation - ms', 'func': s_to_ms},
         {'id': 'max_deadline_violation', 'label': 'max. deadline violation - ms', 'func': s_to_ms},
-        {'id': 'deadline_satisfaction', 'label': 'deadline satisfaction - %'},
+        {'id': 'deadline_satisfaction', 'label': 'deadline satisfaction - %', 'func': to_percent},
         {'id': 'overall_cost', 'label': 'allocation cost'},
         {'id': 'overall_migration_cost', 'label': 'migration cost'},
         {'id': 'elapsed_time', 'label': 'exec time - s'}
@@ -57,9 +62,11 @@ def plot_metrics(optimizers, experiments, output_path, nb_runs):
     metrics_data = []
 
     for exp in experiments:
+        exp_path = os.path.join(output_path, exp['path'], '[0-9]')
+        runs_path = glob(exp_path)
         for opt in optimizers:
-            for run in range(nb_runs):
-                filename = os.path.join(output_path, exp['path'], str(run), opt['id'], 'metrics.json')
+            for (run, run_path) in enumerate(runs_path):
+                filename = os.path.join(run_path, opt['id'], 'metrics.json')
                 if not os.path.isfile(filename):
                     continue
                 df = pd.read_json(filename, orient='records')
@@ -86,25 +93,27 @@ def plot_metrics(optimizers, experiments, output_path, nb_runs):
 def main():
     output_path = 'output/san_francisco/exp/'
     optimizers = [
-        # {'id': 'CloudOptimizer', 'label': 'Cloud'},
+        {'id': 'CloudOptimizer', 'label': 'Cloud'},
         {'id': 'SOHeuristicOptimizer', 'label': 'SOH'},
         {'id': 'MOGAOptimizer', 'label': 'MOGA'},
         # {'id': 'LLCOptimizer_mga_w0', 'label': 'LLC MGA W=0'},
         # {'id': 'LLCOptimizer_mga_w1', 'label': 'LLC MGA W=1'},
         # {'id': 'LLCOptimizer_mga_w2', 'label': 'LLC MGA W=2'},
         # {'id': 'LLCOptimizer_sga_w0', 'label': 'LLC SGA W=0'},
-        {'id': 'LLCOptimizer_sga_w1', 'label': 'LLC SGA W=1'},
+        # {'id': 'LLCOptimizer_sga_w1', 'label': 'LLC SGA W=1'},
         # {'id': 'LLCOptimizer_sga_w2', 'label': 'LLC SGA W=2'},
         # {'id': 'LLCOptimizer_ssga_w0', 'label': 'LLC SSGA W=0'},
         {'id': 'LLCOptimizer_ssga_w1', 'label': 'LLC SSGA W=1'},
         # {'id': 'LLCOptimizer_ssga_w2', 'label': 'LLC SSGA W=2'},
     ]
     experiments = [
-        {'path': 'a1_1211612400_1211698799', 'x': 1},
-        {'path': 'a4_1211612400_1211698799', 'x': 4},
-        {'path': 'a10_1211612400_1211698799', 'x': 10},
+        {'path': '1_a1_1211612400_1211698799', 'x': '1-1'},
+        {'path': '2_a1_1211612400_1211698799', 'x': '1-2'},
+        {'path': '1_a4_1211612400_1211698799', 'x': '4-1'},
+        {'path': '2_a4_1211612400_1211698799', 'x': '4-2'},
+        {'path': 'a10_1211612400_1211698799', 'x': '10-1'},
     ]
-    nb_runs = 25
+    nb_runs = 10
     plot_metrics(optimizers, experiments, output_path, nb_runs)
 
 

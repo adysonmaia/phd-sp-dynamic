@@ -10,7 +10,8 @@ import copy
 
 DEFAULT_STALL_WINDOW = 30
 DEFAULT_STALL_THRESHOLD = 0.0
-DEFAULT_LOAD_CHUNK_PERCENT = 0.1
+# DEFAULT_LOAD_CHUNK_PERCENT = 0.1
+DEFAULT_LOAD_CHUNK_PERCENT = 0.25
 
 
 class SOGAOperator(GAOperator):
@@ -211,6 +212,7 @@ class SOGAOperator(GAOperator):
             remaining_load = total_load
 
             while remaining_load > 0.0:
+                # nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution))
                 for dst_node in nodes:
                     if self._alloc_resources(app, dst_node, solution, chunk, increment=True):
                         solution.app_placement[app.id][dst_node.id] = True

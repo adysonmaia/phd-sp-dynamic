@@ -65,6 +65,17 @@ class OptimizerMonitor(Monitor):
             key = func.__name__
             value = func(system, control_input, environment_input)
             datum[key] = value
+
+        # apps_type = []
+        # for app in system.apps:
+        #     if app.type and app.type not in apps_type:
+        #         apps_type.append(app.type)
+        # for app_type in apps_type:
+        #     for func in self.metrics_func:
+        #         key = '{}_{}'.format(app_type, func.__name__)
+        #         value = util.filter_metric(func, system, control_input, environment_input, apps_type=app_type)
+        #         datum[key] = value
+
         self._metrics_data.append(datum)
 
         place_datum = []
