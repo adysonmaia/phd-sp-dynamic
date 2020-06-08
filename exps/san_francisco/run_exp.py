@@ -1,7 +1,7 @@
 from sp.core.model import Scenario
 from sp.core.predictor import AutoARIMAPredictor, NaivePredictor
 from sp.simulator import Simulator
-from sp.simulator.monitor import OptimizerMonitor
+from sp.simulator.monitor import OptimizerMonitor, EnvironmentMonitor
 from sp.system_controller import metric, util
 from sp.system_controller.optimizer.llc import LLCOptimizer, plan_finder, input_finder
 from sp.system_controller.optimizer import SOGAOptimizer, MOGAOptimizer, CloudOptimizer, SOHeuristicOptimizer
@@ -139,7 +139,20 @@ def main():
     # pool_size = 8
     # pool_size = 4
     # pool_size = 0
-    timeout = 3 * 60  # 3 min
+    # timeout = 3 * 60  # 3 min
+    timeout = 2 * 60  # 2 min
+    # timeout = 1 * 60
+    ga_pop_size = 100
+    # ga_pop_size = 50
+    # ga_nb_gens = 100
+    ga_nb_gens = 50
+
+    # Set environment forecasting
+    env_predictor = MultiProcessingEnvironmentPredictor()
+    env_predictor.pool_size = pool_size
+    env_predictor.load_predictor_class = AutoARIMAPredictor
+    env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': True, 'maxiter': 10}
+    env_predictor.net_delay_predictor_class = NaivePredictor
 
     # Set optimizer solutions
 
@@ -159,6 +172,8 @@ def main():
     opt = SOGAOptimizer()
     opt.objective = single_objective
     opt.timeout = timeout
+    opt.population_size = ga_pop_size
+    opt.nb_generations = ga_nb_gens
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
     # optimizers.append(item)
@@ -168,6 +183,8 @@ def main():
     opt.objective = multi_objective
     opt.pool_size = pool_size
     opt.timeout = timeout
+    opt.population_size = ga_pop_size
+    opt.nb_generations = ga_nb_gens
     opt.dominance_func = dominance_func
     opt_id = format(opt.__class__.__name__)
     item = (opt_id, opt)
@@ -178,7 +195,7 @@ def main():
         {
             'key': 'ssga',
             'input': input_finder.SSGAInputFinder,
-            'input_params': {'timeout': timeout},
+            'input_params': {'timeout': timeout, 'population_size': ga_pop_size, 'nb_generations': ga_nb_gens},
             'plan': None
         },
         # {
@@ -206,6 +223,7 @@ def main():
     prediction_windows = [1, 2]
     # prediction_windows = [0]
     # prediction_windows = [1]
+    # prediction_windows = [2]
     for window in prediction_windows:
         for llc_finder in llc_finders:
             opt = LLCOptimizer()
@@ -217,17 +235,6 @@ def main():
             opt.input_finder_params = llc_finder['input_params'] if 'input_params' in llc_finder else None
             opt.plan_finder_class = llc_finder['plan']
             opt.plan_finder_params = llc_finder['plan_params'] if 'plan_params' in llc_finder else None
-
-            # Set environment forecasting
-            env_predictor = MultiProcessingEnvironmentPredictor()
-            env_predictor.pool_size = pool_size
-            env_predictor.load_predictor_class = AutoARIMAPredictor
-            # time_step = simulation_time['step']
-            # seasonal_period = int(round(1 * 24 * 60 * 60 / float(time_step)))  # Seasonal of 1 day
-            # env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': True, 'maxiter': 10,
-            #                                        'seasonal': True, 'm': seasonal_period}
-            env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': True, 'maxiter': 10}
-            env_predictor.net_delay_predictor_class = NaivePredictor
             opt.environment_predictor = env_predictor
 
             opt_id = '{}_{}_w{}'.format(opt.__class__.__name__, llc_finder['key'], window)
@@ -243,10 +250,35 @@ def main():
         if 'time' in scenario_data:
             time_data.update(scenario_data['time'])
 
+        print('loading scenario {} ...'.format(scenario_filename), end=' ')
+        perf_count = time.perf_counter()
         scenario = None
         with open(scenario_filename) as json_file:
             scenario_json = json.load(json_file)
             scenario = Scenario.from_json(scenario_json)
+        elapsed_time = time.perf_counter() - perf_count
+        print('finished in {:5.2f}s'.format(elapsed_time))
+
+        # Obtain forecasting training set
+        if 'train_start' in time_data and time_data['train_start'] < time_data['start']:
+            time_start, time_stop, time_step = time_data['train_start'], time_data['start'] - 1, time_data['step']
+            env_log_path = os.path.join(root_output_path, scenario_id, str(run))
+            load_log_filename = os.path.join(env_log_path, 'load.json')
+
+            seasonal_period = int(round(1 * 24 * 60 * 60 / float(time_step)))  # Seasonal of 1 day
+            env_predictor.load_predictor_params.update({'seasonal': True, 'm': seasonal_period})
+            env_predictor.load_init_data = load_log_filename
+
+            if not os.path.exists(load_log_filename) or not os.path.isfile(load_log_filename):
+                print('generating training set ...', end=' ')
+                perf_count = time.perf_counter()
+                sim = Simulator(scenario=scenario)
+                sim.set_time(start=time_start, stop=time_stop, step=time_step)
+                sim.optimizer = CloudOptimizer()
+                sim.monitor = EnvironmentMonitor(output_path=env_log_path, log_load=True, log_net_delay=False)
+                sim.run()
+                elapsed_time = time.perf_counter() - perf_count
+                print('finished in {:6.2f}s'.format(elapsed_time))
 
         # Execute simulation for each optimizer nb_runs times
         for (opt_id, opt) in optimizers:
@@ -260,8 +292,9 @@ def main():
                 pass
 
             # Set simulation parameters
+            time_start, time_stop, time_step = time_data['start'], time_data['stop'], time_data['step']
             sim = Simulator(scenario=scenario)
-            sim.set_time(**time_data)
+            sim.set_time(start=time_start, stop=time_stop, step=time_step)
             sim.optimizer = opt
             sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=output_path, debug_prefix=debug_prefix)
             # sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=None, debug_prefix=debug_prefix)

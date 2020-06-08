@@ -1,6 +1,7 @@
 from .environment import EnvironmentPredictor
 from sp.core.predictor import AutoARIMAPredictor, SimpleExpSmoothingPredictor, NaivePredictor
 from sp.core.model import EnvironmentInput, System
+from sp.core.util import json_util
 from collections import defaultdict
 import multiprocessing as mp
 import time
@@ -18,10 +19,46 @@ class MultiProcessingEnvironmentPredictor(EnvironmentPredictor):
             It uses :py:class:`~sp.core.predictor.auto_arima.AutoARIMAPredictor` by default.
             See :py:mod:`sp.core.predictor` module
         load_predictor_params (dict): initialization parameters of the load predictor class
+        load_init_data (Union[str, list]): initial data for load using a json format.
+            A string parameter refers to the filename containing the data.
+            E.g.:
+
+             .. code-block:: python
+
+                # Using a list
+                data = [
+                    {'time': 0, 'app': 0, 'node': 0, 'load': 1.5},
+                    {'time': 1, 'app': 0, 'node': 0, 'load': 2.5}
+                ]
+                predictor = MultiProcessingEnvironmentPredictor()
+                predictor.load_init_data = data
+
+                # Or using a file
+                filename = 'path/load.json'
+                predictor.load_init_data = filename
+
         net_delay_predictor_class (class): network delay predictor class.
             It uses :py:class:`~sp.core.predictor.simple_exp_smoothing.SimpleExpSmoothingPredictor` by default.
             See :py:mod:`sp.core.predictor` module
         net_delay_predictor_params (dict): initialization parameters of the network delay predictor class
+        net_delay_init_data (Union[str, list]): initial data for net delay using a json format.
+            A string parameter refers to the filename containing the data.
+            E.g.:
+
+             .. code-block:: python
+
+                # Using a list
+                data = [
+                    {'time': 0, 'app': 0, 'src_node': 0, 'dst_node': 1, 'net_delay': 1.5},
+                    {'time': 1, 'app': 0, 'src_node': 0, 'dst_node': 1, 'net_delay': 2.5}
+                ]
+                predictor = MultiProcessingEnvironmentPredictor()
+                predictor.net_delay_init_data = data
+
+                # Or using a file
+                filename = 'path/net_delay.json'
+                predictor.net_delay_init_data = filename
+
     """
 
     def __init__(self):
@@ -33,10 +70,12 @@ class MultiProcessingEnvironmentPredictor(EnvironmentPredictor):
 
         self.load_predictor_class = None
         self.load_predictor_params = None
+        self.load_init_data = None
         self._load_data = None
 
         self.net_delay_predictor_class = None
         self.net_delay_predictor_params = None
+        self.net_delay_init_data = None
         self._net_delay_data = None
 
         self.pool_size = 0
@@ -53,7 +92,36 @@ class MultiProcessingEnvironmentPredictor(EnvironmentPredictor):
             self.load_predictor_class = AutoARIMAPredictor
         if self.net_delay_predictor_class is None:
             self.load_predictor_class = SimpleExpSmoothingPredictor
+        self._init_load_data()
+        self._init_net_delay_data()
         self._init_pool()
+
+    def _init_load_data(self):
+        """Initialize load data
+        """
+        if self.load_init_data is None:
+            return
+
+        json_data = json_util.load_content(self.load_init_data)
+        for row in json_data:
+            app_id = int(row['app'])
+            node_id = int(row['node'])
+            load = float(row['load'])
+            self._load_data[app_id][node_id].append(load)
+
+    def _init_net_delay_data(self):
+        """Initialize net delay data
+        """
+        if self.net_delay_init_data is None:
+            return
+
+        json_data = json_util.load_content(self.net_delay_init_data)
+        for row in json_data:
+            app_id = int(row['app'])
+            src_node_id = int(row['src_node'])
+            dst_node_id = int(row['dst_node'])
+            net_delay = float(row['net_delay'])
+            self._net_delay_data[app_id][src_node_id][dst_node_id].append(net_delay)
 
     def clear(self):
         """Clear parameters

@@ -3,6 +3,8 @@ from sp.core.heuristic.brkga import GAOperator, GAIndividual
 from sp.system_controller.model import OptSolution
 from sp.system_controller.util import make_solution_feasible
 from sp.system_controller.util import calc_response_time, calc_load_before_distribution
+from sp.system_controller.util import calc_network_delay, calc_processing_delay, calc_initialization_delay
+from collections import defaultdict
 import numpy as np
 import math
 import copy
@@ -98,10 +100,10 @@ class SOGAOperator(GAOperator):
             heuristic_population = [
                 indiv_gen.create_individual_cloud(self),
                 indiv_gen.create_individual_net_delay(self),
-                indiv_gen.create_individual_cluster_metoids(self),
+                # indiv_gen.create_individual_cluster_metoids(self),
                 indiv_gen.create_individual_deadline(self),
                 indiv_gen.create_individual_load(self),
-                indiv_gen.create_individual_current(self)
+                # indiv_gen.create_individual_current(self)
             ]
             merged_population = []
             for indiv_1 in heuristic_population:
@@ -156,6 +158,7 @@ class SOGAOperator(GAOperator):
         Returns:
             object: fitness value
         """
+
         solution = self.decode(individual)
         return self.objective(self.system, solution, self.environment_input)
 
@@ -174,6 +177,7 @@ class SOGAOperator(GAOperator):
         cloud_node = self.system.cloud_node
 
         solution = OptSolution.create_empty(self.system)
+        cached_delays = _CachedDelays()
 
         selected_nodes = {}
         for (a_index, app) in enumerate(self.system.apps):
@@ -205,14 +209,14 @@ class SOGAOperator(GAOperator):
 
             nodes = list(selected_nodes[app.id])
             nodes.append(cloud_node)
-            nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution))
+            nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution, cached_delays))
 
             total_load = calc_load_before_distribution(app.id, src_node.id, self.system, self.environment_input)
             chunk = total_load * self.load_chunk_percent
             remaining_load = total_load
 
             while remaining_load > 0.0:
-                # nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution))
+                # nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution, cached_delays))
                 for dst_node in nodes:
                     if self._alloc_resources(app, dst_node, solution, chunk, increment=True):
                         solution.app_placement[app.id][dst_node.id] = True
@@ -221,6 +225,7 @@ class SOGAOperator(GAOperator):
 
                         remaining_load -= chunk
                         chunk = min(remaining_load, chunk)
+                        cached_delays.invalidate(app.id, src_node.id, dst_node.id)
                         break
 
         for app in self.system.apps:
@@ -281,7 +286,7 @@ class SOGAOperator(GAOperator):
                 return False
         return True
 
-    def _calc_response_time(self, app, src_node, dst_node, solution):
+    def _calc_response_time(self, app, src_node, dst_node, solution, cached_delays):
         """Calculate response time of requests from src_node to dst_node
 
         Args:
@@ -289,9 +294,12 @@ class SOGAOperator(GAOperator):
             src_node (sp.core.model.node.Node): source node
             dst_node (sp.core.model.node.Node): destination node
             solution (OptSolution): solution
+            cached_delays (_CachedDelays): cached delays
         Returns:
             float: response time
         """
+        if cached_delays.is_valid(app.id, src_node.id, dst_node.id):
+            return cached_delays.get_rt(app.id, src_node.id, dst_node.id)
 
         prev_cpu_alloc = solution.allocated_resource[app.id][dst_node.id][Resource.CPU]
         prev_load = solution.received_load[app.id][dst_node.id]
@@ -304,7 +312,30 @@ class SOGAOperator(GAOperator):
             solution.received_load[app.id][dst_node.id] = load
             solution.app_placement[app.id][dst_node.id] = True
 
-        rt = calc_response_time(app.id, src_node.id, dst_node.id, self.system, solution, self.environment_input)
+        net_delay = None
+        if cached_delays.is_net_delay_valid(app.id, src_node.id, dst_node.id):
+            net_delay = cached_delays.get_net_delay(app.id, src_node.id, dst_node.id)
+        else:
+            net_delay = calc_network_delay(app.id, src_node.id, dst_node.id,
+                                           self.system, solution, self.environment_input)
+            cached_delays.set_net_delay(app.id, src_node.id, dst_node.id, net_delay)
+
+        proc_delay = None
+        if cached_delays.is_proc_delay_valid(app.id, dst_node.id):
+            proc_delay = cached_delays.get_proc_delay(app.id, dst_node.id)
+        else:
+            proc_delay = calc_processing_delay(app.id, dst_node.id, self.system, solution, self.environment_input)
+            cached_delays.set_proc_delay(app.id, dst_node.id, proc_delay)
+
+        init_delay = None
+        if cached_delays.is_init_delay_valid(app.id, dst_node.id):
+            init_delay = cached_delays.get_init_delay(app.id, dst_node.id)
+        else:
+            init_delay = calc_initialization_delay(app.id, dst_node.id, self.system, solution, self.environment_input)
+            cached_delays.set_init_delay(app.id, dst_node.id, init_delay)
+
+        # rt = calc_response_time(app.id, src_node.id, dst_node.id, self.system, solution, self.environment_input)
+        rt = net_delay + proc_delay + init_delay
 
         solution.allocated_resource[app.id][dst_node.id][Resource.CPU] = prev_cpu_alloc
         solution.received_load[app.id][dst_node.id] = prev_load
@@ -312,3 +343,154 @@ class SOGAOperator(GAOperator):
 
         return rt
 
+
+class _CachedDelays:
+    """Cached Delays
+    """
+
+    def __init__(self):
+        """Initialization
+        """
+        self._net_delay = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: None)))
+        self._proc_delay = defaultdict(lambda: defaultdict(lambda: None))
+        self._init_delay = defaultdict(lambda: defaultdict(lambda: None))
+
+    def is_valid(self, app_id, src_node_id, dst_node_id):
+        """Check if a cached response time is valid
+
+        Args:
+            app_id (int): application's id
+            src_node_id (int): source node's id
+            dst_node_id (int): destination node's id
+        Returns:
+            bool: valid or not
+        """
+        return (self.is_net_delay_valid(app_id, src_node_id, dst_node_id)
+                and self.is_proc_delay_valid(app_id, dst_node_id)
+                and self.is_init_delay_valid(app_id, dst_node_id))
+
+    def is_net_delay_valid(self, app_id, src_node_id, dst_node_id):
+        """Check if a cached network delay if valid
+
+        Args:
+            app_id (int): application's id
+            src_node_id (int): source node's id
+            dst_node_id (int): destination node's id
+        Returns:
+            bool: valid or not
+        """
+        return self._net_delay[app_id][src_node_id][dst_node_id] is not None
+
+    def is_proc_delay_valid(self, app_id, node_id):
+        """Check if a cached processing delay is valid
+
+        Args:
+            app_id (int): application's id
+            node_id (int): node's id
+        Returns:
+            bool: valid or not
+        """
+        return self._proc_delay[app_id][node_id] is not None
+
+    def is_init_delay_valid(self, app_id, node_id):
+        """Check if a cached initialization delay is valid
+
+        Args:
+            app_id (int): application's id
+            node_id (int): node's id
+        Returns:
+            bool: valid or not
+        """
+        return self._init_delay[app_id][node_id] is not None
+
+    def get_net_delay(self, app_id, src_node_id, dst_node_id):
+        """Get a cached network delay
+
+        Args:
+            app_id (int): application's id
+            src_node_id (int): source node's id
+            dst_node_id (int): destination node's id
+        Returns:
+            float: delay value
+        """
+        delay = self._net_delay[app_id][src_node_id][dst_node_id]
+        return delay if delay is not None else math.inf
+
+    def get_proc_delay(self, app_id, node_id):
+        """Get a cached processing delay
+
+        Args:
+            app_id (int): application's id
+            node_id (int): node's id
+        Returns:
+            float: delay value
+        """
+        delay = self._proc_delay[app_id][node_id]
+        return delay if delay is not None else math.inf
+
+    def get_init_delay(self, app_id, node_id):
+        """Get a cached initialization delay
+
+        Args:
+            app_id (int): application's id
+            node_id (int): node's id
+        Returns:
+            float: delay value
+        """
+        delay = self._init_delay[app_id][node_id]
+        return delay if delay is not None else math.inf
+
+    def get_rt(self, app_id, src_node_id, dst_node_id):
+        """Get a cached response time
+
+        Args:
+            app_id (int): application's id
+            src_node_id (int): source node's id
+            dst_node_id (int): destination node's id
+        Returns:
+            float: delay value
+        """
+        return (self.get_net_delay(app_id, src_node_id, dst_node_id)
+                + self.get_proc_delay(app_id, dst_node_id)
+                + self.get_init_delay(app_id, dst_node_id))
+
+    def set_net_delay(self, app_id, src_node_id, dst_node_id, value):
+        """Set a network delay
+
+        Args:
+            app_id (int): application's id
+            src_node_id (int): source node's id
+            dst_node_id (int): destination node's id
+            value (float): delay value
+        """
+        self._net_delay[app_id][src_node_id][dst_node_id] = value
+
+    def set_proc_delay(self, app_id, node_id, value):
+        """Set a processing delay
+
+        Args:
+            app_id (int): application's id
+            node_id (int): node's id
+            value (float): delay value
+        """
+        self._proc_delay[app_id][node_id] = value
+
+    def set_init_delay(self, app_id, node_id, value):
+        """Set an initialization delay
+
+        Args:
+            app_id (int): application's id
+            node_id (int): node's id
+            value (float): delay value
+        """
+        self._init_delay[app_id][node_id] = value
+
+    def invalidate(self, app_id, src_node_id, dst_node_id):
+        """Invalidate a cached delay
+
+        Args:
+            app_id (int): application's id
+            src_node_id (int): source node's id
+            dst_node_id (int): destination node's id
+        """
+        self._proc_delay[app_id][dst_node_id] = None

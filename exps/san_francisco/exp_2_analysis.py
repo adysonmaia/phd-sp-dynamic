@@ -1,9 +1,6 @@
 from datetime import datetime
-from future.utils import iteritems
 from pytz import timezone
 from glob import glob
-import json
-import time
 import os
 import pandas as pd
 import seaborn as sns
@@ -48,7 +45,7 @@ def load_opts_df(optimizers, output_path, filename, nb_runs):
     return opts_df
 
 
-def plot_metrics(optimizers, experiments, output_path, nb_runs):
+def plot_metrics(optimizers, experiments, output_path):
     metrics = [
         {'id': 'overall_deadline_violation', 'label': 'overall deadline violation - ms', 'func': s_to_ms},
         {'id': 'max_deadline_violation', 'label': 'max. deadline violation - ms', 'func': s_to_ms},
@@ -104,17 +101,22 @@ def main():
         # {'id': 'LLCOptimizer_sga_w2', 'label': 'LLC SGA W=2'},
         # {'id': 'LLCOptimizer_ssga_w0', 'label': 'LLC SSGA W=0'},
         {'id': 'LLCOptimizer_ssga_w1', 'label': 'LLC SSGA W=1'},
-        # {'id': 'LLCOptimizer_ssga_w2', 'label': 'LLC SSGA W=2'},
+        {'id': 'LLCOptimizer_ssga_w2', 'label': 'LLC SSGA W=2'},
     ]
+    # experiments = [
+    #     {'path': '1_a1_1211612400_1211698799', 'x': '1-1'},
+    #     {'path': '2_a1_1211612400_1211698799', 'x': '1-2'},
+    #     {'path': '1_a4_1211612400_1211698799', 'x': '4-1'},
+    #     {'path': '2_a4_1211612400_1211698799', 'x': '4-2'},
+    #     {'path': 'a10_1211612400_1211698799', 'x': '10-1'},
+    # ]
     experiments = [
-        {'path': '1_a1_1211612400_1211698799', 'x': '1-1'},
-        {'path': '2_a1_1211612400_1211698799', 'x': '1-2'},
-        {'path': '1_a4_1211612400_1211698799', 'x': '4-1'},
-        {'path': '2_a4_1211612400_1211698799', 'x': '4-2'},
-        {'path': 'a10_1211612400_1211698799', 'x': '10-1'},
+        {'path': 'a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiA5MDB9fQ==', 'x': '15'},
+        {'path': 'a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAxODAwfX0=', 'x': '30'},
+        {'path': 'a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAyNzAwfX0=', 'x': '45'},
+        {'path': 'a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAzNjAwfX0=', 'x': '60'},
     ]
-    nb_runs = 10
-    plot_metrics(optimizers, experiments, output_path, nb_runs)
+    plot_metrics(optimizers, experiments, output_path)
 
 
 if __name__ == '__main__':

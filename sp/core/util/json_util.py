@@ -7,7 +7,7 @@ def load_content(json_data):
     Args:
         json_data (object): json data. If a file name is passed, it loads the file
     Returns:
-        object: loaded data
+        Any: loaded data
     """
     if isinstance(json_data, str):
         with open(json_data) as json_file:
@@ -24,7 +24,7 @@ def load_key_content(json_data, key):
         json_data (dict): json data.
         key (object): a dictionary key
     Returns:
-        object: loaded data
+        Any: loaded data
     Raises:
         KeyError: key not found in the data
     """

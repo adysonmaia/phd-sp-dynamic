@@ -33,28 +33,30 @@ def main():
     mobility_path = os.path.join(DATA_PATH, 'cabs')
 
     # Simulation time
+    train_start = SF_TZ.localize(datetime(2008, 5, 23, 0, 0, 0)).timestamp()
     time_start = SF_TZ.localize(datetime(2008, 5, 24, 0, 0, 0)).timestamp()
     time_stop = SF_TZ.localize(datetime(2008, 5, 24, 23, 59, 59)).timestamp()
-    time_step = 60 * 60  # seconds or 1H
+    # time_step = 60 * 60  # seconds or 1H
+    time_step = 30 * 60  # seconds or 30min
     simulation_data = {
-        'time': {'start': time_start, 'stop': time_stop, 'step': time_step},
+        'time': {'start': time_start, 'stop': time_stop, 'step': time_step, 'train_start': train_start},
         'scenarios': []
     }
 
     # Scenarios parameters
-    # scenarios = [
-    #     # {'nb_apps': 10},
-    #     # {'nb_apps': 7},
-    #     {'nb_apps': 4},
-    #     # {'nb_apps': 1},
-    # ]
-
     scenarios = [
-        {'nb_apps': 4, 'time': {'step': 15 * 60}},
-        {'nb_apps': 4, 'time': {'step': 30 * 60}},
-        {'nb_apps': 4, 'time': {'step': 45 * 60}},
-        {'nb_apps': 4, 'time': {'step': 60 * 60}},
+        {'nb_apps': 1},
+        {'nb_apps': 4},
+        {'nb_apps': 7},
+        {'nb_apps': 10}
     ]
+
+    # scenarios = [
+    #     {'nb_apps': 4, 'time': {'step': 15 * 60}},
+    #     {'nb_apps': 4, 'time': {'step': 30 * 60}},
+    #     {'nb_apps': 4, 'time': {'step': 45 * 60}},
+    #     {'nb_apps': 4, 'time': {'step': 60 * 60}},
+    # ]
 
     # Generate each scenario
     nb_runs = 30
@@ -66,7 +68,7 @@ def main():
             scenario_id = 'a{}_{}'.format(nb_apps, scenario_id)
             scenario_path = os.path.join(DATA_PATH, scenario_id, str(run))
             scenario_filename, scenario_data = gen_scenario(nb_apps=nb_apps,
-                                                            time_start=time_start,
+                                                            time_start=train_start,
                                                             time_stop=time_stop,
                                                             map_filename=map_filename,
                                                             mobility_path=mobility_path,

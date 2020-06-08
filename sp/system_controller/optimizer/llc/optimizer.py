@@ -58,6 +58,7 @@ class LLCOptimizer(Optimizer):
         """
         if self.environment_predictor is None:
             self.environment_predictor = DefaultEnvironmentPredictor()
+        self.environment_predictor.init_params()
 
         if self.objective is None:
             self.objective = [
@@ -85,7 +86,6 @@ class LLCOptimizer(Optimizer):
         Returns:
             sp.system_controller.model.opt_solution.OptSolution: problem solution
         """
-        self.init_params()
         self.environment_predictor.update(system, environment_input)
 
         two_step = TwoStep(system=system,
