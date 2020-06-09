@@ -1,5 +1,5 @@
 from sp.core.model import Scenario
-from sp.core.predictor import AutoARIMAPredictor, NaivePredictor
+from sp.core.predictor import AutoARIMAPredictor, SARIMAPredictor, NaivePredictor
 from sp.simulator import Simulator
 from sp.simulator.monitor import OptimizerMonitor, EnvironmentMonitor
 from sp.system_controller import metric, util
@@ -150,8 +150,13 @@ def main():
     # Set environment forecasting
     env_predictor = MultiProcessingEnvironmentPredictor()
     env_predictor.pool_size = pool_size
-    env_predictor.load_predictor_class = AutoARIMAPredictor
-    env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': True, 'maxiter': 10}
+    env_predictor.load_predictor_class = SARIMAPredictor
+    env_predictor.load_predictor_params = {'order': (1, 1, 0), 'enforce_stationarity': False,
+                                           'enforce_invertibility': False}
+    # env_predictor.load_predictor_class = AutoARIMAPredictor
+    # # env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': True, 'maxiter': 10}
+    # env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': False,
+    #                                        'random': True, 'n_fits': 2, 'maxiter': 2}
     env_predictor.net_delay_predictor_class = NaivePredictor
 
     # Set optimizer solutions
@@ -262,11 +267,15 @@ def main():
         # Obtain forecasting training set
         if 'train_start' in time_data and time_data['train_start'] < time_data['start']:
             time_start, time_stop, time_step = time_data['train_start'], time_data['start'] - 1, time_data['step']
+            # time_start, time_stop, time_step = time_data['train_start'], time_data['stop'], time_data['step']
             env_log_path = os.path.join(root_output_path, scenario_id, str(run))
             load_log_filename = os.path.join(env_log_path, 'load.json')
 
             seasonal_period = int(round(1 * 24 * 60 * 60 / float(time_step)))  # Seasonal of 1 day
-            env_predictor.load_predictor_params.update({'seasonal': True, 'm': seasonal_period})
+            seasonal_params = {'seasonal_order': (1, 0, 0, seasonal_period)}
+            # seasonal_params = {'seasonal': True, 'm': seasonal_period}
+            # env_predictor.load_predictor_params.update(seasonal_params)
+            env_predictor.load_predictor_params.update(seasonal_params)
             env_predictor.load_init_data = load_log_filename
 
             if not os.path.exists(load_log_filename) or not os.path.isfile(load_log_filename):

@@ -33,7 +33,7 @@ def main():
     mobility_path = os.path.join(DATA_PATH, 'cabs')
 
     # Simulation time
-    train_start = SF_TZ.localize(datetime(2008, 5, 23, 0, 0, 0)).timestamp()
+    train_start = SF_TZ.localize(datetime(2008, 5, 22, 0, 0, 0)).timestamp()
     time_start = SF_TZ.localize(datetime(2008, 5, 24, 0, 0, 0)).timestamp()
     time_stop = SF_TZ.localize(datetime(2008, 5, 24, 23, 59, 59)).timestamp()
     # time_step = 60 * 60  # seconds or 1H
