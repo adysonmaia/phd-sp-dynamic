@@ -214,7 +214,7 @@ class SOGAOperator(GAOperator):
             total_load = calc_load_before_distribution(app.id, src_node.id, self.system, self.environment_input)
             chunk = total_load * self.load_chunk_percent
             remaining_load = total_load
-            max_nb_chunks = math.floor(1.0 / float(self.load_chunk_percent))
+            max_nb_chunks = math.ceil(1.0 / float(self.load_chunk_percent))
             chunk_count = 0
 
             while remaining_load > 0.0 and chunk_count < max_nb_chunks:
