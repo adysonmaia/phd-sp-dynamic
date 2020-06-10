@@ -214,8 +214,10 @@ class SOGAOperator(GAOperator):
             total_load = calc_load_before_distribution(app.id, src_node.id, self.system, self.environment_input)
             chunk = total_load * self.load_chunk_percent
             remaining_load = total_load
+            max_nb_chunks = math.floor(1.0 / float(self.load_chunk_percent))
+            chunk_count = 0
 
-            while remaining_load > 0.0:
+            while remaining_load > 0.0 and chunk_count < max_nb_chunks:
                 # nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution, cached_delays))
                 for dst_node in nodes:
                     if self._alloc_resources(app, dst_node, solution, chunk, increment=True):
@@ -226,6 +228,7 @@ class SOGAOperator(GAOperator):
                         remaining_load -= chunk
                         chunk = min(remaining_load, chunk)
                         cached_delays.invalidate(app.id, src_node.id, dst_node.id)
+                        chunk_count += 1
                         break
 
         for app in self.system.apps:

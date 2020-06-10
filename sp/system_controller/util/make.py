@@ -70,7 +70,7 @@ def make_max_instances_constraint_feasible(system, solution, environment_input):
             solution.app_placement[app.id][cloud_node.id] = True
             instances.append(cloud_node)
 
-        instances.sort(key=lambda n: solution.received_load[app.id][n.id])
+        instances.sort(key=lambda n: solution.received_load[app.id][n.id], reverse=True)
         while len(instances) > app.max_instances:
             dst_node = instances.pop()
             if dst_node == cloud_node:
