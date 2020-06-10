@@ -90,8 +90,10 @@ def plot_metrics(optimizers, experiments, output_path):
 def main():
     output_path = 'output/san_francisco/exp/'
     optimizers = [
-        {'id': 'CloudOptimizer', 'label': 'Cloud'},
+        # {'id': 'CloudOptimizer', 'label': 'Cloud'},
         {'id': 'SOHeuristicOptimizer', 'label': 'SOH'},
+        {'id': 'NoMigrationOptimizer', 'label': 'No Migration'},
+        {'id': 'OmittedMigrationOptimizer', 'label': 'Omit Migration'},
         {'id': 'MOGAOptimizer', 'label': 'MOGA'},
         # {'id': 'LLCOptimizer_mga_w0', 'label': 'LLC MGA W=0'},
         # {'id': 'LLCOptimizer_mga_w1', 'label': 'LLC MGA W=1'},
@@ -110,11 +112,17 @@ def main():
     #     {'path': '2_a4_1211612400_1211698799', 'x': '4-2'},
     #     {'path': 'a10_1211612400_1211698799', 'x': '10-1'},
     # ]
+    # experiments = [
+    #     {'path': 'a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiA5MDB9fQ==', 'x': '15'},
+    #     {'path': 'a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAxODAwfX0=', 'x': '30'},
+    #     {'path': 'a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAyNzAwfX0=', 'x': '45'},
+    #     {'path': 'a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAzNjAwfX0=', 'x': '60'},
+    # ]
     experiments = [
-        {'path': 'a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiA5MDB9fQ==', 'x': '15'},
-        {'path': 'a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAxODAwfX0=', 'x': '30'},
-        {'path': 'a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAyNzAwfX0=', 'x': '45'},
-        {'path': 'a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAzNjAwfX0=', 'x': '60'},
+        {'path': 'a1_eyJuYl9hcHBzIjogMX0=', 'x': '01'},
+        {'path': 'a4_eyJuYl9hcHBzIjogNH0=', 'x': '04'},
+        {'path': 'a7_eyJuYl9hcHBzIjogN30=', 'x': '07'},
+        {'path': 'a10_eyJuYl9hcHBzIjogMTB9', 'x': '10'},
     ]
     plot_metrics(optimizers, experiments, output_path)
 

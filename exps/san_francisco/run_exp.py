@@ -5,6 +5,7 @@ from sp.simulator.monitor import OptimizerMonitor, EnvironmentMonitor
 from sp.system_controller import metric, util
 from sp.system_controller.optimizer.llc import LLCOptimizer, plan_finder, input_finder
 from sp.system_controller.optimizer import SOGAOptimizer, MOGAOptimizer, CloudOptimizer, SOHeuristicOptimizer
+from sp.system_controller.optimizer import NoMigrationOptimizer, OmittedMigrationOptimizer
 from sp.system_controller.predictor import MultiProcessingEnvironmentPredictor
 from datetime import datetime
 from pytz import timezone
@@ -12,6 +13,9 @@ import json
 import math
 import os
 import time
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 
 UTC_TZ = timezone('UTC')
 SF_TZ_STR = 'US/Pacific'
@@ -111,6 +115,10 @@ def main():
         metric.cost.overall_cost,
         metric.migration.overall_migration_cost,
     ]
+    multi_objective_without_migration = [
+        metric.deadline.overall_deadline_violation,
+        metric.cost.overall_cost,
+    ]
     single_objective = multi_objective[0]
     metrics = [
         metric.deadline.overall_deadline_violation,
@@ -183,6 +191,18 @@ def main():
     item = (opt_id, opt)
     # optimizers.append(item)
 
+    # No Migration Optimizer
+    opt = NoMigrationOptimizer()
+    opt.objective = multi_objective
+    opt.pool_size = pool_size
+    opt.timeout = timeout
+    opt.population_size = ga_pop_size
+    opt.nb_generations = ga_nb_gens
+    opt.dominance_func = dominance_func
+    opt_id = opt.__class__.__name__
+    item = (opt_id, opt)
+    optimizers.append(item)
+
     # Multi-Objective GA optimizer config
     opt = MOGAOptimizer()
     opt.objective = multi_objective
@@ -191,7 +211,19 @@ def main():
     opt.population_size = ga_pop_size
     opt.nb_generations = ga_nb_gens
     opt.dominance_func = dominance_func
-    opt_id = format(opt.__class__.__name__)
+    opt_id = opt.__class__.__name__
+    item = (opt_id, opt)
+    optimizers.append(item)
+
+    # Omitted Migration optimizer config
+    opt = OmittedMigrationOptimizer()
+    opt.objective = multi_objective_without_migration
+    opt.pool_size = pool_size
+    opt.timeout = timeout
+    opt.population_size = ga_pop_size
+    opt.nb_generations = ga_nb_gens
+    opt.dominance_func = dominance_func
+    opt_id = opt.__class__.__name__
     item = (opt_id, opt)
     optimizers.append(item)
 

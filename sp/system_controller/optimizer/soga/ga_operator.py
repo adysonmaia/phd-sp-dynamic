@@ -172,12 +172,24 @@ class SOGAOperator(GAOperator):
         Returns:
             OptSolution: a valid solution
         """
+        solution, selected_nodes = self._decode_part_1(individual)
+        solution = self._decode_part_2(individual, solution, selected_nodes)
+        solution = self._decode_part_3(individual, solution, selected_nodes)
+        return solution
+
+    def _decode_part_1(self, individual):
+        """Decode Part I.
+        It selects candidate nodes to host applications
+
+        Args:
+            individual (GAIndividual): individual
+        Returns:
+            (OptSolution, dict): solution, list of selected nodes per application
+        """
         nb_apps = len(self.system.apps)
         nb_nodes = len(self.system.nodes)
-        cloud_node = self.system.cloud_node
 
         solution = OptSolution.create_empty(self.system)
-        cached_delays = _CachedDelays()
 
         selected_nodes = {}
         for (a_index, app) in enumerate(self.system.apps):
@@ -196,9 +208,28 @@ class SOGAOperator(GAOperator):
             nodes = list(map(lambda n_index: self.system.nodes[n_index], nodes_index))
             selected_nodes[app.id] = nodes
 
+        return solution, selected_nodes
+
+    def _decode_part_2(self, individual, solution, selected_nodes):
+        """Decode Part II.
+        It distributes load among the selected nodes of part I
+
+        Args:
+            individual (GAIndividual): individual
+            solution (OptSolution): solution
+            selected_nodes (dict): selected nodes of part I
+        Returns:
+            OptSolution: solution
+        """
+        nb_apps = len(self.system.apps)
+        nb_nodes = len(self.system.nodes)
+        cloud_node = self.system.cloud_node
+
         start = nb_apps * (nb_nodes + 1)
         end = self.nb_genes
         priority = individual[start:end]
+
+        cached_delays = _CachedDelays()
 
         requests_index = list(range(len(self.requests)))
         requests_index.sort(key=lambda i: priority[i], reverse=True)
@@ -212,11 +243,12 @@ class SOGAOperator(GAOperator):
             nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution, cached_delays))
 
             total_load = calc_load_before_distribution(app.id, src_node.id, self.system, self.environment_input)
-            chunk = total_load * self.load_chunk_percent
             remaining_load = total_load
+            chunk = total_load * self.load_chunk_percent
             max_nb_chunks = math.ceil(1.0 / float(self.load_chunk_percent))
             chunk_count = 0
 
+            # while remaining_load > 0.0 and chunk_count < max_nb_chunks:
             while remaining_load > 0.0 and chunk_count < max_nb_chunks:
                 # nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution, cached_delays))
                 for dst_node in nodes:
@@ -227,10 +259,23 @@ class SOGAOperator(GAOperator):
 
                         remaining_load -= chunk
                         chunk = min(remaining_load, chunk)
-                        cached_delays.invalidate(app.id, src_node.id, dst_node.id)
                         chunk_count += 1
+                        cached_delays.invalidate(app.id, src_node.id, dst_node.id)
                         break
 
+        return solution
+
+    def _decode_part_3(self, individual, solution, selected_nodes):
+        """Decode Part III.
+        It is a local search to make solution feasible
+
+        Args:
+            individual (GAIndividual): individual
+            solution (OptSolution): solution
+            selected_nodes (dict): selected nodes of part I
+        Returns:
+            OptSolution: solution
+        """
         for app in self.system.apps:
             for dst_node in selected_nodes[app.id]:
                 if solution.app_placement[app.id][dst_node.id]:
@@ -273,7 +318,7 @@ class SOGAOperator(GAOperator):
             return True
 
     def _check_capacity_constraint(self, node, solution):
-        """Check if solution respects capacity constraint in a specific node
+        """Check if a solution respects capacity constraint in a specific node
 
         Args:
             node (sp.core.model.node.Node):

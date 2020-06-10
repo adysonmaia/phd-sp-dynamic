@@ -104,7 +104,10 @@ class CalcUtilTestCase(unittest.TestCase):
                         self.assertEqual(init_delay, 0.0)
                     elif curr_place and not prev_place:
                         self.assertGreater(init_delay, 0.0)
-                        self.assertLessEqual(init_delay, mig_delay)
+                        if system.sampling_time > mig_delay:
+                            self.assertLessEqual(init_delay, mig_delay)
+                        else:
+                            self.assertEqual(init_delay, mig_delay)
 
     def test_calc_migration_delay(self):
         for time in range(self.time_duration + 1):
