@@ -248,7 +248,6 @@ class SOGAOperator(GAOperator):
             max_nb_chunks = math.ceil(1.0 / float(self.load_chunk_percent))
             chunk_count = 0
 
-            # while remaining_load > 0.0 and chunk_count < max_nb_chunks:
             while remaining_load > 0.0 and chunk_count < max_nb_chunks:
                 # nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution, cached_delays))
                 for dst_node in nodes:

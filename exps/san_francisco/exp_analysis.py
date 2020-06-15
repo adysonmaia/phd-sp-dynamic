@@ -220,11 +220,16 @@ def main():
     # output_path = 'output/san_francisco/exp/a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAyNzAwfX0='
     # output_path = 'output/san_francisco/exp/a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAxODAwfX0='
     # output_path = 'output/san_francisco/exp/a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiA5MDB9fQ=='
-    output_path = 'output/san_francisco/exp/a10_eyJuYl9hcHBzIjogMTB9/'
+    output_path = 'output/san_francisco/exp/a1_eyJuYl9hcHBzIjogMX0=/'
+    # output_path = 'output/san_francisco/exp/a4_eyJuYl9hcHBzIjogNH0=/'
+    # output_path = 'output/san_francisco/exp/a7_eyJuYl9hcHBzIjogN30=/'
+    # output_path = 'output/san_francisco/exp/a10_eyJuYl9hcHBzIjogMTB9/'
     optimizers = [
         # {'id': 'CloudOptimizer', 'label': 'Cloud'},
-        # {'id': 'MOGAOptimizer', 'label': 'MOGA'},
-        # {'id': 'SOHeuristicOptimizer', 'label': 'SOH'},
+        {'id': 'SOHeuristicOptimizer', 'label': 'SOH'},
+        {'id': 'NoMigrationOptimizer', 'label': 'No Migration'},
+        {'id': 'OmittedMigrationOptimizer', 'label': 'Omit Migration'},
+        {'id': 'MOGAOptimizer', 'label': 'MOGA'},
         # {'id': 'LLCOptimizer_mga_w0', 'label': 'LLC MGA W=0'},
         # {'id': 'LLCOptimizer_mga_w1', 'label': 'LLC MGA W=1'},
         # {'id': 'LLCOptimizer_mga_w2', 'label': 'LLC MGA W=2'},
@@ -238,7 +243,7 @@ def main():
 
     # run_dirs = glob(os.path.join(output_path, '[0-9]*/'))
     # nb_runs = len(run_dirs)
-    nb_runs = 1
+    nb_runs = 4
 
     plot_metrics(optimizers, output_path, nb_runs)
     # plot_placement_total(optimizers, output_path, nb_runs)

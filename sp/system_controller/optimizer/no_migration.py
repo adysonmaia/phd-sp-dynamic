@@ -53,10 +53,12 @@ class NoMigrationGAOperator(MOGAOperator):
             (OptSolution, dict): solution, list of selected nodes per application
         """
         prev_control_input = self.system.control_input
+        cloud_node = self.system.cloud_node
+        selected_nodes = None
+        solution = None
         if prev_control_input is None:
-            return MOGAOperator._decode_part_1(self, individual)
+            solution, selected_nodes = MOGAOperator._decode_part_1(self, individual)
         else:
-            cloud_node = self.system.cloud_node
             solution = OptSolution.create_empty(self.system)
             selected_nodes = {}
             for app in self.system.apps:
@@ -64,11 +66,33 @@ class NoMigrationGAOperator(MOGAOperator):
                 for node in self.system.nodes:
                     if prev_control_input.get_app_placement(app.id, node.id):
                         app_nodes.append(node)
-                        solution.app_placement[app.id][node.id] = True
-                solution.app_placement[app.id][cloud_node.id] = True
                 selected_nodes[app.id] = app_nodes
 
-            return solution, selected_nodes
+        for app in self.system.apps:
+            app_nodes = selected_nodes[app.id]
+            if cloud_node not in app_nodes:
+                app_nodes.append(cloud_node)
+
+        return solution, selected_nodes
+
+    def _decode_part_2(self, individual, solution, selected_nodes):
+        """Decode Part II.
+        It distributes load among the selected nodes of part I
+
+        Args:
+            individual (GAIndividual): individual
+            solution (OptSolution): solution
+            selected_nodes (dict): selected nodes of part I
+        Returns:
+            OptSolution: solution
+        """
+        prev_control_input = self.system.control_input
+        if prev_control_input is not None:
+            for app in self.system.apps:
+                for node in selected_nodes[app.id]:
+                    if self._alloc_resources(app, node, solution, load=0.0, increment=False):
+                        solution.app_placement[app.id][node.id] = True
+        return MOGAOperator._decode_part_2(self, individual, solution, selected_nodes)
 
     def _decode_part_3(self, individual, solution, selected_nodes):
         """Decode Part III.
@@ -83,6 +107,7 @@ class NoMigrationGAOperator(MOGAOperator):
         """
         cloud_node = self.system.cloud_node
         for app in self.system.apps:
-            solution.app_placement[app.id][cloud_node.id] = True
-
+            if not solution.app_placement[app.id][cloud_node.id]:
+                solution.app_placement[app.id][cloud_node.id] = True
+                self._alloc_resources(app, cloud_node, solution, load=0.0, increment=False)
         return MOGAOperator._decode_part_3(self, individual, solution, selected_nodes)

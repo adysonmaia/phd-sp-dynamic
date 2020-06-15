@@ -13,8 +13,8 @@ import json
 import math
 import os
 import time
-import logging
-logging.basicConfig(level=logging.DEBUG)
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
 
 
 UTC_TZ = timezone('UTC')
@@ -126,6 +126,7 @@ def main():
         metric.deadline.avg_deadline_violation,
         metric.deadline.avg_only_violated_deadline,
         metric.deadline.weighted_avg_deadline_violation,
+        metric.deadline.weighted_avg_only_violated_deadline,
         metric.deadline.deadline_satisfaction,
         metric.cost.overall_cost,
         metric.cost.max_cost,

@@ -20,6 +20,10 @@ def to_percent(value):
     return 100.0 * value
 
 
+def bool_to_int(value):
+    return int(value)
+
+
 def load_opts_df(optimizers, output_path, filename, nb_runs):
     opts_df = {}
 
@@ -52,7 +56,12 @@ def plot_metrics(optimizers, experiments, output_path):
         {'id': 'deadline_satisfaction', 'label': 'deadline satisfaction - %', 'func': to_percent},
         {'id': 'overall_cost', 'label': 'allocation cost'},
         {'id': 'overall_migration_cost', 'label': 'migration cost'},
-        {'id': 'elapsed_time', 'label': 'exec time - s'}
+        {'id': 'elapsed_time', 'label': 'exec time - s'},
+        {'id': 'avg_response_time', 'label': 'avg response time - ms', 'func': s_to_ms},
+        {'id': 'avg_deadline_violation', 'label': 'avg deadline violation - ms', 'func': s_to_ms},
+        {'id': 'weighted_avg_response_time', 'label': 'avg response time - ms', 'func': s_to_ms},
+        {'id': 'weighted_avg_deadline_violation', 'label': 'avg deadline violation - ms', 'func': s_to_ms},
+        {'id': 'valid', 'label': 'valid', 'func': bool_to_int},
     ]
     metrics_id = [m['id'] for m in metrics]
 
@@ -78,7 +87,10 @@ def plot_metrics(optimizers, experiments, output_path):
     metrics_df = pd.DataFrame.from_records(metrics_data)
     # sns.set()
     sns.set_context("paper")
-    sns.catplot(x='x', y='overall_deadline_violation', hue='opt', kind='bar', data=metrics_df)
+    # sns.relplot(x='x', y='overall_deadline_violation', hue='opt', kind='line', data=metrics_df)
+    # sns.catplot(x='x', y='overall_deadline_violation', hue='opt', kind='point', ci=None, data=metrics_df)
+    # sns.catplot(x='x', y='overall_deadline_violation', hue='opt', kind='bar', data=metrics_df)
+    sns.boxplot(x='x', y='overall_deadline_violation', hue='opt', notch=False, data=metrics_df)
     plt.show()
 
     # metrics_df = metrics_df.melt(id_vars=['opt', 'run', 'x'], var_name='metric', value_name='y')
@@ -92,7 +104,7 @@ def main():
     optimizers = [
         # {'id': 'CloudOptimizer', 'label': 'Cloud'},
         {'id': 'SOHeuristicOptimizer', 'label': 'SOH'},
-        {'id': 'NoMigrationOptimizer', 'label': 'No Migration'},
+        # {'id': 'NoMigrationOptimizer', 'label': 'No Migration'},
         {'id': 'OmittedMigrationOptimizer', 'label': 'Omit Migration'},
         {'id': 'MOGAOptimizer', 'label': 'MOGA'},
         # {'id': 'LLCOptimizer_mga_w0', 'label': 'LLC MGA W=0'},
