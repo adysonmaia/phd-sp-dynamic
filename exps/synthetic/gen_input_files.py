@@ -27,23 +27,23 @@ def main():
     #     {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 4000},
     #     {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 7000},
     # ]
-    # scenarios = [
-    #     {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 10000},
-    #     {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 10000},
-    #     {'nb_bs': 9, 'nb_apps': 15, 'nb_users': 10000},
-    #     {'nb_bs': 9, 'nb_apps': 20, 'nb_users': 10000},
-    # ]
     scenarios = [
-        # {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 1000},
-        {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 4000},
-        {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 7000},
+        {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 10000},
         {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 10000},
+        {'nb_bs': 9, 'nb_apps': 15, 'nb_users': 10000},
+        {'nb_bs': 9, 'nb_apps': 20, 'nb_users': 10000},
     ]
+    # scenarios = [
+    #     {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 1000},
+    #     {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 4000},
+    #     {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 7000},
+    #     {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 10000},
+    # ]
 
     # Simulation times
     time_start = 0.0
-    time_step = 60.0 * 60.0  # 1 Hour
-    nb_steps = 24
+    time_step = 30.0 * 60.0  # 30 min
+    nb_steps = 48
     # nb_steps = 10
     # nb_steps = 50
     time_stop = (nb_steps - 1) * time_step + time_start
@@ -509,15 +509,15 @@ def distribute_load(min_load, max_load, time_start, time_end, time_step):
         sp_rnd.random_beta_pdf,
         sp_rnd.random_cycle,
         sp_rnd.random_linear,
-        sp_rnd.random_uniform
+        sp_rnd.random_constant,
+        sp_rnd.random_uniform,
     ]
 
     rnd_params = {
         sp_rnd.random_burst: [
-            {'normal_transition': 0.1, 'burst_transition': 0.8},
-            {'normal_transition': 0.2, 'burst_transition': 0.8},
-            {'normal_transition': 0.4, 'burst_transition': 0.8},
-            {'normal_transition': 0.05, 'burst_transition': 0.05}
+            {'normal_transition': 0.1, 'burst_transition': 0.1},
+            {'normal_transition': 0.2, 'burst_transition': 0.2},
+            {'normal_transition': 0.3, 'burst_transition': 0.3},
         ],
         sp_rnd.random_beta_pdf: [
             {'alpha': 2, 'beta': 2},
@@ -531,6 +531,7 @@ def distribute_load(min_load, max_load, time_start, time_end, time_step):
             {'period': nb_steps / 2.0}
         ],
         sp_rnd.random_linear: [{}],
+        sp_rnd.random_constant: [{}],
         sp_rnd.random_uniform: [{}]
     }
 

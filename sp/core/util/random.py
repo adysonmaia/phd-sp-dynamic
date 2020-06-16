@@ -171,7 +171,8 @@ def random_burst(normal_value=None, burst_value=1.0, normal_transition=0.5, burs
     """
 
     if normal_value is None:
-        factors = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+        # factors = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+        factors = [0.1, 0.2, 0.3, 0.4, 0.5]
         factor = np.random.choice(factors)
         normal_value = np.random.uniform(0.0, burst_value * factor)
 
@@ -208,10 +209,15 @@ def random_linear(nb_samples=None, noise=None):
             Resulted values are between 0 and 1
     """
     a = np.random.uniform(0.0, 1.0)
-    b_param_options = [(0.0, 1.0), (a, 1.0), (0.0, a), (a, a)]
-    b_param_index = np.random.choice(range(len(b_param_options)))
-    b_param = b_param_options[b_param_index]
-    b = np.random.uniform(*b_param)
+    # b_param_options = [(0.0, 1.0), (a, 1.0), (0.0, a), (a, a)]
+    # b_param_index = np.random.choice(range(len(b_param_options)))
+    # b_param = b_param_options[b_param_index]
+    # b = np.random.uniform(*b_param)
+    b = 0.0
+    if a <= 0.5:
+        b = 1.0
+    else:
+        b = 0.0
 
     nb_steps = nb_samples if nb_samples else 1
     y = np.linspace(a, b, num=nb_steps)
