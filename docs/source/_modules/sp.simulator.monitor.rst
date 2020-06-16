@@ -4,6 +4,14 @@ sp.simulator.monitor package
 Submodules
 ----------
 
+sp.simulator.monitor.environment module
+---------------------------------------
+
+.. automodule:: sp.simulator.monitor.environment
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 sp.simulator.monitor.monitor module
 -----------------------------------
 

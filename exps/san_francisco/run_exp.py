@@ -22,6 +22,13 @@ SF_TZ_STR = 'US/Pacific'
 SF_TZ = timezone(SF_TZ_STR)
 
 
+def exp_aggregator(values):
+    result = 0.0
+    for (index, value) in enumerate(values):
+        result += value / math.exp(index)
+    return result
+
+
 class ExpRunMonitor(OptimizerMonitor):
     """Simulation monitor
     """
@@ -59,9 +66,14 @@ class ExpRunMonitor(OptimizerMonitor):
         tz_time = datetime.fromtimestamp(sim_time, tz=UTC_TZ).astimezone(SF_TZ)
         print_prefix = '{}: '.format(self.debug_prefix) if self.debug_prefix else ''
         print('{}{}/{} - {} - {:9.3f}s'.format(print_prefix, time_slot, total_time_slot, tz_time, elapsed_time))
-        print(datum)
 
-        print(' ')
+        print('Metrics')
+        metrics_id = list(datum.keys())
+        metrics_id.sort()
+        for metric_id in metrics_id:
+            print('{:40}: {}'.format(metric_id, datum[metric_id]))
+
+        print('\nApplications')
         for app in system.apps:
             places = [n.id for n in system.nodes if control_input.get_app_placement(app.id, n.id)]
             users = environment_input.get_attached_users()
@@ -81,7 +93,7 @@ class ExpRunMonitor(OptimizerMonitor):
                 overall_violation, max_violation, len(places), places
             ))
 
-        print(' ')
+        print('\nFree Resources')
         for node in system.nodes:
             free_str = 'node {:2d}, '.format(node.id)
             for resource in system.resources:
@@ -144,9 +156,9 @@ def main():
 
     #
     dominance_func = util.preferred_dominates
-    pool_size = 12
+    # pool_size = 12
     # pool_size = 8
-    # pool_size = 4
+    pool_size = 4
     # pool_size = 0
     # timeout = 3 * 60  # 3 min
     timeout = 2 * 60  # 2 min
@@ -174,13 +186,13 @@ def main():
     opt = CloudOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Single-Objective Heuristic optimizer config
     opt = SOHeuristicOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Single-Objective GA optimizer config
     opt = SOGAOptimizer()
@@ -202,7 +214,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Multi-Objective GA optimizer config
     opt = MOGAOptimizer()
@@ -214,7 +226,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Omitted Migration optimizer config
     opt = OmittedMigrationOptimizer()
@@ -226,42 +238,45 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
+
+    # LLC Parameters
 
     # LLC (control input and plan) finders versions
     llc_finders = [
         {
-            'key': 'ssga',
+            'id': 'ssga',
             'input': input_finder.SSGAInputFinder,
             'input_params': {'timeout': timeout, 'population_size': ga_pop_size, 'nb_generations': ga_nb_gens},
             'plan': None
         },
         # {
-        #     'key': 'sga',
+        #     'id': 'sga',
         #     'input': input_finder.SGAInputFinder,
         #     'input_params': {'timeout': timeout},
         #     'plan': None
         # },
         # {
-        #     'key': 'mga',
+        #     'id': 'mga',
         #     'input': input_finder.MGAInputFinder,
         #     'input_params': {'timeout': timeout},
         #     'plan': plan_finder.GAPlanFinder,
         #     'plan_params': {'timeout': timeout},
         # },
         # {
-        #     'key': 'ssga_sga',
+        #     'id': 'ssga_sga',
         #     'input': input_finder.PipelineInputFinder,
         #     'plan': None
         # },
     ]
 
-    # LLC optimizer with different parameters
+    # Prediction windows
     # prediction_windows = [0, 1, 2]
-    prediction_windows = [1, 2]
+    # prediction_windows = [1, 2]
     # prediction_windows = [0]
     # prediction_windows = [1]
-    # prediction_windows = [2]
+    prediction_windows = [2]
+
     for window in prediction_windows:
         for llc_finder in llc_finders:
             opt = LLCOptimizer()
@@ -269,13 +284,14 @@ def main():
             opt.pool_size = pool_size
             opt.dominance_func = dominance_func
             opt.objective = multi_objective
+            opt.objective_aggregator = util.sum_aggregator
             opt.input_finder_class = llc_finder['input']
             opt.input_finder_params = llc_finder['input_params'] if 'input_params' in llc_finder else None
             opt.plan_finder_class = llc_finder['plan']
             opt.plan_finder_params = llc_finder['plan_params'] if 'plan_params' in llc_finder else None
             opt.environment_predictor = env_predictor
 
-            opt_id = '{}_{}_w{}'.format(opt.__class__.__name__, llc_finder['key'], window)
+            opt_id = '{}_{}_w{}'.format(opt.__class__.__name__, llc_finder['id'], window)
             item = (opt_id, opt)
             optimizers.append(item)
 
@@ -338,8 +354,8 @@ def main():
             sim = Simulator(scenario=scenario)
             sim.set_time(start=time_start, stop=time_stop, step=time_step)
             sim.optimizer = opt
-            sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=output_path, debug_prefix=debug_prefix)
-            # sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=None, debug_prefix=debug_prefix)
+            # sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=output_path, debug_prefix=debug_prefix)
+            sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=None, debug_prefix=debug_prefix)
 
             # Run simulation
             perf_count = time.perf_counter()

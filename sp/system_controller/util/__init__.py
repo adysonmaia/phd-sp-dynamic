@@ -6,3 +6,4 @@ from .check import is_solution_valid
 from .make import make_solution_feasible
 from .dominance import pareto_dominates, preferred_dominates
 from .metric import filter_metric
+from .aggregator import inv_exp_aggregator, sum_aggregator

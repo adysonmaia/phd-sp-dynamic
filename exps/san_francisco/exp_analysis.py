@@ -110,8 +110,11 @@ def plot_metrics(optimizers, output_path, nb_runs):
         # metric_df.plot(ax=ax, yerr=error_df, legend=False)
         metric_df.plot(ax=ax, legend=False)
 
-        if metric['id'] == 'overall_deadline_violation':
-            ax.set_ylim(0.0, 0.2)
+        # if metric['id'] == 'overall_deadline_violation':
+        #     ax.set_ylim(0.0, 0.2)
+
+        if metric['id'] == 'deadline_satisfaction':
+            ax.set_ylim(0.0, 1.0)
 
     axes[0, 0].legend(ncol=2)
     for row in range(nb_rows):
@@ -220,15 +223,15 @@ def main():
     # output_path = 'output/san_francisco/exp/a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAyNzAwfX0='
     # output_path = 'output/san_francisco/exp/a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAxODAwfX0='
     # output_path = 'output/san_francisco/exp/a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiA5MDB9fQ=='
-    output_path = 'output/san_francisco/exp/a1_eyJuYl9hcHBzIjogMX0=/'
+    # output_path = 'output/san_francisco/exp/a1_eyJuYl9hcHBzIjogMX0=/'
     # output_path = 'output/san_francisco/exp/a4_eyJuYl9hcHBzIjogNH0=/'
     # output_path = 'output/san_francisco/exp/a7_eyJuYl9hcHBzIjogN30=/'
-    # output_path = 'output/san_francisco/exp/a10_eyJuYl9hcHBzIjogMTB9/'
+    output_path = 'output/san_francisco/exp/a10_eyJuYl9hcHBzIjogMTB9/'
     optimizers = [
         # {'id': 'CloudOptimizer', 'label': 'Cloud'},
-        {'id': 'SOHeuristicOptimizer', 'label': 'SOH'},
-        {'id': 'NoMigrationOptimizer', 'label': 'No Migration'},
-        {'id': 'OmittedMigrationOptimizer', 'label': 'Omit Migration'},
+        # {'id': 'SOHeuristicOptimizer', 'label': 'SOH'},
+        # {'id': 'NoMigrationOptimizer', 'label': 'No Migration'},
+        # {'id': 'OmittedMigrationOptimizer', 'label': 'Omit Migration'},
         {'id': 'MOGAOptimizer', 'label': 'MOGA'},
         # {'id': 'LLCOptimizer_mga_w0', 'label': 'LLC MGA W=0'},
         # {'id': 'LLCOptimizer_mga_w1', 'label': 'LLC MGA W=1'},
@@ -239,11 +242,15 @@ def main():
         # {'id': 'LLCOptimizer_ssga_w0', 'label': 'LLC SSGA W=0'},
         {'id': 'LLCOptimizer_ssga_w1', 'label': 'LLC SSGA W=1'},
         # {'id': 'LLCOptimizer_ssga_w2', 'label': 'LLC SSGA W=2'},
+        # {'id': 'LLCOptimizer_ssga_w1_exp', 'label': 'LLC SSGA W=1 Exp'},
+        # {'id': 'LLCOptimizer_ssga_w2_exp', 'label': 'LLC SSGA W=2 Exp'},
+
+
     ]
 
     # run_dirs = glob(os.path.join(output_path, '[0-9]*/'))
     # nb_runs = len(run_dirs)
-    nb_runs = 4
+    nb_runs = 1
 
     plot_metrics(optimizers, output_path, nb_runs)
     # plot_placement_total(optimizers, output_path, nb_runs)

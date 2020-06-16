@@ -4,6 +4,14 @@ sp.system\_controller.util package
 Submodules
 ----------
 
+sp.system\_controller.util.aggregator module
+--------------------------------------------
+
+.. automodule:: sp.system_controller.util.aggregator
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 sp.system\_controller.util.alloc module
 ---------------------------------------
 

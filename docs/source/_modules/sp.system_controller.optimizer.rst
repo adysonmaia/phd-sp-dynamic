@@ -21,6 +21,22 @@ sp.system\_controller.optimizer.cloud module
    :undoc-members:
    :show-inheritance:
 
+sp.system\_controller.optimizer.no\_migration module
+----------------------------------------------------
+
+.. automodule:: sp.system_controller.optimizer.no_migration
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+sp.system\_controller.optimizer.omitted\_migration module
+---------------------------------------------------------
+
+.. automodule:: sp.system_controller.optimizer.omitted_migration
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 sp.system\_controller.optimizer.optimizer module
 ------------------------------------------------
 
