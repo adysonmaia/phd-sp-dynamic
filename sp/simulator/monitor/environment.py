@@ -10,6 +10,8 @@ class EnvironmentMonitor(Monitor):
         output_path (str): path to save the logs
         log_net_delay (bool): whether to log net delay information or not
         log_load (bool): whether to log load information or not
+        net_delay_log_filename (str): net delay log file name
+        load_log_filename (str): load log file name
     """
 
     def __init__(self, output_path=None, log_net_delay=True, log_load=True):
@@ -22,6 +24,9 @@ class EnvironmentMonitor(Monitor):
         self.output_path = output_path
         self.log_net_delay = log_net_delay
         self.log_load = log_load
+
+        self.net_delay_log_filename = 'net_delay.json'
+        self.load_log_filename = 'load.json'
 
         self._net_delay_data = []
         self._load_data = []
@@ -70,8 +75,8 @@ class EnvironmentMonitor(Monitor):
         except OSError:
             pass
 
-        net_delay_filename = os.path.join(self.output_path, 'net_delay.json')
-        load_filename = os.path.join(self.output_path, 'load.json')
+        net_delay_filename = os.path.join(self.output_path, self.net_delay_log_filename)
+        load_filename = os.path.join(self.output_path, self.load_log_filename)
         files_data = []
         if self.log_net_delay:
             files_data.append((net_delay_filename, self._net_delay_data))

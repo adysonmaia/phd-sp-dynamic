@@ -5,7 +5,7 @@ from sp.simulator.monitor import OptimizerMonitor, EnvironmentMonitor
 from sp.system_controller import metric, util
 from sp.system_controller.optimizer.llc import LLCOptimizer, plan_finder, input_finder
 from sp.system_controller.optimizer import SOGAOptimizer, MOGAOptimizer, CloudOptimizer, SOHeuristicOptimizer
-from sp.system_controller.optimizer import NoMigrationOptimizer, OmittedMigrationOptimizer
+from sp.system_controller.optimizer import NoMigrationOptimizer, OmittedMigrationOptimizer, StaticOptimizer
 from sp.system_controller.predictor import MultiProcessingEnvironmentPredictor
 from datetime import datetime
 from pytz import timezone
@@ -93,18 +93,25 @@ class ExpRunMonitor(OptimizerMonitor):
                 overall_violation, max_violation, len(places), places
             ))
 
-        print('\nFree Resources')
-        for node in system.nodes:
-            free_str = 'node {:2d}, '.format(node.id)
-            for resource in system.resources:
-                capacity = node.capacity[resource.name]
-                alloc = sum([control_input.get_allocated_resource(a.id, node.id, resource.name) for a in system.apps])
-                free = 1.0
-                if capacity > 0.0 and not math.isinf(capacity):
-                    free = (capacity - alloc) / float(capacity)
-                    free = round(free, 3)
-                free_str += '{} {:6.3f}, '.format(resource.name, free)
-            print(free_str)
+        # print('\nFree Resources')
+        # for node in system.nodes:
+        #     free_str = 'node {:2d}, '.format(node.id)
+        #     for resource in system.resources:
+        #         capacity = node.capacity[resource.name]
+        #         alloc = sum([control_input.get_allocated_resource(a.id, node.id, resource.name) for a in system.apps])
+        #         free = 1.0
+        #         if capacity > 0.0 and not math.isinf(capacity):
+        #             free = (capacity - alloc) / float(capacity)
+        #             free = round(free, 3)
+        #         free_str += '{} {:6.3f}, '.format(resource.name, free)
+        #     print(free_str)
+
+        # print('\nLoad Distribution')
+        # for app in system.apps:
+        #     for src_node in system.nodes:
+        #         ld = ['{:4.2f}'.format(control_input.get_load_distribution(app.id, src_node.id, dst_node.id))
+        #               for dst_node in system.nodes]
+        #         print('app {:2d}, node {:2d}, ld: {}'.format(app.id, src_node.id, ld))
 
         print("--")
 
@@ -123,23 +130,27 @@ def main():
     # Set objectives and metrics functions
     optimizers = []
     multi_objective = [
-        metric.deadline.overall_deadline_violation,
+        metric.deadline.weighted_avg_deadline_violation,
+        metric.response_time.weighted_avg_response_time,
         metric.cost.overall_cost,
         metric.migration.overall_migration_cost,
     ]
     multi_objective_without_migration = [
-        metric.deadline.overall_deadline_violation,
+        metric.deadline.weighted_avg_deadline_violation,
+        metric.response_time.weighted_avg_response_time,
         metric.cost.overall_cost,
     ]
     single_objective = multi_objective[0]
     metrics = [
         metric.deadline.overall_deadline_violation,
+        metric.deadline.weighted_overall_deadline_violation,
         metric.deadline.max_deadline_violation,
         metric.deadline.avg_deadline_violation,
         metric.deadline.avg_only_violated_deadline,
         metric.deadline.weighted_avg_deadline_violation,
         metric.deadline.weighted_avg_only_violated_deadline,
         metric.deadline.deadline_satisfaction,
+        metric.deadline.weighted_deadline_satisfaction,
         metric.cost.overall_cost,
         metric.cost.max_cost,
         metric.cost.avg_cost,
@@ -147,6 +158,7 @@ def main():
         metric.migration.max_migration_cost,
         metric.migration.avg_migration_cost,
         metric.response_time.overall_response_time,
+        metric.response_time.weighted_overall_response_time,
         metric.response_time.max_response_time,
         metric.response_time.avg_response_time,
         metric.response_time.weighted_avg_response_time,
@@ -161,8 +173,8 @@ def main():
     pool_size = 4
     # pool_size = 0
     # timeout = 3 * 60  # 3 min
-    timeout = 2 * 60  # 2 min
-    # timeout = 1 * 60
+    # timeout = 2 * 60  # 2 min
+    timeout = 1 * 60  # 1 min
     ga_pop_size = 100
     # ga_pop_size = 50
     # ga_nb_gens = 100
@@ -186,13 +198,13 @@ def main():
     opt = CloudOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # Single-Objective Heuristic optimizer config
     opt = SOHeuristicOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # Single-Objective GA optimizer config
     opt = SOGAOptimizer()
@@ -204,9 +216,21 @@ def main():
     item = (opt_id, opt)
     # optimizers.append(item)
 
-    # No Migration Optimizer
-    opt = NoMigrationOptimizer()
+    # Static Optimizer
+    opt = StaticOptimizer()
     opt.objective = multi_objective
+    opt.pool_size = pool_size
+    opt.timeout = timeout
+    opt.population_size = ga_pop_size
+    opt.nb_generations = ga_nb_gens
+    opt.dominance_func = dominance_func
+    opt_id = opt.__class__.__name__
+    item = (opt_id, opt)
+    optimizers.append(item)
+
+    # Omitted Migration optimizer config
+    opt = OmittedMigrationOptimizer()
+    opt.objective = multi_objective_without_migration
     opt.pool_size = pool_size
     opt.timeout = timeout
     opt.population_size = ga_pop_size
@@ -226,19 +250,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
-
-    # Omitted Migration optimizer config
-    opt = OmittedMigrationOptimizer()
-    opt.objective = multi_objective_without_migration
-    opt.pool_size = pool_size
-    opt.timeout = timeout
-    opt.population_size = ga_pop_size
-    opt.nb_generations = ga_nb_gens
-    opt.dominance_func = dominance_func
-    opt_id = opt.__class__.__name__
-    item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # LLC Parameters
 
@@ -250,12 +262,12 @@ def main():
             'input_params': {'timeout': timeout, 'population_size': ga_pop_size, 'nb_generations': ga_nb_gens},
             'plan': None
         },
-        # {
-        #     'id': 'sga',
-        #     'input': input_finder.SGAInputFinder,
-        #     'input_params': {'timeout': timeout},
-        #     'plan': None
-        # },
+        {
+            'id': 'sga',
+            'input': input_finder.SGAInputFinder,
+            'input_params': {'timeout': timeout, 'population_size': ga_pop_size, 'nb_generations': ga_nb_gens},
+            'plan': None
+        },
         # {
         #     'id': 'mga',
         #     'input': input_finder.MGAInputFinder,
@@ -274,8 +286,8 @@ def main():
     # prediction_windows = [0, 1, 2]
     # prediction_windows = [1, 2]
     # prediction_windows = [0]
-    # prediction_windows = [1]
-    prediction_windows = [2]
+    prediction_windows = [1]
+    # prediction_windows = [2]
 
     for window in prediction_windows:
         for llc_finder in llc_finders:
@@ -293,7 +305,7 @@ def main():
 
             opt_id = '{}_{}_w{}'.format(opt.__class__.__name__, llc_finder['id'], window)
             item = (opt_id, opt)
-            optimizers.append(item)
+            # optimizers.append(item)
 
     # Create a simulation for each loaded scenario
     for scenario_data in simulation_data['scenarios']:
@@ -316,7 +328,6 @@ def main():
         # Obtain forecasting training set
         if 'train_start' in time_data and time_data['train_start'] < time_data['start']:
             time_start, time_stop, time_step = time_data['train_start'], time_data['start'] - 1, time_data['step']
-            # time_start, time_stop, time_step = time_data['train_start'], time_data['stop'], time_data['step']
             env_log_path = os.path.join(root_output_path, scenario_id, str(run))
             load_log_filename = os.path.join(env_log_path, 'load.json')
 
@@ -354,8 +365,8 @@ def main():
             sim = Simulator(scenario=scenario)
             sim.set_time(start=time_start, stop=time_stop, step=time_step)
             sim.optimizer = opt
-            # sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=output_path, debug_prefix=debug_prefix)
-            sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=None, debug_prefix=debug_prefix)
+            sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=output_path, debug_prefix=debug_prefix)
+            # sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=None, debug_prefix=debug_prefix)
 
             # Run simulation
             perf_count = time.perf_counter()

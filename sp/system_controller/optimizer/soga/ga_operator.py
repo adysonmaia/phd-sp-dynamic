@@ -238,29 +238,30 @@ class SOGAOperator(GAOperator):
             app = self.system.get_app(app_id)
             src_node = self.system.get_node(src_node_id)
 
-            nodes = list(selected_nodes[app.id])
-            nodes.append(cloud_node)
-            nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution, cached_delays))
-
             total_load = calc_load_before_distribution(app.id, src_node.id, self.system, self.environment_input)
             remaining_load = total_load
             chunk = total_load * self.load_chunk_percent
             max_nb_chunks = math.ceil(1.0 / float(self.load_chunk_percent))
             chunk_count = 0
 
-            while remaining_load > 0.0 and chunk_count < max_nb_chunks:
-                # nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution, cached_delays))
-                for dst_node in nodes:
-                    if self._alloc_resources(app, dst_node, solution, chunk, increment=True):
-                        solution.app_placement[app.id][dst_node.id] = True
-                        chunk_ld = chunk / total_load if total_load > 0.0 else 1.0
-                        solution.load_distribution[app.id][src_node.id][dst_node.id] += chunk_ld
+            if total_load > 0.0:
+                nodes = list(selected_nodes[app.id])
+                nodes.append(cloud_node)
+                nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution, cached_delays))
 
-                        remaining_load -= chunk
-                        chunk = min(remaining_load, chunk)
-                        chunk_count += 1
-                        cached_delays.invalidate(app.id, src_node.id, dst_node.id)
-                        break
+                while remaining_load > 0.0 and chunk_count < max_nb_chunks:
+                    # nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution, cached_delays))
+                    for dst_node in nodes:
+                        if self._alloc_resources(app, dst_node, solution, chunk, increment=True):
+                            solution.app_placement[app.id][dst_node.id] = True
+                            chunk_ld = chunk / total_load if total_load > 0.0 else 1.0
+                            solution.load_distribution[app.id][src_node.id][dst_node.id] += chunk_ld
+
+                            remaining_load -= chunk
+                            chunk = min(remaining_load, chunk)
+                            chunk_count += 1
+                            cached_delays.invalidate(app.id, src_node.id, dst_node.id)
+                            break
 
         return solution
 

@@ -73,6 +73,7 @@ def plot_metrics(optimizers, output_path, nb_runs):
         {'id': 'deadline_satisfaction', 'label': 'deadline satisfaction - %'},
         {'id': 'overall_cost', 'label': 'allocation cost'},
         {'id': 'overall_migration_cost', 'label': 'migration cost'},
+        {'id': 'overall_response_time', 'label': 'overall response time'},
         {'id': 'elapsed_time', 'label': 'exec time - s'}
     ]
     metrics_id = [m['id'] for m in metrics]
@@ -113,8 +114,8 @@ def plot_metrics(optimizers, output_path, nb_runs):
         # if metric['id'] == 'overall_deadline_violation':
         #     ax.set_ylim(0.0, 0.2)
 
-        if metric['id'] == 'deadline_satisfaction':
-            ax.set_ylim(0.0, 1.0)
+        # if metric['id'] == 'deadline_satisfaction':
+        #     ax.set_ylim(0.0, 1.0)
 
     axes[0, 0].legend(ncol=2)
     for row in range(nb_rows):
@@ -224,15 +225,17 @@ def main():
     # output_path = 'output/san_francisco/exp/a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAxODAwfX0='
     # output_path = 'output/san_francisco/exp/a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiA5MDB9fQ=='
     # output_path = 'output/san_francisco/exp/a1_eyJuYl9hcHBzIjogMX0=/'
-    # output_path = 'output/san_francisco/exp/a4_eyJuYl9hcHBzIjogNH0=/'
+    output_path = 'output/san_francisco/exp/a4_eyJuYl9hcHBzIjogNH0=/'
     # output_path = 'output/san_francisco/exp/a7_eyJuYl9hcHBzIjogN30=/'
-    output_path = 'output/san_francisco/exp/a10_eyJuYl9hcHBzIjogMTB9/'
+    # output_path = 'output/san_francisco/exp/a10_eyJuYl9hcHBzIjogMTB9/'
     optimizers = [
-        # {'id': 'CloudOptimizer', 'label': 'Cloud'},
-        # {'id': 'SOHeuristicOptimizer', 'label': 'SOH'},
+        {'id': 'CloudOptimizer', 'label': 'Cloud'},
+        {'id': 'SOHeuristicOptimizer', 'label': 'Net Delay + Deadline'},
         # {'id': 'NoMigrationOptimizer', 'label': 'No Migration'},
+        # {'id': 'NoMigrationOptimizer_fixed', 'label': 'No Migration'},
         # {'id': 'OmittedMigrationOptimizer', 'label': 'Omit Migration'},
-        {'id': 'MOGAOptimizer', 'label': 'MOGA'},
+        {'id': 'StaticOptimizer', 'label': 'Static'},
+        {'id': 'MOGAOptimizer', 'label': 'Proposal w/o Prediction'},
         # {'id': 'LLCOptimizer_mga_w0', 'label': 'LLC MGA W=0'},
         # {'id': 'LLCOptimizer_mga_w1', 'label': 'LLC MGA W=1'},
         # {'id': 'LLCOptimizer_mga_w2', 'label': 'LLC MGA W=2'},
@@ -240,12 +243,8 @@ def main():
         # {'id': 'LLCOptimizer_sga_w1', 'label': 'LLC SGA W=1'},
         # {'id': 'LLCOptimizer_sga_w2', 'label': 'LLC SGA W=2'},
         # {'id': 'LLCOptimizer_ssga_w0', 'label': 'LLC SSGA W=0'},
-        {'id': 'LLCOptimizer_ssga_w1', 'label': 'LLC SSGA W=1'},
+        {'id': 'LLCOptimizer_ssga_w1', 'label': 'Proposal w. Prediction H=1'},
         # {'id': 'LLCOptimizer_ssga_w2', 'label': 'LLC SSGA W=2'},
-        # {'id': 'LLCOptimizer_ssga_w1_exp', 'label': 'LLC SSGA W=1 Exp'},
-        # {'id': 'LLCOptimizer_ssga_w2_exp', 'label': 'LLC SSGA W=2 Exp'},
-
-
     ]
 
     # run_dirs = glob(os.path.join(output_path, '[0-9]*/'))

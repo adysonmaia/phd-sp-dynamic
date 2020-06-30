@@ -58,9 +58,12 @@ def plot_metrics(optimizers, experiments, output_path):
         {'id': 'overall_migration_cost', 'label': 'migration cost'},
         {'id': 'elapsed_time', 'label': 'exec time - s'},
         {'id': 'avg_response_time', 'label': 'avg response time - ms', 'func': s_to_ms},
-        {'id': 'avg_deadline_violation', 'label': 'avg deadline violation - ms', 'func': s_to_ms},
         {'id': 'weighted_avg_response_time', 'label': 'avg response time - ms', 'func': s_to_ms},
+        {'id': 'overall_response_time', 'label': 'overall response time - ms', 'func': s_to_ms},
+        {'id': 'avg_deadline_violation', 'label': 'avg deadline violation - ms', 'func': s_to_ms},
+        {'id': 'avg_only_violated_deadline', 'label': 'avg deadline violation 2 - ms', 'func': s_to_ms},
         {'id': 'weighted_avg_deadline_violation', 'label': 'avg deadline violation - ms', 'func': s_to_ms},
+        {'id': 'avg_migration_cost', 'label': 'avg migration cost'},
         {'id': 'valid', 'label': 'valid', 'func': bool_to_int},
     ]
     metrics_id = [m['id'] for m in metrics]
@@ -88,9 +91,9 @@ def plot_metrics(optimizers, experiments, output_path):
     # sns.set()
     sns.set_context("paper")
     # sns.relplot(x='x', y='overall_deadline_violation', hue='opt', kind='line', data=metrics_df)
-    # sns.catplot(x='x', y='overall_deadline_violation', hue='opt', kind='point', ci=None, data=metrics_df)
-    # sns.catplot(x='x', y='overall_deadline_violation', hue='opt', kind='bar', data=metrics_df)
-    sns.boxplot(x='x', y='overall_deadline_violation', hue='opt', notch=False, data=metrics_df)
+    # sns.catplot(x='x', y='avg_response_time', hue='opt', kind='point', ci=None, data=metrics_df)
+    sns.catplot(x='x', y='overall_migration_cost', hue='opt', kind='bar', ci=95, data=metrics_df)
+    # sns.boxplot(x='x', y='overall_deadline_violation', hue='opt', notch=False, data=metrics_df)
     plt.show()
 
     # metrics_df = metrics_df.melt(id_vars=['opt', 'run', 'x'], var_name='metric', value_name='y')
@@ -102,11 +105,13 @@ def plot_metrics(optimizers, experiments, output_path):
 def main():
     output_path = 'output/san_francisco/exp/'
     optimizers = [
-        # {'id': 'CloudOptimizer', 'label': 'Cloud'},
-        {'id': 'SOHeuristicOptimizer', 'label': 'SOH'},
+        {'id': 'CloudOptimizer', 'label': 'Cloud'},
+        {'id': 'SOHeuristicOptimizer', 'label': 'Net Delay + Deadline'},
         # {'id': 'NoMigrationOptimizer', 'label': 'No Migration'},
-        {'id': 'OmittedMigrationOptimizer', 'label': 'Omit Migration'},
-        {'id': 'MOGAOptimizer', 'label': 'MOGA'},
+        # {'id': 'NoMigrationOptimizer_fixed', 'label': 'No Migration'},
+        # {'id': 'OmittedMigrationOptimizer', 'label': 'Omit Migration'},
+        {'id': 'StaticOptimizer', 'label': 'Static'},
+        {'id': 'MOGAOptimizer', 'label': 'Proposal w/o Prediction'},
         # {'id': 'LLCOptimizer_mga_w0', 'label': 'LLC MGA W=0'},
         # {'id': 'LLCOptimizer_mga_w1', 'label': 'LLC MGA W=1'},
         # {'id': 'LLCOptimizer_mga_w2', 'label': 'LLC MGA W=2'},
@@ -114,8 +119,9 @@ def main():
         # {'id': 'LLCOptimizer_sga_w1', 'label': 'LLC SGA W=1'},
         # {'id': 'LLCOptimizer_sga_w2', 'label': 'LLC SGA W=2'},
         # {'id': 'LLCOptimizer_ssga_w0', 'label': 'LLC SSGA W=0'},
-        {'id': 'LLCOptimizer_ssga_w1', 'label': 'LLC SSGA W=1'},
-        {'id': 'LLCOptimizer_ssga_w2', 'label': 'LLC SSGA W=2'},
+        {'id': 'LLCOptimizer_ssga_w1', 'label': 'Proposal w. Prediction H=1'},
+        # {'id': 'LLCOptimizer_ssga_w2', 'label': 'Proposal w. Prediction H=2'},
+        # {'id': 'LLCOptimizer_sga_w1', 'label': 'Proposal General H=1'},
     ]
     # experiments = [
     #     {'path': '1_a1_1211612400_1211698799', 'x': '1-1'},

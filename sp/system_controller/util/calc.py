@@ -104,8 +104,8 @@ def calc_initialization_delay(app_id, node_id, system, control_input, environmen
     return init_delay
 
 
-def calc_migration_delay(app_id, dst_node_id, system, control_input, environment_input):
-    """Calculate migration/replication delay of an application that will be hosted in a destination node
+def calc_migration_size(app_id, dst_node_id, system, control_input, environment_input, return_extra_data=False):
+    """Calculate the application size that will be migrated/replicated to a destination node
 
     Args:
         app_id (int): application's id
@@ -113,13 +113,15 @@ def calc_migration_delay(app_id, dst_node_id, system, control_input, environment
         system (System): system
         control_input (ControlInput): control input
         environment_input (EnvironmentInput): environment input
+        return_extra_data (bool): whether additional information should be return or not.
+            This include source node's id, which is a node hosting the selected application instance
+            that will be migrated/replicated to the destination node
     Returns:
-        float: migration delay
+        Union[float, tuple]: application's size or tuple (app size, src node id)
     """
-
     curr_control = system.control_input
     if curr_control is None:
-        return 0.0
+        return (0.0, None) if return_extra_data else 0.0
 
     min_delay = math.inf
     src_node_id = system.cloud_node.id
@@ -136,20 +138,45 @@ def calc_migration_delay(app_id, dst_node_id, system, control_input, environment
         if resource_name in system.resources_name:
             app_size += curr_control.get_allocated_resource(app_id, src_node_id, resource_name)
     # TODO: Transform storage unit to bandwidth unit in general form
-    app_size *= 8.0  # Convert bit to byte
+    app_size *= 8.0  # Convert byte to bit
+    return (app_size, src_node_id) if return_extra_data else app_size
 
+
+def calc_migration_delay(app_id, dst_node_id, system, control_input, environment_input, return_extra_data=False):
+    """Calculate migration/replication delay of an application that will be hosted in a destination node
+
+    Args:
+        app_id (int): application's id
+        dst_node_id (int): destination node's id
+        system (System): system
+        control_input (ControlInput): control input
+        environment_input (EnvironmentInput): environment input
+        return_extra_data (bool): whether additional information should be return or not.
+            This include application's size and source node's id.
+            A source node is a node hosting the selected application instance that will be migrated/replicated
+            to the destination node
+    Returns:
+        Union[float, tuple]: migration delay or tuple (mig delay, app size, src node id)
+    """
+    curr_control = system.control_input
+    if curr_control is None:
+        return (0.0, 0.0, None) if return_extra_data else 0.0
+
+    app_size, src_node_id = calc_migration_size(app_id, dst_node_id, system, control_input, environment_input,
+                                                return_extra_data=True)
     # TODO: create a estimator to calculate the migration time
     mig_delay = 0.0
-    net_path = environment_input.get_net_path(app_id, src_node_id, dst_node_id)
-    if len(net_path) > 0 and app_size > 0.0:
-        link_src_id = net_path[0]
-        for link_dst_id in net_path[1:]:
-            link = system.get_link(link_src_id, link_dst_id)
-            delay = link.propagation_delay + app_size / float(link.bandwidth)
-            mig_delay += delay
-            link_src_id = link_dst_id
+    if app_size > 0.0:
+        net_path = environment_input.get_net_path(app_id, src_node_id, dst_node_id)
+        if len(net_path) > 0:
+            link_src_id = net_path[0]
+            for link_dst_id in net_path[1:]:
+                link = system.get_link(link_src_id, link_dst_id)
+                delay = link.propagation_delay + app_size / float(link.bandwidth)
+                mig_delay += delay
+                link_src_id = link_dst_id
 
-    return mig_delay
+    return (mig_delay, app_size, src_node_id) if return_extra_data else mig_delay
 
 
 def calc_load_before_distribution(app_id, node_id, system, environment_input):

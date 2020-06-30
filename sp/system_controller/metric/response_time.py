@@ -63,6 +63,21 @@ def overall_response_time(system, control_input, environment_input):
     return sum(rt) if len(rt) > 0 else 0.0
 
 
+def weighted_overall_response_time(system, control_input, environment_input):
+    """Weighted Overall Response Time Metric
+
+    Args:
+        system (System): system
+        control_input (ControlInput): control input
+        environment_input (EnvironmentInput):  environment input
+    Returns:
+        float: metric value
+    """
+    rt, load = _calc_rt(system, control_input, environment_input, return_load=True)
+    w_rt = list(map(lambda i: rt[i] * load[i], range(len(rt))))
+    return sum(w_rt) if len(w_rt) > 0 else 0.0
+
+
 def _calc_rt(system, control_input, environment_input, return_load=False):
     """Calculate response time for every request flow
 

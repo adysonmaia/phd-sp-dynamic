@@ -221,13 +221,13 @@ class MultiProcessingEnvironmentPredictor(EnvironmentPredictor):
         total_elapsed_time = 0.0
 
         perf_count = time.perf_counter()
-        envs = self._predict_load(envs, steps)
+        envs = self._predict_load(envs)
         elapsed_time = time.perf_counter() - perf_count
         total_elapsed_time += elapsed_time
         logging.debug("{:15} {:9.3f}".format("load predict", elapsed_time))
 
         perf_count = time.perf_counter()
-        envs = self._predict_net_delay(envs, steps)
+        envs = self._predict_net_delay(envs)
         elapsed_time = time.perf_counter() - perf_count
         total_elapsed_time += elapsed_time
         logging.debug("{:15} {:9.3f}".format("net predict", elapsed_time))
@@ -236,15 +236,15 @@ class MultiProcessingEnvironmentPredictor(EnvironmentPredictor):
 
         return envs
 
-    def _predict_load(self, env_inputs, steps):
+    def _predict_load(self, env_inputs):
         """Predict load attribute of next environment inputs
 
         Args:
             env_inputs list(EnvironmentInput): next environment inputs
-            steps (int): number of values to predict
         Returns:
             list(EnvironmentInput): predicted data
         """
+        steps = len(env_inputs)
         list_params = []
         map_func = self._map_func
         if self.load_predictor_class == NaivePredictor:
@@ -268,15 +268,15 @@ class MultiProcessingEnvironmentPredictor(EnvironmentPredictor):
 
         return env_inputs
 
-    def _predict_net_delay(self, env_inputs, steps):
+    def _predict_net_delay(self, env_inputs):
         """Predict network delay attribute of next environment inputs
 
         Args:
             env_inputs list(EnvironmentInput): next environment inputs
-            steps (int): number of values to predict
         Returns:
             list(EnvironmentInput): predicted data
         """
+        steps = len(env_inputs)
         list_params = []
         map_func = self._map_func
         if self.net_delay_predictor_class == NaivePredictor:

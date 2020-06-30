@@ -5,7 +5,17 @@ from sp.system_controller.model import OptSolution
 
 class NoMigrationOptimizer(MOGAOptimizer):
     """No Migration Optimizer
+
+    Attributes:
+        use_last_solution (bool): use the decoded solution from the previous time step
+
     """
+
+    def __init__(self):
+        """Initialization
+        """
+        MOGAOptimizer.__init__(self)
+        self.use_last_solution = False
 
     def solve(self, system, environment_input):
         """Solve the service placement problem
@@ -22,17 +32,22 @@ class NoMigrationOptimizer(MOGAOptimizer):
                                             environment_input=environment_input,
                                             use_heuristic=self.use_heuristic,
                                             extra_first_population=self._last_population)
-        mo_ga = NSGAII(operator=ga_operator,
-                       nb_generations=self.nb_generations,
-                       population_size=self.population_size,
-                       elite_proportion=self.elite_proportion,
-                       mutant_proportion=self.mutant_proportion,
-                       elite_probability=self.elite_probability,
-                       stop_threshold=self.stop_threshold,
-                       dominance_func=self.dominance_func,
-                       timeout=self.timeout,
-                       pool_size=self.pool_size)
-        population = mo_ga.solve()
+
+        population = None
+        if self.use_last_solution and self._last_population is not None:
+            population = self._last_population
+        else:
+            mo_ga = NSGAII(operator=ga_operator,
+                           nb_generations=self.nb_generations,
+                           population_size=self.population_size,
+                           elite_proportion=self.elite_proportion,
+                           mutant_proportion=self.mutant_proportion,
+                           elite_probability=self.elite_probability,
+                           stop_threshold=self.stop_threshold,
+                           dominance_func=self.dominance_func,
+                           timeout=self.timeout,
+                           pool_size=self.pool_size)
+            population = mo_ga.solve()
 
         self._last_population = population
         solution = ga_operator.decode(population[0])

@@ -33,21 +33,6 @@ def avg_deadline_violation(system, control_input, environment_input):
     return mean(violations) if len(violations) > 0 else 0.0
 
 
-def avg_only_violated_deadline(system, control_input, environment_input):
-    """Average Only Violated Deadline Metric
-
-    Args:
-        system (System): system
-        control_input (ControlInput): control input
-        environment_input (EnvironmentInput):  environment input
-    Returns:
-        float: metric value
-    """
-    delta = _calc_delta_time(system, control_input, environment_input)
-    violations = list(filter(lambda d: d > 0.0, delta))
-    return mean(violations) if len(violations) > 0 else 0.0
-
-
 def weighted_avg_deadline_violation(system, control_input, environment_input):
     """Weighted Average Deadline Violation Metric
 
@@ -65,6 +50,21 @@ def weighted_avg_deadline_violation(system, control_input, environment_input):
         return average(violations, weights=load)
     else:
         return 0.0
+
+
+def avg_only_violated_deadline(system, control_input, environment_input):
+    """Average Only Violated Deadline Metric
+
+    Args:
+        system (System): system
+        control_input (ControlInput): control input
+        environment_input (EnvironmentInput):  environment input
+    Returns:
+        float: metric value
+    """
+    delta = _calc_delta_time(system, control_input, environment_input)
+    violations = list(filter(lambda d: d > 0.0, delta))
+    return mean(violations) if len(violations) > 0 else 0.0
 
 
 def weighted_avg_only_violated_deadline(system, control_input, environment_input):
@@ -103,6 +103,21 @@ def overall_deadline_violation(system, control_input, environment_input):
     return sum(violations) if len(violations) > 0 else 0.0
 
 
+def weighted_overall_deadline_violation(system, control_input, environment_input):
+    """Weighted Overall Deadline Violation Metric
+
+    Args:
+        system (System): system
+        control_input (ControlInput): control input
+        environment_input (EnvironmentInput):  environment input
+    Returns:
+        float: metric value
+    """
+    delta, load = _calc_delta_time(system, control_input, environment_input, return_load=True)
+    violations = list(map(lambda i: max(delta[i], 0.0) * load[i], range(len(delta))))
+    return sum(violations) if len(violations) > 0 else 0.0
+
+
 def deadline_satisfaction(system, control_input, environment_input):
     """Deadline Satisfaction Rate Metric
 
@@ -116,6 +131,22 @@ def deadline_satisfaction(system, control_input, environment_input):
     delta = _calc_delta_time(system, control_input, environment_input)
     success_count = sum(map(lambda d: d <= 0.0, delta))
     return success_count / float(len(delta)) if len(delta) > 0 else 1.0
+
+
+def weighted_deadline_satisfaction(system, control_input, environment_input):
+    """Weighted Deadline Satisfaction Rate Metric
+
+    Args:
+        system (System): system
+        control_input (ControlInput): control input
+        environment_input (EnvironmentInput):  environment input
+    Returns:
+        float: metric value
+    """
+    delta, load = _calc_delta_time(system, control_input, environment_input, return_load=True)
+    sat = list(map(lambda i: load[i] if delta[i] <= 0.0 else 0.0, range(len(delta))))
+    total_load = sum(load) if len(load) > 0 else 0.0
+    return sum(sat) / total_load if len(sat) > 0 and total_load > 0.0 else 0.0
 
 
 def _calc_delta_time(system, control_input, environment_input, return_load=False):
