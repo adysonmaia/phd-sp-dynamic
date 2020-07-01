@@ -22,13 +22,6 @@ SF_TZ_STR = 'US/Pacific'
 SF_TZ = timezone(SF_TZ_STR)
 
 
-def exp_aggregator(values):
-    result = 0.0
-    for (index, value) in enumerate(values):
-        result += value / math.exp(index)
-    return result
-
-
 class ExpRunMonitor(OptimizerMonitor):
     """Simulation monitor
     """
@@ -93,18 +86,18 @@ class ExpRunMonitor(OptimizerMonitor):
                 overall_violation, max_violation, len(places), places
             ))
 
-        # print('\nFree Resources')
-        # for node in system.nodes:
-        #     free_str = 'node {:2d}, '.format(node.id)
-        #     for resource in system.resources:
-        #         capacity = node.capacity[resource.name]
-        #         alloc = sum([control_input.get_allocated_resource(a.id, node.id, resource.name) for a in system.apps])
-        #         free = 1.0
-        #         if capacity > 0.0 and not math.isinf(capacity):
-        #             free = (capacity - alloc) / float(capacity)
-        #             free = round(free, 3)
-        #         free_str += '{} {:6.3f}, '.format(resource.name, free)
-        #     print(free_str)
+        print('\nFree Resources')
+        for node in system.nodes:
+            free_str = 'node {:2d}, '.format(node.id)
+            for resource in system.resources:
+                capacity = node.capacity[resource.name]
+                alloc = sum([control_input.get_allocated_resource(a.id, node.id, resource.name) for a in system.apps])
+                free = 1.0
+                if capacity > 0.0 and not math.isinf(capacity):
+                    free = (capacity - alloc) / float(capacity)
+                    free = round(free, 3)
+                free_str += '{} {:6.3f}, '.format(resource.name, free)
+            print(free_str)
 
         # print('\nLoad Distribution')
         # for app in system.apps:
@@ -198,7 +191,7 @@ def main():
     opt = CloudOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Single-Objective Heuristic optimizer config
     opt = SOHeuristicOptimizer()
@@ -226,7 +219,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Omitted Migration optimizer config
     opt = OmittedMigrationOptimizer()
@@ -305,7 +298,7 @@ def main():
 
             opt_id = '{}_{}_w{}'.format(opt.__class__.__name__, llc_finder['id'], window)
             item = (opt_id, opt)
-            # optimizers.append(item)
+            optimizers.append(item)
 
     # Create a simulation for each loaded scenario
     for scenario_data in simulation_data['scenarios']:

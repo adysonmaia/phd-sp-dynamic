@@ -68,7 +68,7 @@ class _StaticGAOperator(MOGAOperator):
     """
 
     def __init__(self, init_solution=None, **kwargs):
-        MOGAOperator.__init__(**kwargs)
+        MOGAOperator.__init__(self, **kwargs)
         self.init_solution = init_solution
 
     def decode(self, individual):

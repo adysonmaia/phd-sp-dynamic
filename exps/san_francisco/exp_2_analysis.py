@@ -51,20 +51,20 @@ def load_opts_df(optimizers, output_path, filename, nb_runs):
 
 def plot_metrics(optimizers, experiments, output_path):
     metrics = [
-        {'id': 'overall_deadline_violation', 'label': 'overall deadline violation - ms', 'func': s_to_ms},
+        {'id': 'valid', 'label': 'valid', 'func': bool_to_int},
         {'id': 'max_deadline_violation', 'label': 'max. deadline violation - ms', 'func': s_to_ms},
         {'id': 'deadline_satisfaction', 'label': 'deadline satisfaction - %', 'func': to_percent},
+        {'id': 'elapsed_time', 'label': 'exec time - s'},
+        {'id': 'overall_deadline_violation', 'label': 'overall deadline violation - ms', 'func': s_to_ms},
         {'id': 'overall_cost', 'label': 'allocation cost'},
         {'id': 'overall_migration_cost', 'label': 'migration cost'},
-        {'id': 'elapsed_time', 'label': 'exec time - s'},
-        {'id': 'avg_response_time', 'label': 'avg response time - ms', 'func': s_to_ms},
-        {'id': 'weighted_avg_response_time', 'label': 'avg response time - ms', 'func': s_to_ms},
         {'id': 'overall_response_time', 'label': 'overall response time - ms', 'func': s_to_ms},
         {'id': 'avg_deadline_violation', 'label': 'avg deadline violation - ms', 'func': s_to_ms},
         {'id': 'avg_only_violated_deadline', 'label': 'avg deadline violation 2 - ms', 'func': s_to_ms},
-        {'id': 'weighted_avg_deadline_violation', 'label': 'avg deadline violation - ms', 'func': s_to_ms},
+        {'id': 'avg_response_time', 'label': 'avg response time - ms', 'func': s_to_ms},
         {'id': 'avg_migration_cost', 'label': 'avg migration cost'},
-        {'id': 'valid', 'label': 'valid', 'func': bool_to_int},
+        {'id': 'weighted_avg_response_time', 'label': 'avg response time - ms', 'func': s_to_ms},
+        {'id': 'weighted_avg_deadline_violation', 'label': 'avg deadline violation - ms', 'func': s_to_ms},
     ]
     metrics_id = [m['id'] for m in metrics]
 
@@ -91,8 +91,8 @@ def plot_metrics(optimizers, experiments, output_path):
     # sns.set()
     sns.set_context("paper")
     # sns.relplot(x='x', y='overall_deadline_violation', hue='opt', kind='line', data=metrics_df)
-    # sns.catplot(x='x', y='avg_response_time', hue='opt', kind='point', ci=None, data=metrics_df)
-    sns.catplot(x='x', y='overall_migration_cost', hue='opt', kind='bar', ci=95, data=metrics_df)
+    sns.catplot(x='x', y='overall_cost', hue='opt', kind='point', ci=None, data=metrics_df)
+    # sns.catplot(x='x', y='weighted_avg_response_time', hue='opt', kind='bar', ci=95, data=metrics_df)
     # sns.boxplot(x='x', y='overall_deadline_violation', hue='opt', notch=False, data=metrics_df)
     plt.show()
 
@@ -106,11 +106,11 @@ def main():
     output_path = 'output/san_francisco/exp/'
     optimizers = [
         {'id': 'CloudOptimizer', 'label': 'Cloud'},
+        # {'id': 'StaticOptimizer', 'label': 'Static'},
         {'id': 'SOHeuristicOptimizer', 'label': 'Net Delay + Deadline'},
         # {'id': 'NoMigrationOptimizer', 'label': 'No Migration'},
         # {'id': 'NoMigrationOptimizer_fixed', 'label': 'No Migration'},
         # {'id': 'OmittedMigrationOptimizer', 'label': 'Omit Migration'},
-        {'id': 'StaticOptimizer', 'label': 'Static'},
         {'id': 'MOGAOptimizer', 'label': 'Proposal w/o Prediction'},
         # {'id': 'LLCOptimizer_mga_w0', 'label': 'LLC MGA W=0'},
         # {'id': 'LLCOptimizer_mga_w1', 'label': 'LLC MGA W=1'},

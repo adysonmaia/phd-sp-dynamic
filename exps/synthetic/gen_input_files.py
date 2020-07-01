@@ -343,6 +343,12 @@ def gen_apps(nb_apps, net_data):
         'MMTC': np.linspace(10, 100, num=10) * 1e+6,
         'EMBB': np.linspace(100, 1000, num=10) * 1e+6,
     }
+    # CPU parameters
+    cpu_attenuation_options = {
+        'URLLC': np.linspace(0.1, 1, num=10),
+        'MMTC': [1.0],
+        'EMBB': np.linspace(0.5, 1, num=6),
+    }
 
     app_type_options = ['URLLC', 'MMTC', 'EMBB']
     selected_type = None
@@ -356,7 +362,6 @@ def gen_apps(nb_apps, net_data):
     json_data = {'apps': []}
     for index in range(nb_apps):
         app_type = selected_type[index]
-        # app_type = 'URLLC'
 
         deadline = random.choice(deadline_options[app_type])
         cpu_work = random.choice(cpu_work_options[app_type])
@@ -373,8 +378,11 @@ def gen_apps(nb_apps, net_data):
 
         # Create linear estimator that satisfies the queue and deadline constraints
         # f(x) = ax + b
-        demand_cpu_a = cpu_work
-        demand_cpu_b = 2.0 * cpu_work / float(deadline)
+        # demand_cpu_a = cpu_work
+        # demand_cpu_b = 2.0 * cpu_work / float(deadline)
+        demand_cpu_a = cpu_work + 1.0
+        cpu_attenuation = random.choice(cpu_attenuation_options[app_type])
+        demand_cpu_b = (cpu_work / float(cpu_attenuation * deadline)) + 1.0
 
         app = {
             'id': index,

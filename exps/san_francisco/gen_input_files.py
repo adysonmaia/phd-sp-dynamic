@@ -45,7 +45,10 @@ def main():
 
     # Scenarios parameters
     scenarios = [
-        {'nb_apps': 5},
+        {'nb_apps': 3},
+        # {'nb_apps': 10},
+        # {'nb_apps': 15},
+        # {'nb_apps': 508},
     ]
 
     # scenarios = [
@@ -93,6 +96,7 @@ def main():
 
 def gen_scenario(nb_apps, time_start, time_stop, map_filename, mobility_path, output_path, cached_users_data=None):
     """ It generates a simulation scenario with specific parameters
+
     Args:
         nb_apps (int): number of applications
         time_start (float): simulation start time (in seconds)
@@ -162,6 +166,7 @@ def gen_scenario(nb_apps, time_start, time_stop, map_filename, mobility_path, ou
 
 def gen_network(bbox, topology, **kwargs):
     """Generate the network graph with a specific topology
+
     Args:
         bbox (BoundBox): bound box of positions
         topology (str): network's topology, values: 'grid', 'zipcode'
@@ -275,6 +280,7 @@ def gen_network(bbox, topology, **kwargs):
 
 def gen_bs_network(bbox, topology='grid', **kwargs):
     """Generate base stations in a specific format (topology)
+
     Args:
         bbox (BoundBox): limits where base stations' positions will be placed
         topology (str): format / topology of the network
@@ -292,6 +298,7 @@ def gen_bs_network(bbox, topology='grid', **kwargs):
 
 def gen_grid_bs_network(bbox, distance=2000.0, tol=200.0):
     """Generate base stations in a grid topology
+
     Args:
         bbox (BoundBox): bound box of the grid
         distance (float): distance between base stations
@@ -322,6 +329,7 @@ def gen_grid_bs_network(bbox, distance=2000.0, tol=200.0):
 
 def gen_zipcode_bs_network(bbox, map_filename):
     """Generate base stations in the centroid of each zip code area of San Francisco
+
     Args:
        bbox (BoundBox): bound box of the grid
        map_filename (str): file name of the zip code map
@@ -368,6 +376,7 @@ def gen_zipcode_bs_network(bbox, map_filename):
 
 def gen_apps(nb_apps, net_data):
     """Generate applications
+
     Args:
         nb_apps (int): number of applications
         net_data (dict): network's data
@@ -408,6 +417,7 @@ def gen_apps(nb_apps, net_data):
     # Maximum number of instances running at the same time-slot
     max_instance_range = list(range(1, len(net_data['nodes']) + 1))
     # max_instance_range = [len(net_data['nodes'])]
+    # max_instance_range = [1]
     max_instance_options = {
         'URLLC': max_instance_range,
         'MMTC': max_instance_range,
@@ -438,10 +448,19 @@ def gen_apps(nb_apps, net_data):
         'EMBB': np.linspace(100, 1000, num=10) * 1e+6,
     }
 
+    app_type_options = ['URLLC', 'MMTC', 'EMBB']
+    selected_type = None
+    if nb_apps >= len(app_type_options):
+        selected_type = copy.copy(app_type_options)
+        selected_type += list(np.random.choice(app_type_options, size=nb_apps - len(selected_type)))
+    else:
+        selected_type = list(np.random.choice(app_type_options, size=nb_apps))
+
     # Generate applications
     json_data = {'apps': []}
     for index in range(nb_apps):
-        app_type = 'URLLC'
+        app_type = selected_type[index]
+        # app_type = 'URLLC'
 
         deadline = random.choice(deadline_options[app_type])
         cpu_work = random.choice(cpu_work_options[app_type])
@@ -458,8 +477,10 @@ def gen_apps(nb_apps, net_data):
 
         # Create linear estimator that satisfies the queue and deadline constraints
         # f(x) = ax + b
-        demand_cpu_a = cpu_work
+        demand_cpu_a = cpu_work + 1.0
+        # demand_cpu_a = 2.0 * cpu_work
         demand_cpu_b = 2.0 * cpu_work / float(deadline)
+        # demand_cpu_b = cpu_work / float(deadline) + 1.0
 
         app = {
             'id': index,
@@ -482,6 +503,7 @@ def gen_apps(nb_apps, net_data):
 
 def gen_users(time_start, time_stop, bbox, mobility_path, output_path):
     """Generate users
+
     Args:
         time_start (float): simulation start time (unix timestamp)
         time_stop (float): simulation stop time (unix timestamp)
@@ -536,6 +558,7 @@ def gen_users(time_start, time_stop, bbox, mobility_path, output_path):
 
 def distribute_users(users_data, apps_data, net_data):
     """Distribute users among the generated applications
+
     Args:
         users_data (dict): users data in json format
         apps_data (dict): applications data in json format
@@ -549,15 +572,16 @@ def distribute_users(users_data, apps_data, net_data):
     total_nb_users = len(users_data['users'])
     users_index = list(range(total_nb_users))
 
-    # Use zipf (zeta) distribution to set number of users of each application
-    zipf_alpha = 1.6
-    users_distribution = sp_rnd.random_zipf(zipf_alpha, nb_apps)
+    # Generate distribution factors for all applications
+    # users_distribution = gen_users_distribution(users_data, apps_data, net_data, use_zipf=True)
+    users_distribution = gen_users_distribution(users_data, apps_data, net_data, use_zipf=False)
 
     # Distribute users among all applications
     remaining_users = frozenset(users_index)
-    min_nb_users = min(nb_nodes, total_nb_users // nb_apps)
-    # min_nb_users = 1
-    nb_users_to_distribute = total_nb_users - nb_apps * min_nb_users
+    # min_nb_users = min(nb_nodes, total_nb_users // nb_apps)
+    min_nb_users = 1
+    # min_nb_users = total_nb_users // nb_apps
+    nb_users_to_distribute = max(0.0, total_nb_users - nb_apps * min_nb_users)
     users_per_app = {}
     max_dist_app_id = None
     max_dist = 0.0
@@ -566,8 +590,10 @@ def distribute_users(users_data, apps_data, net_data):
         nb_users = math.floor(distribution * nb_users_to_distribute) + min_nb_users
         nb_users = int(min(nb_users, len(remaining_users)))
 
-        users = list(random.sample(remaining_users, nb_users))
-        remaining_users = remaining_users.difference(users)
+        users = []
+        if nb_users > 0:
+            users = list(random.sample(remaining_users, nb_users))
+            remaining_users = remaining_users.difference(users)
         users_per_app[app_id] = users
 
         if distribution >= max_dist:
@@ -585,6 +611,36 @@ def distribute_users(users_data, apps_data, net_data):
             user['app_id'] = app_id
 
     return users_data
+
+
+def gen_users_distribution(users_data, apps_data, net_data, use_zipf=True):
+    """Generate users distribution factor for each application
+
+    Args:
+        users_data (dict): users data in json format
+        apps_data (dict): applications data in json format
+        net_data (dict): network data in json format
+        use_zipf (bool): whether to use zeta distribution or not
+    Returns:
+        list: distribution factor for each application
+    """
+
+    users_distribution = None
+    if use_zipf:
+        # Use zipf (zeta) distribution to set number of users of each application
+        nb_apps = len(apps_data['apps'])
+        zipf_alpha = 1.6
+        users_distribution = sp_rnd.random_zipf(zipf_alpha, nb_apps)
+    else:
+        # Set users percentage for each application based on its type
+        app_type_distribution = {'URLLC': 0.1, 'EMBB': 0.2, 'MMTC': 0.7}
+        app_types = list(app_type_distribution.keys())
+        nb_apps_per_type = {app_type: sum(map(lambda a: a['type'] == app_type, apps_data['apps']))
+                            for app_type in app_types}
+        nb_types_with_app = len([t for t in app_types if nb_apps_per_type[t] > 0])
+        users_distribution = [app_type_distribution[a['type']] / float(nb_apps_per_type[a['type']])
+                              for a in apps_data['apps']]
+    return users_distribution
 
 
 if __name__ == '__main__':

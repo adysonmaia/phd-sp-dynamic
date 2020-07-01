@@ -1,11 +1,11 @@
 from sp.core.model import Scenario
 from sp.core.predictor import AutoARIMAPredictor, SARIMAPredictor, NaivePredictor
 from sp.simulator import Simulator
-from sp.simulator.monitor import OptimizerMonitor
+from sp.simulator.monitor import OptimizerMonitor, EnvironmentMonitor
 from sp.system_controller import metric, util
 from sp.system_controller.optimizer.llc import LLCOptimizer, plan_finder, input_finder
 from sp.system_controller.optimizer import SOGAOptimizer, MOGAOptimizer, CloudOptimizer, SOHeuristicOptimizer
-from sp.system_controller.optimizer import NoMigrationOptimizer, OmittedMigrationOptimizer
+from sp.system_controller.optimizer import NoMigrationOptimizer, OmittedMigrationOptimizer, StaticOptimizer
 from sp.system_controller.predictor import MultiProcessingEnvironmentPredictor
 import json
 import math
@@ -89,6 +89,13 @@ class ExpRunMonitor(OptimizerMonitor):
                 free_str += '{} {:6.3f}, '.format(resource.name, free)
             print(free_str)
 
+        # print('\nLoad Distribution')
+        # for app in system.apps:
+        #     for src_node in system.nodes:
+        #         ld = ['{:4.2f}'.format(control_input.get_load_distribution(app.id, src_node.id, dst_node.id))
+        #               for dst_node in system.nodes]
+        #         print('app {:2d}, node {:2d}, ld: {}'.format(app.id, src_node.id, ld))
+
         print("--")
 
 
@@ -106,23 +113,27 @@ def main():
     # Set objectives and metrics functions
     optimizers = []
     multi_objective = [
-        metric.deadline.overall_deadline_violation,
+        metric.deadline.weighted_avg_deadline_violation,
+        metric.response_time.weighted_avg_response_time,
         metric.cost.overall_cost,
         metric.migration.overall_migration_cost,
     ]
     multi_objective_without_migration = [
-        metric.deadline.overall_deadline_violation,
+        metric.deadline.weighted_avg_deadline_violation,
+        metric.response_time.weighted_avg_response_time,
         metric.cost.overall_cost,
     ]
-    single_objective = multi_objective[0]
+    single_objective = metric.response_time.weighted_avg_response_time
     metrics = [
         metric.deadline.overall_deadline_violation,
+        metric.deadline.weighted_overall_deadline_violation,
         metric.deadline.max_deadline_violation,
         metric.deadline.avg_deadline_violation,
         metric.deadline.avg_only_violated_deadline,
         metric.deadline.weighted_avg_deadline_violation,
         metric.deadline.weighted_avg_only_violated_deadline,
         metric.deadline.deadline_satisfaction,
+        metric.deadline.weighted_deadline_satisfaction,
         metric.cost.overall_cost,
         metric.cost.max_cost,
         metric.cost.avg_cost,
@@ -130,6 +141,7 @@ def main():
         metric.migration.max_migration_cost,
         metric.migration.avg_migration_cost,
         metric.response_time.overall_response_time,
+        metric.response_time.weighted_overall_response_time,
         metric.response_time.max_response_time,
         metric.response_time.avg_response_time,
         metric.response_time.weighted_avg_response_time,
@@ -144,8 +156,8 @@ def main():
     pool_size = 4
     # pool_size = 0
     # timeout = 3 * 60  # 3 min
-    timeout = 2 * 60  # 2 min
-    # timeout = 1 * 60
+    # timeout = 2 * 60  # 2 min
+    timeout = 1 * 60  # 1 min
     ga_pop_size = 100
     # ga_pop_size = 50
     # ga_nb_gens = 100
@@ -154,7 +166,7 @@ def main():
     # Set environment forecasting
     env_predictor = MultiProcessingEnvironmentPredictor()
     env_predictor.pool_size = pool_size
-    env_predictor.load_predictor_class = SARIMAPredictor
+    # env_predictor.load_predictor_class = SARIMAPredictor
     # env_predictor.load_predictor_params = {'order': (1, 1, 0), 'enforce_stationarity': False,
     #                                        'enforce_invertibility': False}
     env_predictor.load_predictor_class = AutoARIMAPredictor
@@ -169,10 +181,11 @@ def main():
     opt = CloudOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Single-Objective Heuristic optimizer config
     opt = SOHeuristicOptimizer()
+    opt.version = [opt.versions.NET_DELAY, opt.versions.DEADLINE]
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
     optimizers.append(item)
@@ -187,8 +200,8 @@ def main():
     item = (opt_id, opt)
     # optimizers.append(item)
 
-    # No Migration Optimizer
-    opt = NoMigrationOptimizer()
+    # Static Optimizer
+    opt = StaticOptimizer()
     opt.objective = multi_objective
     opt.pool_size = pool_size
     opt.timeout = timeout
@@ -197,19 +210,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
-
-    # Multi-Objective GA optimizer config
-    opt = MOGAOptimizer()
-    opt.objective = multi_objective
-    opt.pool_size = pool_size
-    opt.timeout = timeout
-    opt.population_size = ga_pop_size
-    opt.nb_generations = ga_nb_gens
-    opt.dominance_func = dominance_func
-    opt_id = opt.__class__.__name__
-    item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Omitted Migration optimizer config
     opt = OmittedMigrationOptimizer()
@@ -221,7 +222,19 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
+
+    # Multi-Objective GA optimizer config
+    opt = MOGAOptimizer()
+    opt.objective = multi_objective
+    opt.pool_size = pool_size
+    opt.timeout = timeout
+    opt.population_size = ga_pop_size
+    opt.nb_generations = ga_nb_gens
+    opt.dominance_func = dominance_func
+    opt_id = opt.__class__.__name__
+    item = (opt_id, opt)
+    # optimizers.append(item)
 
     # LLC Parameters
 
@@ -233,12 +246,12 @@ def main():
             'input_params': {'timeout': timeout, 'population_size': ga_pop_size, 'nb_generations': ga_nb_gens},
             'plan': None
         },
-        # {
-        #     'id': 'sga',
-        #     'input': input_finder.SGAInputFinder,
-        #     'input_params': {'timeout': timeout},
-        #     'plan': None
-        # },
+        {
+            'id': 'sga',
+            'input': input_finder.SGAInputFinder,
+            'input_params': {'timeout': timeout, 'population_size': ga_pop_size, 'nb_generations': ga_nb_gens},
+            'plan': None
+        },
         # {
         #     'id': 'mga',
         #     'input': input_finder.MGAInputFinder,
@@ -255,9 +268,9 @@ def main():
 
     # Prediction windows
     # prediction_windows = [0, 1, 2]
-    prediction_windows = [1, 2]
+    # prediction_windows = [1, 2]
     # prediction_windows = [0]
-    # prediction_windows = [1]
+    prediction_windows = [1]
     # prediction_windows = [2]
 
     for window in prediction_windows:
@@ -276,7 +289,7 @@ def main():
 
             opt_id = '{}_{}_w{}'.format(opt.__class__.__name__, llc_finder['id'], window)
             item = (opt_id, opt)
-            optimizers.append(item)
+            # optimizers.append(item)
 
     # Create a simulation for each loaded scenario
     for scenario_data in simulation_data['scenarios']:
@@ -295,6 +308,9 @@ def main():
             scenario = Scenario.from_json(scenario_json)
         elapsed_time = time.perf_counter() - perf_count
         print('finished in {:5.2f}s'.format(elapsed_time))
+
+        if len(scenario.apps) != 10:
+            continue
 
         # Execute simulation for each optimizer nb_runs times
         for (opt_id, opt) in optimizers:

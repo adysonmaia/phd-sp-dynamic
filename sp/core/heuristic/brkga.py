@@ -307,14 +307,17 @@ class BRKGA:
         """
         self.init_params()
         self.current_population = self.first_population(apply_selection=True)
+        cur_iter = 0
         try:
             for _ in range(self.nb_generations):
+                cur_iter += 1
                 if self.should_stop(self.current_population):
                     break
                 self.current_population = self.next_population(self.current_population, apply_selection=True)
         except KeyboardInterrupt:
             raise
         finally:
+            # print('ga iter', cur_iter)
             self.clear_params()
             return self.current_population
 

@@ -14,6 +14,7 @@ class _VersionsEnum:
         CLUSTER_METOIDS_SC (function): it prioritizes nodes in the center of a group/cluster of users
             and it tries to detect the number of groups/clusters
         DEADLINE (function): it prioritizes applications with shortest deadline
+        LOAD (function): it prioritizes nodes with large load
     """
 
     def __init__(self):
@@ -24,6 +25,7 @@ class _VersionsEnum:
         self.CLUSTER_METOIDS = indiv_gen.create_individual_cluster_metoids
         self.CLUSTER_METOIDS_SC = indiv_gen.create_individual_cluster_metoids_sc
         self.DEADLINE = indiv_gen.create_individual_deadline
+        self.LOAD = indiv_gen.create_individual_load
 
     def to_dict(self):
         """Export the enumeration to a dictionary format
