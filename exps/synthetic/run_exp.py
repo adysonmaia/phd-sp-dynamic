@@ -56,38 +56,38 @@ class ExpRunMonitor(OptimizerMonitor):
         for metric_id in metrics_id:
             print('{:40}: {}'.format(metric_id, datum[metric_id]))
 
-        print('\nApplications')
-        for app in system.apps:
-            places = [n.id for n in system.nodes if control_input.get_app_placement(app.id, n.id)]
-            users = environment_input.get_attached_users()
-            users = list(filter(lambda u: u.app_id == app.id and u.node_id is not None, users))
-            load = sum([util.calc_load_before_distribution(app.id, node.id, system, environment_input)
-                        for node in system.nodes])
-            overall_violation = util.filter_metric(metric.deadline.overall_deadline_violation,
-                                                   system, control_input, environment_input,
-                                                   apps_id=app.id)
-            max_violation = util.filter_metric(metric.deadline.max_deadline_violation,
-                                               system, control_input, environment_input,
-                                               apps_id=app.id)
-            print('app {:2d} {:>5}, deadline {:6.1f}ms, max instances {:2d}, users {:4d}, load {:10.3f}, '
-                  'max violation {:9.6f}s, overall violation {:9.6f}s, '
-                  'places {:2d}: {}'.format(
-                app.id, app.type, 1000 * app.deadline, app.max_instances, len(users), load,
-                overall_violation, max_violation, len(places), places
-            ))
+        # print('\nApplications')
+        # for app in system.apps:
+        #     places = [n.id for n in system.nodes if control_input.get_app_placement(app.id, n.id)]
+        #     users = environment_input.get_attached_users()
+        #     users = list(filter(lambda u: u.app_id == app.id and u.node_id is not None, users))
+        #     load = sum([util.calc_load_before_distribution(app.id, node.id, system, environment_input)
+        #                 for node in system.nodes])
+        #     overall_violation = util.filter_metric(metric.deadline.overall_deadline_violation,
+        #                                            system, control_input, environment_input,
+        #                                            apps_id=app.id)
+        #     max_violation = util.filter_metric(metric.deadline.max_deadline_violation,
+        #                                        system, control_input, environment_input,
+        #                                        apps_id=app.id)
+        #     print('app {:2d} {:>5}, deadline {:6.1f}ms, max instances {:2d}, users {:4d}, load {:10.3f}, '
+        #           'max violation {:9.6f}s, overall violation {:9.6f}s, '
+        #           'places {:2d}: {}'.format(
+        #         app.id, app.type, 1000 * app.deadline, app.max_instances, len(users), load,
+        #         overall_violation, max_violation, len(places), places
+        #     ))
 
-        print('\nFree Resources')
-        for node in system.nodes:
-            free_str = 'node {:2d}, '.format(node.id)
-            for resource in system.resources:
-                capacity = node.capacity[resource.name]
-                alloc = sum([control_input.get_allocated_resource(a.id, node.id, resource.name) for a in system.apps])
-                free = 1.0
-                if capacity > 0.0 and not math.isinf(capacity):
-                    free = (capacity - alloc) / float(capacity)
-                    free = round(free, 3)
-                free_str += '{} {:6.3f}, '.format(resource.name, free)
-            print(free_str)
+        # print('\nFree Resources')
+        # for node in system.nodes:
+        #     free_str = 'node {:2d}, '.format(node.id)
+        #     for resource in system.resources:
+        #         capacity = node.capacity[resource.name]
+        #         alloc = sum([control_input.get_allocated_resource(a.id, node.id, resource.name) for a in system.apps])
+        #         free = 1.0
+        #         if capacity > 0.0 and not math.isinf(capacity):
+        #             free = (capacity - alloc) / float(capacity)
+        #             free = round(free, 3)
+        #         free_str += '{} {:6.3f}, '.format(resource.name, free)
+        #     print(free_str)
 
         # print('\nLoad Distribution')
         # for app in system.apps:
@@ -181,7 +181,7 @@ def main():
     opt = CloudOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # Single-Objective Heuristic optimizer config
     opt = SOHeuristicOptimizer()
@@ -210,7 +210,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # Omitted Migration optimizer config
     opt = OmittedMigrationOptimizer()
@@ -234,7 +234,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # LLC Parameters
 
@@ -289,7 +289,7 @@ def main():
 
             opt_id = '{}_{}_w{}'.format(opt.__class__.__name__, llc_finder['id'], window)
             item = (opt_id, opt)
-            # optimizers.append(item)
+            optimizers.append(item)
 
     # Create a simulation for each loaded scenario
     for scenario_data in simulation_data['scenarios']:
@@ -308,9 +308,6 @@ def main():
             scenario = Scenario.from_json(scenario_json)
         elapsed_time = time.perf_counter() - perf_count
         print('finished in {:5.2f}s'.format(elapsed_time))
-
-        if len(scenario.apps) != 10:
-            continue
 
         # Execute simulation for each optimizer nb_runs times
         for (opt_id, opt) in optimizers:
