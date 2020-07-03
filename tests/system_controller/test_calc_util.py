@@ -96,8 +96,8 @@ class CalcUtilTestCase(unittest.TestCase):
 
                     init_delay = util.calc_initialization_delay(app.id, dst_node.id,
                                                                 system, control_input, env_input)
-                    mig_delay = util.calc_migration_delay(app.id, dst_node.id,
-                                                          system, control_input, env_input)
+                    mig_delay = util.calc_min_migration_delay(app.id, dst_node.id,
+                                                              system, control_input, env_input)
                     if not curr_place:
                         self.assertEqual(init_delay, 0.0)
                     elif curr_place and prev_place:
@@ -122,8 +122,8 @@ class CalcUtilTestCase(unittest.TestCase):
                     if system.control_input is not None:
                         prev_place = system.control_input.get_app_placement(app.id, dst_node.id)
 
-                    mig_delay = util.calc_migration_delay(app.id, dst_node.id,
-                                                          system, control_input, env_input)
+                    mig_delay = util.calc_min_migration_delay(app.id, dst_node.id,
+                                                              system, control_input, env_input)
                     if system.control_input is None:
                         self.assertEqual(mig_delay, 0.0)
                     elif curr_place and prev_place:

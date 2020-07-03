@@ -5,7 +5,7 @@ from sp.simulator.monitor import OptimizerMonitor, EnvironmentMonitor
 from sp.system_controller import metric, util
 from sp.system_controller.optimizer.llc import LLCOptimizer, plan_finder, input_finder
 from sp.system_controller.optimizer import SOGAOptimizer, MOGAOptimizer, CloudOptimizer, SOHeuristicOptimizer
-from sp.system_controller.optimizer import NoMigrationOptimizer, OmittedMigrationOptimizer, StaticOptimizer
+from sp.system_controller.optimizer import OmittedMigrationOptimizer, StaticOptimizer
 from sp.system_controller.predictor import MultiProcessingEnvironmentPredictor
 from datetime import datetime
 from pytz import timezone
@@ -66,38 +66,38 @@ class ExpRunMonitor(OptimizerMonitor):
         for metric_id in metrics_id:
             print('{:40}: {}'.format(metric_id, datum[metric_id]))
 
-        print('\nApplications')
-        for app in system.apps:
-            places = [n.id for n in system.nodes if control_input.get_app_placement(app.id, n.id)]
-            users = environment_input.get_attached_users()
-            users = list(filter(lambda u: u.app_id == app.id and u.node_id is not None, users))
-            load = sum([util.calc_load_before_distribution(app.id, node.id, system, environment_input)
-                        for node in system.nodes])
-            overall_violation = util.filter_metric(metric.deadline.overall_deadline_violation,
-                                                   system, control_input, environment_input,
-                                                   apps_id=app.id)
-            max_violation = util.filter_metric(metric.deadline.max_deadline_violation,
-                                               system, control_input, environment_input,
-                                               apps_id=app.id)
-            print('app {:2d} {:>5}, deadline {:6.1f}ms, max instances {:2d}, users {:4d}, load {:10.3f}, '
-                  'max violation {:9.6f}s, overall violation {:9.6f}s, '
-                  'places {:2d}: {}'.format(
-                app.id, app.type, 1000 * app.deadline, app.max_instances, len(users), load,
-                overall_violation, max_violation, len(places), places
-            ))
-
-        print('\nFree Resources')
-        for node in system.nodes:
-            free_str = 'node {:2d}, '.format(node.id)
-            for resource in system.resources:
-                capacity = node.capacity[resource.name]
-                alloc = sum([control_input.get_allocated_resource(a.id, node.id, resource.name) for a in system.apps])
-                free = 1.0
-                if capacity > 0.0 and not math.isinf(capacity):
-                    free = (capacity - alloc) / float(capacity)
-                    free = round(free, 3)
-                free_str += '{} {:6.3f}, '.format(resource.name, free)
-            print(free_str)
+        # print('\nApplications')
+        # for app in system.apps:
+        #     places = [n.id for n in system.nodes if control_input.get_app_placement(app.id, n.id)]
+        #     users = environment_input.get_attached_users()
+        #     users = list(filter(lambda u: u.app_id == app.id and u.node_id is not None, users))
+        #     load = sum([util.calc_load_before_distribution(app.id, node.id, system, environment_input)
+        #                 for node in system.nodes])
+        #     overall_violation = util.filter_metric(metric.deadline.overall_deadline_violation,
+        #                                            system, control_input, environment_input,
+        #                                            apps_id=app.id)
+        #     max_violation = util.filter_metric(metric.deadline.max_deadline_violation,
+        #                                        system, control_input, environment_input,
+        #                                        apps_id=app.id)
+        #     print('app {:2d} {:>5}, deadline {:6.1f}ms, max instances {:2d}, users {:4d}, load {:10.3f}, '
+        #           'max violation {:9.6f}s, overall violation {:9.6f}s, '
+        #           'places {:2d}: {}'.format(
+        #         app.id, app.type, 1000 * app.deadline, app.max_instances, len(users), load,
+        #         overall_violation, max_violation, len(places), places
+        #     ))
+        #
+        # print('\nFree Resources')
+        # for node in system.nodes:
+        #     free_str = 'node {:2d}, '.format(node.id)
+        #     for resource in system.resources:
+        #         capacity = node.capacity[resource.name]
+        #         alloc = sum([control_input.get_allocated_resource(a.id, node.id, resource.name) for a in system.apps])
+        #         free = 1.0
+        #         if capacity > 0.0 and not math.isinf(capacity):
+        #             free = (capacity - alloc) / float(capacity)
+        #             free = round(free, 3)
+        #         free_str += '{} {:6.3f}, '.format(resource.name, free)
+        #     print(free_str)
 
         # print('\nLoad Distribution')
         # for app in system.apps:
@@ -126,14 +126,14 @@ def main():
         metric.deadline.weighted_avg_deadline_violation,
         metric.response_time.weighted_avg_response_time,
         metric.cost.overall_cost,
-        metric.migration.overall_migration_cost,
+        metric.migration.weighted_migration_rate,
     ]
     multi_objective_without_migration = [
         metric.deadline.weighted_avg_deadline_violation,
         metric.response_time.weighted_avg_response_time,
         metric.cost.overall_cost,
     ]
-    single_objective = multi_objective[0]
+    single_objective = metric.response_time.weighted_avg_response_time
     metrics = [
         metric.deadline.overall_deadline_violation,
         metric.deadline.weighted_overall_deadline_violation,
@@ -150,6 +150,8 @@ def main():
         metric.migration.overall_migration_cost,
         metric.migration.max_migration_cost,
         metric.migration.avg_migration_cost,
+        metric.migration.migration_rate,
+        metric.migration.weighted_migration_rate,
         metric.response_time.overall_response_time,
         metric.response_time.weighted_overall_response_time,
         metric.response_time.max_response_time,
@@ -191,7 +193,7 @@ def main():
     opt = CloudOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # Single-Objective Heuristic optimizer config
     opt = SOHeuristicOptimizer()
@@ -219,7 +221,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # Omitted Migration optimizer config
     opt = OmittedMigrationOptimizer()

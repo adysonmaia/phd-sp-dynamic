@@ -5,7 +5,7 @@ from sp.simulator.monitor import OptimizerMonitor, EnvironmentMonitor
 from sp.system_controller import metric, util
 from sp.system_controller.optimizer.llc import LLCOptimizer, plan_finder, input_finder
 from sp.system_controller.optimizer import SOGAOptimizer, MOGAOptimizer, CloudOptimizer, SOHeuristicOptimizer
-from sp.system_controller.optimizer import NoMigrationOptimizer, OmittedMigrationOptimizer, StaticOptimizer
+from sp.system_controller.optimizer import OmittedMigrationOptimizer, StaticOptimizer
 from sp.system_controller.predictor import MultiProcessingEnvironmentPredictor
 import json
 import math
@@ -116,7 +116,7 @@ def main():
         metric.deadline.weighted_avg_deadline_violation,
         metric.response_time.weighted_avg_response_time,
         metric.cost.overall_cost,
-        metric.migration.overall_migration_cost,
+        metric.migration.weighted_migration_rate,
     ]
     multi_objective_without_migration = [
         metric.deadline.weighted_avg_deadline_violation,
@@ -140,6 +140,8 @@ def main():
         metric.migration.overall_migration_cost,
         metric.migration.max_migration_cost,
         metric.migration.avg_migration_cost,
+        metric.migration.migration_rate,
+        metric.migration.weighted_migration_rate,
         metric.response_time.overall_response_time,
         metric.response_time.weighted_overall_response_time,
         metric.response_time.max_response_time,

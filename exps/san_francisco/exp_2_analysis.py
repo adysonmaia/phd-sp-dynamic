@@ -54,6 +54,7 @@ def plot_metrics(optimizers, experiments, output_path):
         {'id': 'valid', 'label': 'valid', 'func': bool_to_int},
         {'id': 'max_deadline_violation', 'label': 'max. deadline violation - ms', 'func': s_to_ms},
         {'id': 'deadline_satisfaction', 'label': 'deadline satisfaction - %', 'func': to_percent},
+        {'id': 'migration_rate', 'label': 'migration rate - %', 'func': to_percent},
         {'id': 'elapsed_time', 'label': 'exec time - s'},
         {'id': 'overall_deadline_violation', 'label': 'overall deadline violation - ms', 'func': s_to_ms},
         {'id': 'overall_cost', 'label': 'allocation cost'},
@@ -65,8 +66,10 @@ def plot_metrics(optimizers, experiments, output_path):
         {'id': 'avg_migration_cost', 'label': 'avg migration cost'},
         {'id': 'weighted_avg_response_time', 'label': 'avg response time - ms', 'func': s_to_ms},
         {'id': 'weighted_avg_deadline_violation', 'label': 'avg deadline violation - ms', 'func': s_to_ms},
+        {'id': 'weighted_migration_rate', 'label': 'migration rate - %', 'func': to_percent},
     ]
     metrics_id = [m['id'] for m in metrics]
+    cloud_opt_id = 'CloudOptimizer'
 
     metrics_data = []
 
@@ -79,21 +82,38 @@ def plot_metrics(optimizers, experiments, output_path):
                 if not os.path.isfile(filename):
                     continue
                 df = pd.read_json(filename, orient='records')
+
+                cloud_filename = os.path.join(run_path, cloud_opt_id, 'metrics.json')
+                cloud_df = None
+                if os.path.isfile(cloud_filename):
+                    cloud_df = pd.read_json(cloud_filename, orient='records')
+
                 data = {'opt': opt['label'], 'run': run, 'x': exp['x']}
                 for metric in metrics:
-                    value = df[metric['id']].mean()
+                    metric_id = metric['id']
+                    if metric_id not in df.columns:
+                        continue
+
+                    value = df[metric_id].mean()
+                    cloud_value = cloud_df[metric_id].mean() if cloud_df is not None else 0.0
+                    # value = df[metric_id].sum()
+                    # cloud_value = cloud_df[metric_id].sum() if cloud_df is not None else 0.0
                     if 'func' in metric:
                         value = metric['func'](value)
-                    data[metric['id']] = value
+                        cloud_value = metric['func'](cloud_value)
+                    if cloud_value > 0.0:
+                        data[metric_id] = value / float(cloud_value)
+                    else:
+                        data[metric_id] = value
                 metrics_data.append(data)
 
     metrics_df = pd.DataFrame.from_records(metrics_data)
     # sns.set()
     sns.set_context("paper")
-    # sns.relplot(x='x', y='overall_deadline_violation', hue='opt', kind='line', data=metrics_df)
-    sns.catplot(x='x', y='overall_cost', hue='opt', kind='point', ci=None, data=metrics_df)
-    # sns.catplot(x='x', y='weighted_avg_response_time', hue='opt', kind='bar', ci=95, data=metrics_df)
-    # sns.boxplot(x='x', y='overall_deadline_violation', hue='opt', notch=False, data=metrics_df)
+    # sns.relplot(x='x', y='weighted_avg_deadline_violation', hue='opt', kind='line', data=metrics_df)
+    # sns.catplot(x='x', y='weighted_avg_deadline_violation', hue='opt', kind='point', ci=None, data=metrics_df)
+    sns.catplot(x='x', y='weighted_avg_deadline_violation', hue='opt', kind='bar', ci=95, data=metrics_df)
+    # sns.boxplot(x='x', y='weighted_avg_deadline_violation', hue='opt', notch=False, data=metrics_df)
     plt.show()
 
     # metrics_df = metrics_df.melt(id_vars=['opt', 'run', 'x'], var_name='metric', value_name='y')
@@ -106,22 +126,13 @@ def main():
     output_path = 'output/san_francisco/exp/'
     optimizers = [
         {'id': 'CloudOptimizer', 'label': 'Cloud'},
-        # {'id': 'StaticOptimizer', 'label': 'Static'},
+        {'id': 'StaticOptimizer', 'label': 'Static'},
         {'id': 'SOHeuristicOptimizer', 'label': 'Net Delay + Deadline'},
-        # {'id': 'NoMigrationOptimizer', 'label': 'No Migration'},
-        # {'id': 'NoMigrationOptimizer_fixed', 'label': 'No Migration'},
         # {'id': 'OmittedMigrationOptimizer', 'label': 'Omit Migration'},
         {'id': 'MOGAOptimizer', 'label': 'Proposal w/o Prediction'},
-        # {'id': 'LLCOptimizer_mga_w0', 'label': 'LLC MGA W=0'},
-        # {'id': 'LLCOptimizer_mga_w1', 'label': 'LLC MGA W=1'},
-        # {'id': 'LLCOptimizer_mga_w2', 'label': 'LLC MGA W=2'},
-        # {'id': 'LLCOptimizer_sga_w0', 'label': 'LLC SGA W=0'},
-        # {'id': 'LLCOptimizer_sga_w1', 'label': 'LLC SGA W=1'},
-        # {'id': 'LLCOptimizer_sga_w2', 'label': 'LLC SGA W=2'},
-        # {'id': 'LLCOptimizer_ssga_w0', 'label': 'LLC SSGA W=0'},
         {'id': 'LLCOptimizer_ssga_w1', 'label': 'Proposal w. Prediction H=1'},
         # {'id': 'LLCOptimizer_ssga_w2', 'label': 'Proposal w. Prediction H=2'},
-        # {'id': 'LLCOptimizer_sga_w1', 'label': 'Proposal General H=1'},
+        {'id': 'LLCOptimizer_sga_w1', 'label': 'Proposal General H=1'},
     ]
     # experiments = [
     #     {'path': '1_a1_1211612400_1211698799', 'x': '1-1'},
@@ -137,9 +148,9 @@ def main():
     #     {'path': 'a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAzNjAwfX0=', 'x': '60'},
     # ]
     experiments = [
-        {'path': 'a1_eyJuYl9hcHBzIjogMX0=', 'x': '01'},
-        {'path': 'a4_eyJuYl9hcHBzIjogNH0=', 'x': '04'},
-        {'path': 'a7_eyJuYl9hcHBzIjogN30=', 'x': '07'},
+        # {'path': 'a1_eyJuYl9hcHBzIjogMX0=', 'x': '01'},
+        # {'path': 'a4_eyJuYl9hcHBzIjogNH0=', 'x': '04'},
+        # {'path': 'a7_eyJuYl9hcHBzIjogN30=', 'x': '07'},
         {'path': 'a10_eyJuYl9hcHBzIjogMTB9', 'x': '10'},
     ]
     plot_metrics(optimizers, experiments, output_path)

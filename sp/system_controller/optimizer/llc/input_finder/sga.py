@@ -59,6 +59,12 @@ class SGAInputFinder(InputFinder):
                     dominance_func=self.dominance_func,
                     pool_size=self.pool_size,
                     **self.ga_params)
+
+        if self.last_inputs is not None:
+            last_pop_size = int(round(ga.elite_proportion * len(self.last_inputs)))
+            if last_pop_size > 0:
+                ga_operator.extra_first_population = self.last_inputs[:last_pop_size]
+
         population = ga.solve()
         population = list(map(ga_operator.get_control_input, population))
         return population

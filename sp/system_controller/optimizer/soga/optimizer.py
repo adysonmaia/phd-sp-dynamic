@@ -73,6 +73,12 @@ class SOGAOptimizer(Optimizer):
                       timeout=self.timeout,
                       pool_size=self.pool_size)
         population = so_ga.solve()
-        self._last_population = population
+
+        last_pop_size = int(round(self.elite_proportion * len(population)))
+        if last_pop_size > 0:
+            self._last_population = population[:last_pop_size]
+        else:
+            self._last_population = population
+
         solution = ga_operator.decode(population[0])
         return solution

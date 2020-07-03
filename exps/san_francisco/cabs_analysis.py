@@ -89,7 +89,11 @@ def plot_on_map(df):
     bbox = [df['lon'].min(), df['lat'].min(), df['lon'].max(), df['lat'].max()]
     map_gdf = gpd.read_file(SF_SHAPE_FILE)
     map_gdf = map_gdf.to_crs(crs)
+
     map_gdf = map_gdf.cx[bbox[0]:bbox[2], bbox[1]:bbox[3]]
+    centroids = map_gdf.centroid.cx[bbox[0]:bbox[2], bbox[1]:bbox[3]]
+    map_gdf = map_gdf.loc[centroids.index]
+
     map_bbox = map_gdf.total_bounds.tolist()
 
     time_delta = timedelta(minutes=10)
@@ -146,13 +150,16 @@ def main():
     df.set_index('time', inplace=True)
     df.sort_index(inplace=True)
 
-    bbox = {'lon': [-122.5160063624, -122.3754337591], 'lat': [37.7093, 37.8112472822]}
+    # bbox = {'lon': [-122.5160063624, -122.3754337591], 'lat': [37.7093, 37.8112472822]}
+    bbox = {'lon': [-122.452, -122.3754337591], 'lat': [37.7315, 37.8112472822]}
+    # bbox = {'lon': [-122.452, -122.3754337591], 'lat': [37.7093, 37.8112472822]}
+    # bbox = {'lon': [-122.452, -122.3754337591], 'lat': [37.721, 37.8112472822]}
     for (key, value) in iteritems(bbox):
         df = df[df[key].between(*value)]
 
     # plot_count(df)
-    plot_count_forecasting(df)
-    # plot_on_map(df)
+    # plot_count_forecasting(df)
+    plot_on_map(df)
 
 
 if __name__ == '__main__':

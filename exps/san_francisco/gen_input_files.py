@@ -45,7 +45,7 @@ def main():
 
     # Scenarios parameters
     scenarios = [
-        {'nb_apps': 3},
+        {'nb_apps': 5},
         # {'nb_apps': 10},
         # {'nb_apps': 15},
         # {'nb_apps': 508},
@@ -115,7 +115,8 @@ def gen_scenario(nb_apps, time_start, time_stop, map_filename, mobility_path, ou
         pass
 
     # Bound Box of San Francisco, CA, US
-    bbox_pos = [{'lon': -122.5160063624, 'lat': 37.7093}, {'lon': -122.3754337591, 'lat': 37.8112472822}]
+    # bbox_pos = [{'lon': -122.5160063624, 'lat': 37.7093}, {'lon': -122.3754337591, 'lat': 37.8112472822}]
+    bbox_pos = [{'lon': -122.452, 'lat': 37.7315}, {'lon': -122.3754337591, 'lat': 37.8112472822}]
     bbox_points = [GpsPoint(**pos) for pos in bbox_pos]
     bbox = BoundBox(*bbox_points)
 
@@ -341,6 +342,8 @@ def gen_zipcode_bs_network(bbox, map_filename):
     map_gdf = gpd.read_file(map_filename)
     map_gdf = map_gdf.to_crs(crs)
     map_gdf = map_gdf.cx[bbox.x_min:bbox.x_max, bbox.y_min:bbox.y_max]
+    centroids = map_gdf.centroid.cx[bbox.x_min:bbox.x_max, bbox.y_min:bbox.y_max]
+    map_gdf = map_gdf.loc[centroids.index]
     map_gdf.sort_values('zip', inplace=True)
     map_gdf.reset_index(drop=True, inplace=True)
 
@@ -448,6 +451,13 @@ def gen_apps(nb_apps, net_data):
         'EMBB': np.linspace(100, 1000, num=10) * 1e+6,
     }
 
+    # CPU parameters
+    cpu_attenuation_options = {
+        'URLLC': np.linspace(0.1, 1, num=10),
+        'MMTC': [1.0],
+        'EMBB': np.linspace(0.5, 1, num=6),
+    }
+
     app_type_options = ['URLLC', 'MMTC', 'EMBB']
     selected_type = None
     if nb_apps >= len(app_type_options):
@@ -459,8 +469,8 @@ def gen_apps(nb_apps, net_data):
     # Generate applications
     json_data = {'apps': []}
     for index in range(nb_apps):
-        app_type = selected_type[index]
-        # app_type = 'URLLC'
+        # app_type = selected_type[index]
+        app_type = 'URLLC'
 
         deadline = random.choice(deadline_options[app_type])
         cpu_work = random.choice(cpu_work_options[app_type])
@@ -477,10 +487,10 @@ def gen_apps(nb_apps, net_data):
 
         # Create linear estimator that satisfies the queue and deadline constraints
         # f(x) = ax + b
+        # demand_cpu_b = 2.0 * cpu_work / float(deadline)
         demand_cpu_a = cpu_work + 1.0
-        # demand_cpu_a = 2.0 * cpu_work
-        demand_cpu_b = 2.0 * cpu_work / float(deadline)
-        # demand_cpu_b = cpu_work / float(deadline) + 1.0
+        cpu_attenuation = random.choice(cpu_attenuation_options[app_type])
+        demand_cpu_b = (cpu_work / float(cpu_attenuation * deadline)) + 1.0
 
         app = {
             'id': index,
@@ -573,8 +583,8 @@ def distribute_users(users_data, apps_data, net_data):
     users_index = list(range(total_nb_users))
 
     # Generate distribution factors for all applications
-    # users_distribution = gen_users_distribution(users_data, apps_data, net_data, use_zipf=True)
-    users_distribution = gen_users_distribution(users_data, apps_data, net_data, use_zipf=False)
+    users_distribution = gen_users_distribution(users_data, apps_data, net_data, use_zipf=True)
+    # users_distribution = gen_users_distribution(users_data, apps_data, net_data, use_zipf=False)
 
     # Distribute users among all applications
     remaining_users = frozenset(users_index)

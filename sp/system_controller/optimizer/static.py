@@ -37,7 +37,6 @@ class StaticOptimizer(MOGAOptimizer):
                                         system=system,
                                         environment_input=environment_input,
                                         use_heuristic=self.use_heuristic,
-                                        extra_first_population=self._last_population,
                                         init_solution=self._init_solution)
         if self._init_solution is None:
             mo_ga = NSGAII(operator=ga_operator,
