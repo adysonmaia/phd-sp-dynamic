@@ -11,6 +11,7 @@ import json
 import math
 import os
 import time
+import gc
 
 
 class ExpRunMonitor(OptimizerMonitor):
@@ -114,16 +115,14 @@ def main():
     optimizers = []
     multi_objective = [
         metric.deadline.weighted_avg_deadline_violation,
-        metric.response_time.weighted_avg_response_time,
         metric.cost.overall_cost,
         metric.migration.weighted_migration_rate,
     ]
     multi_objective_without_migration = [
         metric.deadline.weighted_avg_deadline_violation,
-        metric.response_time.weighted_avg_response_time,
         metric.cost.overall_cost,
     ]
-    single_objective = metric.response_time.weighted_avg_response_time
+    single_objective = metric.deadline.weighted_avg_deadline_violation
     metrics = [
         metric.deadline.overall_deadline_violation,
         metric.deadline.weighted_overall_deadline_violation,
@@ -153,6 +152,7 @@ def main():
 
     #
     dominance_func = util.preferred_dominates
+    # pool_size = 16
     # pool_size = 12
     # pool_size = 8
     pool_size = 4
@@ -224,7 +224,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
+    optimizers.append(item)
 
     # Multi-Objective GA optimizer config
     opt = MOGAOptimizer()
@@ -335,6 +335,9 @@ def main():
             sim.run()
             elapsed_time = time.perf_counter() - perf_count
             print('scenario {}, run {}, opt {} - sim exec time: {}s'.format(scenario_id, run, opt_id, elapsed_time))
+
+        scenario = None
+        gc.collect()
 
 
 if __name__ == '__main__':

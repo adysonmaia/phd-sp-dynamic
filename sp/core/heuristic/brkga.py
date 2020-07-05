@@ -262,6 +262,16 @@ class BRKGA:
         """
         return self.operator.crossover(indiv_1, indiv_2, prob_1, prob_2)
 
+    def mutate_population(self, population):
+        """Mutate individuals in a population
+
+        Args:
+            population (list(GAIndividual)): list of individuals
+        Returns:
+            list(GAIndividual): population after the mutation operation
+        """
+        return self.operator.mutate_population(population)
+
     def next_population(self, population, apply_selection=True):
         """Generate the next population through crossover and mutation operations in the current population
 
@@ -277,7 +287,7 @@ class BRKGA:
         elite = population[:self._elite_size]
         next_population += elite
 
-        # Get mutant individuals
+        # Get random mutant individuals
         mutants = [self.rand_individual() for _ in range(self._mutant_size)]
         next_population += mutants
 
@@ -292,6 +302,9 @@ class BRKGA:
                                        self.elite_probability,
                                        1.0 - self.elite_probability)
             next_population += offspring
+
+        # Mutate individuals
+        population = self.mutate_population(population)
 
         # Apply selection operation if necessary
         if apply_selection:
@@ -421,6 +434,16 @@ class GAOperator(ABC):
             individuals (list(GAIndividual)): list of individuals
         """
         return []
+
+    def mutate_population(self, population):
+        """Mutate individuals in a population
+
+        Args:
+            population (list(GAIndividual)): list of individuals
+        Returns:
+            list(GAIndividual): population after the mutation operation
+        """
+        return population
 
     def crossover(self, indiv_1, indiv_2, prob_1, prob_2):
         """Execute the crossover operation.

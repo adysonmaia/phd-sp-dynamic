@@ -150,7 +150,7 @@ def calc_migration_delay(app_id, src_node_id, dst_node_id, system, control_input
     Returns:
         float: migration delay. It returns infinity if the source node isn't hosting the application
     """
-    if system.control_input is None and ignore_placement:
+    if system.control_input is None and not ignore_placement:
         return 0.0
 
     app_size = calc_app_size(app_id, src_node_id, system, system.control_input, environment_input,
@@ -163,12 +163,14 @@ def calc_migration_delay(app_id, src_node_id, dst_node_id, system, control_input
     net_path = environment_input.get_net_path(app_id, src_node_id, dst_node_id)
     if len(net_path) > 0:
         app_size_bits = app_size * 8.0  # TODO: generalize this type conversion
-        link_src_id = net_path[0]
-        for link_dst_id in net_path[1:]:
-            link = system.get_link(link_src_id, link_dst_id)
+        link_start_node_id = net_path[0]
+        for link_end_node_id in net_path[1:]:
+            link = system.get_link(link_start_node_id, link_end_node_id)
             delay = link.propagation_delay + (app_size_bits / float(link.bandwidth))
             mig_delay += delay
-            link_src_id = link_dst_id
+            link_start_node_id = link_end_node_id
+    elif src_node_id != dst_node_id:
+        mig_delay = math.inf
     return mig_delay
 
 
@@ -194,19 +196,25 @@ def calc_min_migration_delay(app_id, dst_node_id, system, control_input, environ
     min_delay = math.inf
     selected_src_node_id = None
     for src_node in system.nodes:
-        if not curr_control.get_app_placement(app_id, src_node.id):
+        if not curr_control.get_app_placement(app_id, src_node.id) or src_node.id == dst_node_id:
             continue
         delay = calc_migration_delay(app_id, src_node.id, dst_node_id, system, control_input, environment_input)
+        # delay = environment_input.get_net_delay(app_id, src_node.id, dst_node_id)
         if delay < min_delay:
             min_delay = delay
             selected_src_node_id = src_node.id
 
+    mig_delay = None
     if selected_src_node_id is None:
         selected_src_node_id = system.cloud_node.id
-        min_delay = calc_migration_delay(app_id, selected_src_node_id, dst_node_id,
+        mig_delay = calc_migration_delay(app_id, selected_src_node_id, dst_node_id,
                                          system, control_input, environment_input, ignore_placement=True)
+    else:
+        mig_delay = min_delay
+        # mig_delay = calc_migration_delay(app_id, selected_src_node_id, dst_node_id,
+        #                                  system, control_input, environment_input)
 
-    return (min_delay, selected_src_node_id) if return_src_node_id else min_delay
+    return (mig_delay, selected_src_node_id) if return_src_node_id else mig_delay
 
 
 def calc_load_before_distribution(app_id, node_id, system, environment_input):

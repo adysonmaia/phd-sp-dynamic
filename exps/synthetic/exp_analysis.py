@@ -93,11 +93,11 @@ def plot_metrics(optimizers, experiments, output_path):
                 metrics_data.append(data)
 
     metrics_df = pd.DataFrame.from_records(metrics_data)
-    # sns.set()
+    sns.set()
     sns.set_context("paper")
     # sns.relplot(x='x', y='weighted_avg_deadline_violation', hue='opt', kind='line', data=metrics_df)
-    # sns.catplot(x='x', y='weighted_avg_deadline_violation', hue='opt', kind='point', ci=None, data=metrics_df)
-    sns.catplot(x='x', y='weighted_avg_deadline_violation', hue='opt', kind='bar', data=metrics_df)
+    sns.catplot(x='x', y='weighted_avg_deadline_violation', hue='opt', kind='point', ci=None, data=metrics_df)
+    # sns.catplot(x='x', y='weighted_avg_deadline_violation', hue='opt', kind='bar', data=metrics_df)
     # sns.boxplot(x='x', y='weighted_avg_deadline_violation', hue='opt', notch=False, data=metrics_df)
     plt.show()
 

@@ -45,7 +45,8 @@ def main():
 
     # Scenarios parameters
     scenarios = [
-        {'nb_apps': 5},
+        {'nb_apps': 1},
+        # {'nb_apps': 5},
         # {'nb_apps': 10},
         # {'nb_apps': 15},
         # {'nb_apps': 508},
@@ -71,6 +72,7 @@ def main():
     for run in range(nb_runs):
         for scenario_params in scenarios:
             nb_apps = scenario_params['nb_apps']
+            # scenario_id = 'n{}_a{}_u{}'.format(nb_bs, nb_apps, nb_users)
             scenario_id = base64.urlsafe_b64encode(bytes(json.dumps(scenario_params), 'utf-8')).decode('utf-8')
             scenario_id = 'a{}_{}'.format(nb_apps, scenario_id)
             scenario_path = os.path.join(DATA_PATH, scenario_id, str(run))
@@ -453,9 +455,9 @@ def gen_apps(nb_apps, net_data):
 
     # CPU parameters
     cpu_attenuation_options = {
-        'URLLC': np.linspace(0.1, 1, num=10),
-        'MMTC': [1.0],
-        'EMBB': np.linspace(0.5, 1, num=6),
+        'URLLC': np.linspace(0.1, 0.5, num=5),
+        'MMTC': np.linspace(0.1, 0.5, num=5),
+        'EMBB': np.linspace(0.1, 0.5, num=5),
     }
 
     app_type_options = ['URLLC', 'MMTC', 'EMBB']
@@ -487,7 +489,9 @@ def gen_apps(nb_apps, net_data):
 
         # Create linear estimator that satisfies the queue and deadline constraints
         # f(x) = ax + b
-        # demand_cpu_b = 2.0 * cpu_work / float(deadline)
+        # demand_cpu_a = cpu_work + 1.0
+        # demand_cpu_b = cpu_work / float(deadline) + 1.0
+        # demand_cpu_b = 2.0 * cpu_work / float(deadline) + 1.0
         demand_cpu_a = cpu_work + 1.0
         cpu_attenuation = random.choice(cpu_attenuation_options[app_type])
         demand_cpu_b = (cpu_work / float(cpu_attenuation * deadline)) + 1.0
@@ -583,8 +587,9 @@ def distribute_users(users_data, apps_data, net_data):
     users_index = list(range(total_nb_users))
 
     # Generate distribution factors for all applications
-    users_distribution = gen_users_distribution(users_data, apps_data, net_data, use_zipf=True)
-    # users_distribution = gen_users_distribution(users_data, apps_data, net_data, use_zipf=False)
+    # users_distribution = gen_users_distribution(users_data, apps_data, net_data, dist_type='zipf')
+    # users_distribution = gen_users_distribution(users_data, apps_data, net_data, dist_type='app_type')
+    users_distribution = gen_users_distribution(users_data, apps_data, net_data, dist_type='equal')
 
     # Distribute users among all applications
     remaining_users = frozenset(users_index)
@@ -623,25 +628,25 @@ def distribute_users(users_data, apps_data, net_data):
     return users_data
 
 
-def gen_users_distribution(users_data, apps_data, net_data, use_zipf=True):
+def gen_users_distribution(users_data, apps_data, net_data, dist_type='zipf'):
     """Generate users distribution factor for each application
 
     Args:
         users_data (dict): users data in json format
         apps_data (dict): applications data in json format
         net_data (dict): network data in json format
-        use_zipf (bool): whether to use zeta distribution or not
+        dist_type (str): distribution type. Options: 'zipf', 'app_type', 'equal'
     Returns:
         list: distribution factor for each application
     """
 
     users_distribution = None
-    if use_zipf:
+    if dist_type == 'zipf':
         # Use zipf (zeta) distribution to set number of users of each application
         nb_apps = len(apps_data['apps'])
         zipf_alpha = 1.6
         users_distribution = sp_rnd.random_zipf(zipf_alpha, nb_apps)
-    else:
+    elif dist_type == 'app_type':
         # Set users percentage for each application based on its type
         app_type_distribution = {'URLLC': 0.1, 'EMBB': 0.2, 'MMTC': 0.7}
         app_types = list(app_type_distribution.keys())
@@ -650,6 +655,9 @@ def gen_users_distribution(users_data, apps_data, net_data, use_zipf=True):
         nb_types_with_app = len([t for t in app_types if nb_apps_per_type[t] > 0])
         users_distribution = [app_type_distribution[a['type']] / float(nb_apps_per_type[a['type']])
                               for a in apps_data['apps']]
+    else:
+        nb_apps = len(apps_data['apps'])
+        users_distribution = [1 / float(nb_apps)] * nb_apps
     return users_distribution
 
 

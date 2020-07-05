@@ -345,9 +345,9 @@ def gen_apps(nb_apps, net_data):
     }
     # CPU parameters
     cpu_attenuation_options = {
-        'URLLC': np.linspace(0.1, 1, num=10),
-        'MMTC': [1.0],
-        'EMBB': np.linspace(0.5, 1, num=6),
+        'URLLC': np.linspace(0.1, 0.5, num=5),
+        'MMTC': np.linspace(0.1, 0.5, num=5),
+        'EMBB': np.linspace(0.1, 0.5, num=5),
     }
 
     app_type_options = ['URLLC', 'MMTC', 'EMBB']

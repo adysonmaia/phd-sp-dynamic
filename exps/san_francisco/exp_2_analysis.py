@@ -108,7 +108,7 @@ def plot_metrics(optimizers, experiments, output_path):
                 metrics_data.append(data)
 
     metrics_df = pd.DataFrame.from_records(metrics_data)
-    # sns.set()
+    sns.set()
     sns.set_context("paper")
     # sns.relplot(x='x', y='weighted_avg_deadline_violation', hue='opt', kind='line', data=metrics_df)
     # sns.catplot(x='x', y='weighted_avg_deadline_violation', hue='opt', kind='point', ci=None, data=metrics_df)
@@ -124,6 +124,7 @@ def plot_metrics(optimizers, experiments, output_path):
 
 def main():
     output_path = 'output/san_francisco/exp/'
+    # output_path = 'output/san_francisco/exp_2/'
     optimizers = [
         {'id': 'CloudOptimizer', 'label': 'Cloud'},
         {'id': 'StaticOptimizer', 'label': 'Static'},
@@ -131,7 +132,6 @@ def main():
         # {'id': 'OmittedMigrationOptimizer', 'label': 'Omit Migration'},
         {'id': 'MOGAOptimizer', 'label': 'Proposal w/o Prediction'},
         {'id': 'LLCOptimizer_ssga_w1', 'label': 'Proposal w. Prediction H=1'},
-        # {'id': 'LLCOptimizer_ssga_w2', 'label': 'Proposal w. Prediction H=2'},
         {'id': 'LLCOptimizer_sga_w1', 'label': 'Proposal General H=1'},
     ]
     # experiments = [
@@ -148,10 +148,11 @@ def main():
     #     {'path': 'a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAzNjAwfX0=', 'x': '60'},
     # ]
     experiments = [
-        # {'path': 'a1_eyJuYl9hcHBzIjogMX0=', 'x': '01'},
+        {'path': 'a1_eyJuYl9hcHBzIjogMX0=', 'x': '01'},
         # {'path': 'a4_eyJuYl9hcHBzIjogNH0=', 'x': '04'},
+        # {'path': 'a5_eyJuYl9hcHBzIjogNX0=', 'x': '05'},
         # {'path': 'a7_eyJuYl9hcHBzIjogN30=', 'x': '07'},
-        {'path': 'a10_eyJuYl9hcHBzIjogMTB9', 'x': '10'},
+        # {'path': 'a10_eyJuYl9hcHBzIjogMTB9', 'x': '10'},
     ]
     plot_metrics(optimizers, experiments, output_path)
 
