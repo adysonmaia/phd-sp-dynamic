@@ -508,7 +508,7 @@ def distribute_load(min_load, max_load, time_start, time_end, time_step):
     Returns:
         list: distributed load in a json format
     """
-    time_step = min(10 * 60.0, time_step)  # 10 min
+    # time_step = min(10 * 60.0, time_step)  # 10 min
     nb_steps = int(math.floor((time_end - time_start) / float(time_step)))
 
     # Different load patterns
@@ -548,7 +548,7 @@ def distribute_load(min_load, max_load, time_start, time_end, time_step):
     func_kwargs = random.choice(rnd_params[func])
 
     # Generate load along the simulation according to the selected pattern
-    noise = 0.05
+    noise = 0.01
     samples = func(nb_samples=nb_steps, noise=noise, **func_kwargs)
     loads = []
     for step in range(nb_steps):
