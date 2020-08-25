@@ -1,3 +1,4 @@
+from sp.core.util import json_util
 from collections.abc import Iterable
 import numpy as np
 import math
@@ -359,6 +360,37 @@ def random_zipf(alpha=1.8, nb_samples=None, noise=None):
 
     y_sum = sum(y)
     y = scale_samples(y, min_value=0.0, max_value=y_sum)
+    y = add_white_noise(y, noise)
+
+    if nb_samples is None:
+        return y[0]
+    else:
+        return y
+
+
+def random_time_series(time_series, nb_samples=None, noise=None, min_value=None, max_value=None):
+    """Generate values from a time series
+
+    Args:
+        time_series (Union[list,str]): time series or filename for the time series
+        nb_samples (int): number of generated samples. If None, function returns only a single value
+        noise (float): it adds a white noise to the generated values if this parameter is not None
+        min_value (float): minimum value that will be zero after the scaling
+        max_value (float): maximum value that will be one after the scaling
+
+    Returns:
+        Union[list, float]: list of random values or a single value if nb_samples is None.
+            Resulted values are between 0 and 1
+    """
+    time_series = json_util.load_content(time_series)
+    ts_size = len(time_series)
+
+    nb_steps = nb_samples if nb_samples else 1
+    indexes = np.linspace(0, ts_size - 1, num=nb_steps)
+    indexes = map(lambda i: int(round(i)), indexes)
+    y = [time_series[i] for i in indexes]
+
+    y = scale_samples(y, min_value=min_value, max_value=max_value)
     y = add_white_noise(y, noise)
 
     if nb_samples is None:

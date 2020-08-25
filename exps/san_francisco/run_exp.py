@@ -1,5 +1,5 @@
 from sp.core.model import Scenario
-from sp.core.predictor import AutoARIMAPredictor, SARIMAPredictor, NaivePredictor
+from sp.core.predictor import AutoARIMAPredictor, SARIMAPredictor, NaivePredictor, SimpleExpSmoothingPredictor
 from sp.simulator import Simulator
 from sp.simulator.monitor import OptimizerMonitor, EnvironmentMonitor
 from sp.system_controller import metric, util
@@ -67,38 +67,38 @@ class ExpRunMonitor(OptimizerMonitor):
         for metric_id in metrics_id:
             print('{:40}: {}'.format(metric_id, datum[metric_id]))
 
-        print('\nApplications')
-        for app in system.apps:
-            places = [n.id for n in system.nodes if control_input.get_app_placement(app.id, n.id)]
-            users = environment_input.get_attached_users()
-            users = list(filter(lambda u: u.app_id == app.id and u.node_id is not None, users))
-            load = sum([util.calc_load_before_distribution(app.id, node.id, system, environment_input)
-                        for node in system.nodes])
-            overall_violation = util.filter_metric(metric.deadline.overall_deadline_violation,
-                                                   system, control_input, environment_input,
-                                                   apps_id=app.id)
-            max_violation = util.filter_metric(metric.deadline.max_deadline_violation,
-                                               system, control_input, environment_input,
-                                               apps_id=app.id)
-            print('app {:2d} {:>5}, deadline {:6.1f}ms, max instances {:2d}, users {:4d}, load {:10.3f}, '
-                  'max violation {:9.6f}s, overall violation {:9.6f}s, '
-                  'places {:2d}: {}'.format(
-                app.id, app.type, 1000 * app.deadline, app.max_instances, len(users), load,
-                overall_violation, max_violation, len(places), places
-            ))
-        #
-        # print('\nFree Resources')
-        # for node in system.nodes:
-        #     free_str = 'node {:2d}, '.format(node.id)
-        #     for resource in system.resources:
-        #         capacity = node.capacity[resource.name]
-        #         alloc = sum([control_input.get_allocated_resource(a.id, node.id, resource.name) for a in system.apps])
-        #         free = 1.0
-        #         if capacity > 0.0 and not math.isinf(capacity):
-        #             free = (capacity - alloc) / float(capacity)
-        #             free = round(free, 3)
-        #         free_str += '{} {:6.3f}, '.format(resource.name, free)
-        #     print(free_str)
+        # print('\nApplications')
+        # for app in system.apps:
+        #     places = [n.id for n in system.nodes if control_input.get_app_placement(app.id, n.id)]
+        #     users = environment_input.get_attached_users()
+        #     users = list(filter(lambda u: u.app_id == app.id and u.node_id is not None, users))
+        #     load = sum([util.calc_load_before_distribution(app.id, node.id, system, environment_input)
+        #                 for node in system.nodes])
+        #     overall_violation = util.filter_metric(metric.deadline.overall_deadline_violation,
+        #                                            system, control_input, environment_input,
+        #                                            apps_id=app.id)
+        #     max_violation = util.filter_metric(metric.deadline.max_deadline_violation,
+        #                                        system, control_input, environment_input,
+        #                                        apps_id=app.id)
+        #     print('app {:2d} {:>5}, deadline {:6.1f}ms, max instances {:2d}, users {:4d}, load {:10.3f}, '
+        #           'max violation {:9.6f}s, overall violation {:9.6f}s, '
+        #           'places {:2d}: {}'.format(
+        #         app.id, app.type, 1000 * app.deadline, app.max_instances, len(users), load,
+        #         overall_violation, max_violation, len(places), places
+        #     ))
+
+        print('\nFree Resources')
+        for node in system.nodes:
+            free_str = 'node {:2d}, '.format(node.id)
+            for resource in system.resources:
+                capacity = node.capacity[resource.name]
+                alloc = sum([control_input.get_allocated_resource(a.id, node.id, resource.name) for a in system.apps])
+                free = 1.0
+                if capacity > 0.0 and not math.isinf(capacity):
+                    free = (capacity - alloc) / float(capacity)
+                    free = round(free, 3)
+                free_str += '{} {:6.3f}, '.format(resource.name, free)
+            print(free_str)
 
         # print('\nLoad Distribution')
         # for app in system.apps:
@@ -170,8 +170,8 @@ def main():
     # timeout = 3 * 60  # 3 min
     # timeout = 2 * 60  # 2 min
     timeout = 1 * 60  # 1 min
-    ga_pop_size = 100
-    # ga_pop_size = 50
+    # ga_pop_size = 100
+    ga_pop_size = 50
     # ga_nb_gens = 100
     ga_nb_gens = 50
 
@@ -179,12 +179,13 @@ def main():
     env_predictor = MultiProcessingEnvironmentPredictor()
     env_predictor.pool_size = pool_size
     env_predictor.load_predictor_class = SARIMAPredictor
-    env_predictor.load_predictor_params = {'order': (1, 1, 0), 'enforce_stationarity': False,
-                                           'enforce_invertibility': False}
+    # env_predictor.load_predictor_params = {'order': (1, 1, 0), 'enforce_stationarity': False,
+    #                                        'enforce_invertibility': False}
     # env_predictor.load_predictor_class = AutoARIMAPredictor
     # # env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': True, 'maxiter': 10}
     # env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': False,
     #                                        'random': True, 'n_fits': 2, 'maxiter': 2}
+    env_predictor.load_predictor_class = SimpleExpSmoothingPredictor
     env_predictor.net_delay_predictor_class = NaivePredictor
 
     # Set optimizer solutions
@@ -219,6 +220,7 @@ def main():
     opt.population_size = ga_pop_size
     opt.nb_generations = ga_nb_gens
     opt.dominance_func = dominance_func
+    opt.force_cloud_placement = False
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
     optimizers.append(item)
@@ -233,7 +235,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Multi-Objective GA optimizer config
     opt = MOGAOptimizer()
@@ -320,29 +322,29 @@ def main():
         elapsed_time = time.perf_counter() - perf_count
         print('finished in {:5.2f}s'.format(elapsed_time))
 
-        # Obtain forecasting training set
-        if 'train_start' in time_data and time_data['train_start'] < time_data['start']:
-            time_start, time_stop, time_step = time_data['train_start'], time_data['start'] - 1, time_data['step']
-            env_log_path = os.path.join(root_output_path, scenario_id, str(run))
-            load_log_filename = os.path.join(env_log_path, 'load.json')
-
-            seasonal_period = int(round(1 * 24 * 60 * 60 / float(time_step)))  # Seasonal of 1 day
-            seasonal_params = {'seasonal_order': (1, 0, 0, seasonal_period)}
-            # seasonal_params = {'seasonal': True, 'm': seasonal_period}
-            # env_predictor.load_predictor_params.update(seasonal_params)
-            env_predictor.load_predictor_params.update(seasonal_params)
-            env_predictor.load_init_data = load_log_filename
-
-            if not os.path.exists(load_log_filename) or not os.path.isfile(load_log_filename):
-                print('generating training set ...', end=' ')
-                perf_count = time.perf_counter()
-                sim = Simulator(scenario=scenario)
-                sim.set_time(start=time_start, stop=time_stop, step=time_step)
-                sim.optimizer = CloudOptimizer()
-                sim.monitor = EnvironmentMonitor(output_path=env_log_path, log_load=True, log_net_delay=False)
-                sim.run()
-                elapsed_time = time.perf_counter() - perf_count
-                print('finished in {:6.2f}s'.format(elapsed_time))
+        # # Obtain forecasting training set
+        # if 'train_start' in time_data and time_data['train_start'] < time_data['start']:
+        #     time_start, time_stop, time_step = time_data['train_start'], time_data['start'] - 1, time_data['step']
+        #     env_log_path = os.path.join(root_output_path, scenario_id, str(run))
+        #     load_log_filename = os.path.join(env_log_path, 'load.json')
+        #
+        #     seasonal_period = int(round(1 * 24 * 60 * 60 / float(time_step)))  # Seasonal of 1 day
+        #     seasonal_params = {'seasonal_order': (1, 0, 0, seasonal_period)}
+        #     # seasonal_params = {'seasonal': True, 'm': seasonal_period}
+        #     # env_predictor.load_predictor_params.update(seasonal_params)
+        #     env_predictor.load_predictor_params.update(seasonal_params)
+        #     env_predictor.load_init_data = load_log_filename
+        #
+        #     if not os.path.exists(load_log_filename) or not os.path.isfile(load_log_filename):
+        #         print('generating training set ...', end=' ')
+        #         perf_count = time.perf_counter()
+        #         sim = Simulator(scenario=scenario)
+        #         sim.set_time(start=time_start, stop=time_stop, step=time_step)
+        #         sim.optimizer = CloudOptimizer()
+        #         sim.monitor = EnvironmentMonitor(output_path=env_log_path, log_load=True, log_net_delay=False)
+        #         sim.run()
+        #         elapsed_time = time.perf_counter() - perf_count
+        #         print('finished in {:6.2f}s'.format(elapsed_time))
 
         # Execute simulation for each optimizer nb_runs times
         for (opt_id, opt) in optimizers:
@@ -354,6 +356,10 @@ def main():
                 os.makedirs(output_path)
             except OSError:
                 pass
+
+            metrics_filename = os.path.join(output_path, 'metrics.json')
+            if os.path.isfile(metrics_filename):
+                continue
 
             # Set simulation parameters
             time_start, time_stop, time_step = time_data['start'], time_data['stop'], time_data['step']

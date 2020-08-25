@@ -7,12 +7,15 @@ from sp.system_controller.util import calc_load_before_distribution, make_soluti
 class StaticOptimizer(MOGAOptimizer):
     """Static Optimizer
 
+    Attributes:
+        force_cloud_placement (bool): if True, it forces the cloud node to host all applications
     """
 
     def __init__(self):
         """Initialization
         """
         MOGAOptimizer.__init__(self)
+        self.force_cloud_placement = True
         self._init_solution = None
         self._init_encoded_solution = None
 
@@ -37,7 +40,8 @@ class StaticOptimizer(MOGAOptimizer):
                                         system=system,
                                         environment_input=environment_input,
                                         use_heuristic=self.use_heuristic,
-                                        init_solution=self._init_solution)
+                                        init_solution=self._init_solution,
+                                        force_cloud_placement=self.force_cloud_placement)
         if self._init_solution is None:
             mo_ga = NSGAII(operator=ga_operator,
                            nb_generations=self.nb_generations,
@@ -64,11 +68,13 @@ class _StaticGAOperator(MOGAOperator):
 
     Attributes:
         init_solution (OptSolution): initial solution, i.e., solution of the first time slot
+        force_cloud_placement (bool): if True, it forces the cloud node to host all applications
     """
 
-    def __init__(self, init_solution=None, **kwargs):
+    def __init__(self, init_solution=None, force_cloud_placement=True, **kwargs):
         MOGAOperator.__init__(self, **kwargs)
         self.init_solution = init_solution
+        self.force_cloud_placement = force_cloud_placement
 
     def decode(self, individual):
         """Decode the individual's chromosome and obtain a valid solution for the optimization problem
@@ -94,16 +100,17 @@ class _StaticGAOperator(MOGAOperator):
         Returns:
             OptSolution: solution
         """
-        cloud_node = self.system.cloud_node
-        for app in self.system.apps:
-            if solution.app_placement[app.id][cloud_node.id]:
-                continue
+        if self.force_cloud_placement:
+            cloud_node = self.system.cloud_node
+            for app in self.system.apps:
+                if solution.app_placement[app.id][cloud_node.id]:
+                    continue
 
-            if cloud_node not in selected_nodes[app.id]:
-                selected_nodes[app.id].append(cloud_node)
+                if cloud_node not in selected_nodes[app.id]:
+                    selected_nodes[app.id].append(cloud_node)
 
-            if self._alloc_resources(app, cloud_node, solution, load=0.0, increment=False):
-                solution.app_placement[app.id][cloud_node.id] = True
+                if self._alloc_resources(app, cloud_node, solution, load=0.0, increment=False):
+                    solution.app_placement[app.id][cloud_node.id] = True
 
         return MOGAOperator._decode_part_3(self, individual, solution, selected_nodes)
 

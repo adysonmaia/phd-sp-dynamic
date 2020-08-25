@@ -27,17 +27,20 @@ def main():
     #     {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 4000},
     #     {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 7000},
     # ]
+    # scenarios = [
+    #     {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 10000},
+    #     {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 10000},
+    #     {'nb_bs': 9, 'nb_apps': 15, 'nb_users': 10000},
+    #     {'nb_bs': 9, 'nb_apps': 20, 'nb_users': 10000},
+    # ]
     scenarios = [
+        {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 5000},
         {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 10000},
-        {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 10000},
-        {'nb_bs': 9, 'nb_apps': 15, 'nb_users': 10000},
-        {'nb_bs': 9, 'nb_apps': 20, 'nb_users': 10000},
+        {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 15000},
+        {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 20000},
     ]
     # scenarios = [
-    #     {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 1000},
-    #     {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 4000},
-    #     {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 7000},
-    #     {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 10000},
+    #     {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 10000},
     # ]
 
     # Simulation times
@@ -519,6 +522,7 @@ def distribute_load(min_load, max_load, time_start, time_end, time_step):
         sp_rnd.random_linear,
         sp_rnd.random_constant,
         sp_rnd.random_uniform,
+        sp_rnd.random_time_series,
     ]
 
     rnd_params = {
@@ -537,6 +541,12 @@ def distribute_load(min_load, max_load, time_start, time_end, time_step):
         sp_rnd.random_cycle: [
             {'period': nb_steps},
             {'period': nb_steps / 2.0}
+        ],
+        sp_rnd.random_time_series: [
+            {'time_series': 'input/san_francisco/loads/1d.json', 'min_value': 0.0},
+            {'time_series': 'input/san_francisco/loads/1d.json', 'min_value': None},
+            {'time_series': 'input/san_francisco/loads/1d_n15_4.json', 'min_value': 0.0},
+            {'time_series': 'input/san_francisco/loads/1d_n15_4.json', 'min_value': None},
         ],
         sp_rnd.random_linear: [{}],
         sp_rnd.random_constant: [{}],

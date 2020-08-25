@@ -11,6 +11,7 @@ import time
 import pandas as pd
 import geopandas as gpd
 import numpy as np
+import os
 
 
 UTC_TZ = timezone('UTC')
@@ -170,6 +171,7 @@ def plot_load_by_node(scenario, df):
 
     load_min, load_max = df['load'].min(), df['load'].max()
     df['app_label'] = df['app'].map(lambda app_id: 'app {} (id {})'.format(scenario.get_app(app_id).type, int(app_id)))
+    print(load_min, load_max)
 
     for (node_index, node) in enumerate(bs_nodes):
         ax_row = node_index // nb_cols
@@ -184,8 +186,14 @@ def plot_load_by_node(scenario, df):
         # load_df = node_df.groupby(['time', 'app_label'])['load'].sum().unstack()
         # load_df.plot(ax=ax, legend=False)
 
-        grouped_df = df[df['node'] == node.id].groupby('app_label')
+        node_df = df[df['node'] == node.id]
+        grouped_df = node_df.groupby('app_label')
         grouped_df['load'].plot(ax=ax)
+
+        load_list = node_df['load'].groupby('time').sum().tolist()
+        load_filename = 'input/san_francisco/loads/1d_n{}_{}.json'.format(len(bs_nodes), node.id + 1)
+        with open(load_filename, 'w') as outfile:
+            json.dump(load_list, outfile)
 
     for row in range(nb_rows):
         for col in range(nb_cols):
@@ -345,19 +353,26 @@ def data_analysis(scenario, load_filename, users_filename):
 
     # plot_load_by_app(scenario, load_df)
     # plot_load_by_app_node(scenario, load_df)
-    # plot_load_by_node(scenario, load_df)
-    plot_users(scenario, load_df, users_df)
+    plot_load_by_node(scenario, load_df)
+    # plot_users(scenario, load_df, users_df)
     # plot_map(scenario)
 
 
 def main():
     scenario_filename = 'input/san_francisco/scenario.json'
-    load_filename = 'output/san_francisco/load_analysis/load.json'
-    users_filename = 'output/san_francisco/load_analysis/users.json'
+    scenario_filename = 'input/san_francisco/a1_eyJuYl9hcHBzIjogMX0=/0/scenario.json'
+    output_path = 'output/san_francisco/load_analysis/'
+    load_filename = os.path.join(output_path, 'load.json')
+    users_filename = os.path.join(output_path, 'users.json')
     scenario = None
     with open(scenario_filename) as json_file:
         data = json.load(json_file)
         scenario = Scenario.from_json(data)
+
+    try:
+        os.makedirs(output_path)
+    except OSError:
+        pass
 
     # run_sim(scenario, load_filename, users_filename)
     data_analysis(scenario, load_filename, users_filename)

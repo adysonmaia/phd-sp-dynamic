@@ -183,14 +183,14 @@ def main():
     opt = CloudOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Single-Objective Heuristic optimizer config
     opt = SOHeuristicOptimizer()
     opt.version = [opt.versions.NET_DELAY, opt.versions.DEADLINE]
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Single-Objective GA optimizer config
     opt = SOGAOptimizer()
@@ -212,7 +212,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Omitted Migration optimizer config
     opt = OmittedMigrationOptimizer()
@@ -224,7 +224,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # Multi-Objective GA optimizer config
     opt = MOGAOptimizer()
@@ -236,7 +236,7 @@ def main():
     opt.dominance_func = dominance_func
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    optimizers.append(item)
+    # optimizers.append(item)
 
     # LLC Parameters
 
@@ -272,8 +272,9 @@ def main():
     # prediction_windows = [0, 1, 2]
     # prediction_windows = [1, 2]
     # prediction_windows = [0]
-    prediction_windows = [1]
+    # prediction_windows = [1]
     # prediction_windows = [2]
+    prediction_windows = [1, 2, 3, 4]
 
     for window in prediction_windows:
         for llc_finder in llc_finders:
@@ -321,6 +322,10 @@ def main():
                 os.makedirs(output_path)
             except OSError:
                 pass
+
+            metrics_filename = os.path.join(output_path, 'metrics.json')
+            if os.path.isfile(metrics_filename):
+                continue
 
             # Set simulation parameters
             time_start, time_stop, time_step = time_data['start'], time_data['stop'], time_data['step']

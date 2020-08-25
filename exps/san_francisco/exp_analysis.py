@@ -230,17 +230,20 @@ def main():
     # output_path = 'output/san_francisco/exp/a1_eyJuYl9hcHBzIjogMX0=/'
     # output_path = 'output/san_francisco/exp_2/a1_eyJuYl9hcHBzIjogMX0=/'
     # output_path = 'output/san_francisco/exp/a4_eyJuYl9hcHBzIjogNH0=/'
-    output_path = 'output/san_francisco/exp/a5_eyJuYl9hcHBzIjogNX0=/'
+    # output_path = 'output/san_francisco/exp/a5_eyJuYl9hcHBzIjogNX0=/'
     # output_path = 'output/san_francisco/exp/a7_eyJuYl9hcHBzIjogN30=/'
     # output_path = 'output/san_francisco/exp/a10_eyJuYl9hcHBzIjogMTB9/'
+    # output_path = 'output/san_francisco/exp/a200/'
+    # output_path = 'output/san_francisco/exp/a100/'
+    output_path = 'output/san_francisco/exp/a50/'
     optimizers = [
         # {'id': 'CloudOptimizer', 'label': 'Cloud'},
-        # {'id': 'StaticOptimizer', 'label': 'Static'},
-        # {'id': 'SOHeuristicOptimizer', 'label': 'Net Delay + Deadline'},
+        {'id': 'StaticOptimizer', 'label': 'Static'},
+        # {'id': 'SOHeuristicOptimizer', 'label': 'N+D'},
         # {'id': 'OmittedMigrationOptimizer', 'label': 'Omit Migration'},
-        {'id': 'MOGAOptimizer', 'label': 'Proposal w/o Prediction'},
-        # {'id': 'LLCOptimizer_ssga_w1', 'label': 'Proposal w. Prediction H=1'},
-        # {'id': 'LLCOptimizer_sga_w1', 'label': 'Proposal General H=1'},
+        {'id': 'MOGAOptimizer', 'label': 'H1'},
+        {'id': 'LLCOptimizer_ssga_w1', 'label': 'SS H=2'},
+        # {'id': 'LLCOptimizer_sga_w1', 'label': 'GS H=2'},
     ]
 
     # run_dirs = glob(os.path.join(output_path, '[0-9]*/'))

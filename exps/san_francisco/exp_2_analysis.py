@@ -74,7 +74,7 @@ def plot_metrics(optimizers, experiments, output_path):
     metrics_data = []
 
     for exp in experiments:
-        exp_path = os.path.join(output_path, exp['path'], '[0-9]')
+        exp_path = os.path.join(output_path, exp['path'], '[0-9]*')
         runs_path = glob(exp_path)
         for opt in optimizers:
             for (run, run_path) in enumerate(runs_path):
@@ -85,8 +85,8 @@ def plot_metrics(optimizers, experiments, output_path):
 
                 cloud_filename = os.path.join(run_path, cloud_opt_id, 'metrics.json')
                 cloud_df = None
-                if os.path.isfile(cloud_filename):
-                    cloud_df = pd.read_json(cloud_filename, orient='records')
+                # if os.path.isfile(cloud_filename):
+                #     cloud_df = pd.read_json(cloud_filename, orient='records')
 
                 data = {'opt': opt['label'], 'run': run, 'x': exp['x']}
                 for metric in metrics:
@@ -128,11 +128,11 @@ def main():
     optimizers = [
         {'id': 'CloudOptimizer', 'label': 'Cloud'},
         {'id': 'StaticOptimizer', 'label': 'Static'},
-        {'id': 'SOHeuristicOptimizer', 'label': 'Net Delay + Deadline'},
+        {'id': 'SOHeuristicOptimizer', 'label': 'N+D'},
         # {'id': 'OmittedMigrationOptimizer', 'label': 'Omit Migration'},
-        {'id': 'MOGAOptimizer', 'label': 'Proposal w/o Prediction'},
-        {'id': 'LLCOptimizer_ssga_w1', 'label': 'Proposal w. Prediction H=1'},
-        {'id': 'LLCOptimizer_sga_w1', 'label': 'Proposal General H=1'},
+        {'id': 'MOGAOptimizer', 'label': 'H=1'},
+        {'id': 'LLCOptimizer_ssga_w1', 'label': 'SS H=2'},
+        {'id': 'LLCOptimizer_sga_w1', 'label': 'GS H=2'},
     ]
     # experiments = [
     #     {'path': '1_a1_1211612400_1211698799', 'x': '1-1'},
@@ -147,12 +147,15 @@ def main():
     #     {'path': 'a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAyNzAwfX0=', 'x': '45'},
     #     {'path': 'a4_eyJuYl9hcHBzIjogNCwgInRpbWUiOiB7InN0ZXAiOiAzNjAwfX0=', 'x': '60'},
     # ]
+    # experiments = [
+    #     # {'path': 'a1_eyJuYl9hcHBzIjogMX0=', 'x': '01'},
+    #     {'path': 'a4_eyJuYl9hcHBzIjogNH0=', 'x': '04'},
+    #     # {'path': 'a5_eyJuYl9hcHBzIjogNX0=', 'x': '05'},
+    #     {'path': 'a7_eyJuYl9hcHBzIjogN30=', 'x': '07'},
+    #     {'path': 'a10_eyJuYl9hcHBzIjogMTB9', 'x': '10'},
+    # ]
     experiments = [
-        {'path': 'a1_eyJuYl9hcHBzIjogMX0=', 'x': '01'},
-        # {'path': 'a4_eyJuYl9hcHBzIjogNH0=', 'x': '04'},
-        # {'path': 'a5_eyJuYl9hcHBzIjogNX0=', 'x': '05'},
-        # {'path': 'a7_eyJuYl9hcHBzIjogN30=', 'x': '07'},
-        # {'path': 'a10_eyJuYl9hcHBzIjogMTB9', 'x': '10'},
+        {'path': 'a50', 'x': 50},
     ]
     plot_metrics(optimizers, experiments, output_path)
 

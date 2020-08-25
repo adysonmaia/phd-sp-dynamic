@@ -157,9 +157,9 @@ def main():
     for (key, value) in iteritems(bbox):
         df = df[df[key].between(*value)]
 
-    # plot_count(df)
+    plot_count(df)
     # plot_count_forecasting(df)
-    plot_on_map(df)
+    # plot_on_map(df)
 
 
 if __name__ == '__main__':

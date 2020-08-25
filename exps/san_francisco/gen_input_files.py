@@ -38,19 +38,30 @@ def main():
     time_stop = SF_TZ.localize(datetime(2008, 5, 24, 23, 59, 59)).timestamp()
     # time_step = 60 * 60  # seconds or 1H
     time_step = 30 * 60  # seconds or 30min
+    # time_step = 15 * 60  # seconds or 15min
+    # time_step = 10 * 60  # seconds or 10min
+    # time_step = 5 * 60  # seconds or 5min
     simulation_data = {
-        'time': {'start': time_start, 'stop': time_stop, 'step': time_step, 'train_start': train_start},
+        # 'time': {'start': time_start, 'stop': time_stop, 'step': time_step, 'train_start': train_start},
+        'time': {'start': time_start, 'stop': time_stop, 'step': time_step},
         'scenarios': []
     }
 
     # Scenarios parameters
     scenarios = [
-        {'nb_apps': 1},
-        # {'nb_apps': 5},
-        # {'nb_apps': 10},
-        # {'nb_apps': 15},
-        # {'nb_apps': 508},
+        {'nb_apps': 50, 'nb_users': 50},
+        # {'nb_apps': 100, 'nb_users': 100},
+        # {'nb_apps': 200, 'nb_users': 200},
+        # {'nb_apps': 500, 'nb_users': 500},
     ]
+
+    # scenarios = [
+    #     {'nb_apps': 1},
+    #     # {'nb_apps': 5},
+    #     # {'nb_apps': 10},
+    #     # {'nb_apps': 15},
+    #     # {'nb_apps': 508},
+    # ]
 
     # scenarios = [
     #     {'nb_apps': 1},
@@ -72,9 +83,11 @@ def main():
     for run in range(nb_runs):
         for scenario_params in scenarios:
             nb_apps = scenario_params['nb_apps']
+            nb_users = scenario_params['nb_users'] if 'nb_users' in scenario_params else None
             # scenario_id = 'n{}_a{}_u{}'.format(nb_bs, nb_apps, nb_users)
-            scenario_id = base64.urlsafe_b64encode(bytes(json.dumps(scenario_params), 'utf-8')).decode('utf-8')
-            scenario_id = 'a{}_{}'.format(nb_apps, scenario_id)
+            # scenario_id = base64.urlsafe_b64encode(bytes(json.dumps(scenario_params), 'utf-8')).decode('utf-8')
+            # scenario_id = 'a{}_{}'.format(nb_apps, scenario_id)
+            scenario_id = 'a{}'.format(nb_apps)
             scenario_path = os.path.join(DATA_PATH, scenario_id, str(run))
             scenario_filename, scenario_data = gen_scenario(nb_apps=nb_apps,
                                                             time_start=train_start,
@@ -82,7 +95,8 @@ def main():
                                                             map_filename=map_filename,
                                                             mobility_path=mobility_path,
                                                             output_path=scenario_path,
-                                                            cached_users_data=cached_users_data)
+                                                            cached_users_data=cached_users_data,
+                                                            nb_users=nb_users)
             if cached_users_data is None:
                 cached_users_data = scenario_data['users']
 
@@ -96,7 +110,8 @@ def main():
         json.dump(simulation_data, outfile, indent=2)
 
 
-def gen_scenario(nb_apps, time_start, time_stop, map_filename, mobility_path, output_path, cached_users_data=None):
+def gen_scenario(nb_apps, time_start, time_stop, map_filename, mobility_path, output_path,
+                 cached_users_data=None, nb_users=None):
     """ It generates a simulation scenario with specific parameters
 
     Args:
@@ -107,6 +122,7 @@ def gen_scenario(nb_apps, time_start, time_stop, map_filename, mobility_path, ou
         mobility_path (str): directory of the mobility traces
         output_path (str): directory to save scenario config files
         cached_users_data (dict): cached users' data in json format. It reuses this previously generated data
+        nb_users (Union[None, int]): number of users to be generated
     Returns:
         str: config filename of the generated scenario
         dict: scenario's data in json format
@@ -117,8 +133,8 @@ def gen_scenario(nb_apps, time_start, time_stop, map_filename, mobility_path, ou
         pass
 
     # Bound Box of San Francisco, CA, US
-    # bbox_pos = [{'lon': -122.5160063624, 'lat': 37.7093}, {'lon': -122.3754337591, 'lat': 37.8112472822}]
-    bbox_pos = [{'lon': -122.452, 'lat': 37.7315}, {'lon': -122.3754337591, 'lat': 37.8112472822}]
+    bbox_pos = [{'lon': -122.5160063624, 'lat': 37.7093}, {'lon': -122.3754337591, 'lat': 37.8112472822}]  # 25 BS
+    # bbox_pos = [{'lon': -122.452, 'lat': 37.7315}, {'lon': -122.3754337591, 'lat': 37.8112472822}]   # 15 BS
     bbox_points = [GpsPoint(**pos) for pos in bbox_pos]
     bbox = BoundBox(*bbox_points)
 
@@ -137,11 +153,12 @@ def gen_scenario(nb_apps, time_start, time_stop, map_filename, mobility_path, ou
 
     # Generate users if cache is None
     users_data = None
-    if cached_users_data is not None:
+    use_cache = cached_users_data is not None and (nb_users is None or nb_users == len(cached_users_data['users']))
+    if use_cache:
         users_data = copy.deepcopy(cached_users_data)
     else:
         users_pos_path = os.path.join(output_path, 'users_position')
-        users_data = gen_users(time_start, time_stop, bbox, mobility_path, users_pos_path)
+        users_data = gen_users(time_start, time_stop, bbox, mobility_path, users_pos_path, nb_users)
 
     # Distribute users among all applications
     users_data = distribute_users(users_data, apps_data, net_data)
@@ -196,10 +213,15 @@ def gen_network(bbox, topology, **kwargs):
     core_properties = {
         'type': 'CORE',
         'avail': 0.999,  # 99.9 %
+        # 'capacity': {
+        #     'CPU': 4 * 5e+9,  # 4 Core with 5 GIPS (Giga Instructions Per Second)
+        #     'RAM': 16e+9,  # 16 GB (Giga Byte)
+        #     'DISK': 32e+9,  # 32 GB (Giga Byte)
+        # },
         'capacity': {
-            'CPU': 4 * 5e+9,  # 4 Core with 5 GIPS (Giga Instructions Per Second)
-            'RAM': 16e+9,  # 16 GB (Giga Byte)
-            'DISK': 32e+9,  # 32 GB (Giga Byte)
+            'CPU': 0.0,
+            'RAM': 0.0,
+            'DISK': 0.0,
         },
         'cost': {
             'CPU': [0.5e-12, 0.5e-12],  # cost for IPS / second
@@ -229,6 +251,8 @@ def gen_network(bbox, topology, **kwargs):
     }
     light_speed = 3e+9  # speed of light in vacuum - 300,000,000 m/s
     light_speed_glass = 2e+9  # speed of light in a glass medium - 200,000,000 m/s
+    # link_speed = light_speed_glass
+    link_speed = 1e+6
     bs_bs_link_properties = {
         'bw': 100e+6,  # 100 Mbps (Mega bits per second)
         'delay': 0.001  # seconds or 1 ms
@@ -253,8 +277,9 @@ def gen_network(bbox, topology, **kwargs):
     for link in json_data['links']:
         link.update(bs_bs_link_properties)
         if 'distance' in link and 'delay' in link:
-            extra_delay = link['distance'] / float(light_speed_glass)
+            extra_delay = link['distance'] / float(link_speed)
             link['delay'] += extra_delay
+            print(link['nodes'], link['distance'], link['delay'])
             del link['distance']
 
     # Create the core node
@@ -266,6 +291,15 @@ def gen_network(bbox, topology, **kwargs):
         node_id = node['id']
         link = copy.copy(bs_core_link_properties)
         link['nodes'] = (node_id, core_id)
+        if 'position' in core_node and 'position' in node:
+            core_pos = core_node['position']
+            core_pos = GpsPoint(**core_pos)
+            node_pos = node['position']
+            node_pos = GpsPoint(**node_pos)
+            dist = node_pos.distance(core_pos)
+            extra_delay = dist / float(link_speed)
+            link['delay'] += extra_delay
+            print(link['nodes'], dist, link['delay'])
         json_data['links'].append(link)
     json_data['nodes'].append(core_node)
 
@@ -420,9 +454,10 @@ def gen_apps(nb_apps, net_data):
     }
 
     # Maximum number of instances running at the same time-slot
-    max_instance_range = list(range(1, len(net_data['nodes']) + 1))
+    # max_instance_range = list(range(1, len(net_data['nodes']) + 1))
     # max_instance_range = [len(net_data['nodes'])]
-    # max_instance_range = [1]
+    max_instance_range = [1]
+    # max_instance_range = [2]
     max_instance_options = {
         'URLLC': max_instance_range,
         'MMTC': max_instance_range,
@@ -459,6 +494,11 @@ def gen_apps(nb_apps, net_data):
         'MMTC': np.linspace(0.1, 0.5, num=5),
         'EMBB': np.linspace(0.1, 0.5, num=5),
     }
+    # cpu_attenuation_options = {
+    #     'URLLC': [1.0],
+    #     'MMTC': [1.0],
+    #     'EMBB': [1.0],
+    # }
 
     app_type_options = ['URLLC', 'MMTC', 'EMBB']
     selected_type = None
@@ -471,8 +511,8 @@ def gen_apps(nb_apps, net_data):
     # Generate applications
     json_data = {'apps': []}
     for index in range(nb_apps):
-        # app_type = selected_type[index]
-        app_type = 'URLLC'
+        app_type = selected_type[index]
+        # app_type = 'URLLC'
 
         deadline = random.choice(deadline_options[app_type])
         cpu_work = random.choice(cpu_work_options[app_type])
@@ -515,7 +555,7 @@ def gen_apps(nb_apps, net_data):
     return json_data
 
 
-def gen_users(time_start, time_stop, bbox, mobility_path, output_path):
+def gen_users(time_start, time_stop, bbox, mobility_path, output_path, nb_users=None):
     """Generate users
 
     Args:
@@ -524,6 +564,7 @@ def gen_users(time_start, time_stop, bbox, mobility_path, output_path):
         bbox (BoundBox): bound box of the users' positions
         mobility_path (str): directory of the mobility traces
         output_path (str): directory to save users' positions
+        nb_users (Union[None, int]): number of users to be generated
     Returns:
         dict: users in json format
     """
@@ -566,6 +607,17 @@ def gen_users(time_start, time_stop, bbox, mobility_path, output_path):
             # Set user's properties
             user = {'id': user_id, 'pos': pos_filename}
             json_data['users'].append(user)
+
+    if nb_users is not None:
+        current_nb_users = len(json_data['users'])
+        if nb_users < current_nb_users:
+            json_data['users'] = random.sample(json_data['users'], nb_users)
+        elif nb_users > current_nb_users:
+            for user_id in range(current_nb_users, nb_users):
+                index = user_id % current_nb_users
+                user = copy.copy(json_data['users'][index])
+                user['id'] = user_id
+                json_data['users'].append(user)
 
     return json_data
 
