@@ -27,18 +27,18 @@ def main():
     #     {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 4000},
     #     {'nb_bs': 25, 'nb_apps': 50, 'nb_users': 7000},
     # ]
-    # scenarios = [
-    #     {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 10000},
-    #     {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 10000},
-    #     {'nb_bs': 9, 'nb_apps': 15, 'nb_users': 10000},
-    #     {'nb_bs': 9, 'nb_apps': 20, 'nb_users': 10000},
-    # ]
     scenarios = [
-        {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 5000},
         {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 10000},
-        {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 15000},
-        {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 20000},
+        {'nb_bs': 9, 'nb_apps': 10, 'nb_users': 10000},
+        # {'nb_bs': 9, 'nb_apps': 15, 'nb_users': 10000},
+        # {'nb_bs': 9, 'nb_apps': 20, 'nb_users': 10000},
     ]
+    # scenarios = [
+    #     {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 5000},
+    #     {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 10000},
+    #     {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 15000},
+    #     {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 20000},
+    # ]
     # scenarios = [
     #     {'nb_bs': 9, 'nb_apps': 5, 'nb_users': 10000},
     # ]

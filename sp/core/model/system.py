@@ -34,7 +34,8 @@ class System:
         Returns:
             System: the shallow copy
         """
-        cp = System()
+        cls = self.__class__
+        cp = cls()
         cp.scenario = self.scenario
         cp.environment_input = self.environment_input
         cp.control_input = self.control_input
@@ -51,7 +52,8 @@ class System:
         Returns:
             System: an empty system's state
         """
-        new_system = System()
+        cls = self.__class__
+        new_system = cls()
         new_system.scenario = self.scenario
         new_system.time = self.time
         new_system.sampling_time = self.sampling_time
@@ -65,7 +67,7 @@ class System:
         Returns:
             bool: whether two system's state are equals or not
         """
-        if self.time != other.time or self.sampling_time != other.sampling_time:
+        if other is None or self.time != other.time or self.sampling_time != other.sampling_time:
             return False
 
         for app in self.apps:

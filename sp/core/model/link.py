@@ -25,6 +25,8 @@ class Link:
         Returns:
             bool: if the link is equal to other
         """
+        if other is None:
+            return False
         ids_1 = self.nodes_id
         ids_2 = other.nodes_id
         ids_3 = ids_2[::-1]

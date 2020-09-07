@@ -59,6 +59,8 @@ class Application:
         Returns:
             bool: whether two objects are equals or not
         """
+        if other is None:
+            return False
         return self.id == other.id
 
     def __lt__(self, other):

@@ -10,6 +10,12 @@ class EnvironmentPredictor(Predictor):
     """
 
     @abstractmethod
+    def init_params(self):
+        """Initialize parameters for the simulation
+        """
+        pass
+
+    @abstractmethod
     def update(self, system, environment_input):
         """Update predictor at a simulation time with a system's state and environment input
 

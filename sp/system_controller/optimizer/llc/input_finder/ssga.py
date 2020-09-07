@@ -23,6 +23,7 @@ class SSGAInputFinder(InputFinder):
                  dominance_func,
                  pool_size,
                  last_inputs,
+                 load_chunk_distribution=None,
                  **ga_params):
         """Initialization
         """
@@ -43,7 +44,8 @@ class SSGAInputFinder(InputFinder):
                                             objective_aggregator=objective_aggregator,
                                             system_estimator=system_estimator,
                                             dominance_func=dominance_func,
-                                            pool_size=pool_size)
+                                            pool_size=pool_size,
+                                            load_chunk_distribution=load_chunk_distribution)
 
     def solve(self):
         """Execute the heuristic
@@ -93,7 +95,8 @@ class SSGAOperator(MOGAOperator):
                               system=plan_finder.system,
                               environment_input=env_input,
                               use_heuristic=use_heuristic,
-                              extra_first_population=extra_first_population)
+                              extra_first_population=extra_first_population,
+                              load_chunk_distribution=plan_finder.load_chunk_distribution)
 
         self.plan_finder = plan_finder
         self.sequence_length = sequence_length

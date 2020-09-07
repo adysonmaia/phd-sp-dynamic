@@ -22,10 +22,10 @@ class LLCOptimizer(Optimizer):
         system_estimator (SystemEstimator): system estimator. It uses
             py:class:`~sp.system_controller.estimator.system.DefaultSystemEstimator` by default
         plan_finder_class (class): plan finder class.
-            See py:mod:`sp.system_controller.optimizer.llc.plan_finder` module
+            See py:mod:`sp.system_controller.optimizer.llga.plan_finder` module
         plan_finder_params (dict): initialization parameters of the plan finder class
         input_finder_class (class): input finder class.
-            See py:mod:`sp.system_controller.optimizer.llc.input_finder` module
+            See py:mod:`sp.system_controller.optimizer.llga.input_finder` module
         input_finder_params (dict): initialization parameters of the input finder class
         dominance_func (function): multi-objective dominance function.
             It can be either :py:func:`~sp.system_controller.optimizer.moga.ga_operator.preferred_dominates` or

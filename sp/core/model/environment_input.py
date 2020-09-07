@@ -19,7 +19,8 @@ class EnvironmentInput:
         Returns:
             EnvironmentInput: the shallow copy
         """
-        cp = EnvironmentInput()
+        cls = self.__class__
+        cp = cls()
         cp.generated_load = self.generated_load
         cp.net_delay = self.net_delay
         cp.net_path = self.net_path
@@ -86,8 +87,8 @@ class EnvironmentInput:
                 count += 1
         return count
 
-    @staticmethod
-    def create_empty(system):
+    @classmethod
+    def create_empty(cls, system):
         """Create an empty environment input based on a system's state
 
         Args:
@@ -95,7 +96,7 @@ class EnvironmentInput:
         Returns:
             EnvironmentInput: an empty environment input
         """
-        env = EnvironmentInput()
+        env = cls()
 
         for app in system.apps:
             env.generated_load[app.id] = {}

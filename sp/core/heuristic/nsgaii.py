@@ -30,7 +30,7 @@ class NSGAII(BRKGA):
     See Also: https://doi.org/10.1109/4235.996017
 
     Attributes:
-        dominance_func (function): dominance operator
+        dominance_func: dominance operator
         stop_threshold (float): MGBM stopping threshold. See Also: https://doi.org/10.1016/j.ins.2016.07.025
     """
 
@@ -41,7 +41,7 @@ class NSGAII(BRKGA):
         """Initialization
 
         Args:
-            dominance_func (function): dominance operator
+            dominance_func: dominance operator
             stop_threshold (float): MGBM stopping threshold.
             **brkga_params: initialization parameters for :py:class:`~sp.core.heuristic.brkga.BRKGA` class
         """

@@ -9,7 +9,7 @@ def run(graph, weight_func=None):
 
     Args:
         graph: undirected graph
-        weight_func (function): link/edge weight function
+        weight_func: link/edge weight function
 
     Returns:
         (dict, dict): successors and minimum distance matrices
@@ -34,7 +34,7 @@ def floyd_warshall(graph, weight_func=None):
 
     Args:
         graph: undirected graph. It needs to have nodes_id and links properties
-        weight_func (function): it specifies the (positive) weight of each link/edge in the graph.
+        weight_func: it is a function specifying the (positive) weight of each link/edge in the graph.
             If none, each link has the weight equal to 1.0
     Returns:
         (dict, dict): successors and minimum distance matrices

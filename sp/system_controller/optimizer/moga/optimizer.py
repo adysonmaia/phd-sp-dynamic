@@ -25,6 +25,8 @@ class MOGAOptimizer(Optimizer):
         use_heuristic (bool): whether heuristics is used to generate the first population or not
         pool_size (int): multi-processing pool size. If zero, the optimizer doesn't use multi-processing
         timeout (Union[float, None]): maximum execution time of the optimizer. If None, there is no timeout
+        load_chunk_distribution (float): load chunk distribution (value between 0 and 1).
+            Loads are distributed in chunks where its size is defined by this attribute
     """
 
     def __init__(self):
@@ -39,6 +41,7 @@ class MOGAOptimizer(Optimizer):
         self.elite_probability = 0.6
         self.dominance_func = preferred_dominates
         self.stop_threshold = 0.10
+        self.load_chunk_distribution = 0.25
         self.use_heuristic = True
         self.timeout = None
         self.pool_size = 4
@@ -77,7 +80,8 @@ class MOGAOptimizer(Optimizer):
                                    system=system,
                                    environment_input=environment_input,
                                    use_heuristic=self.use_heuristic,
-                                   extra_first_population=self._last_population)
+                                   extra_first_population=self._last_population,
+                                   load_chunk_distribution=self.load_chunk_distribution)
         mo_ga = NSGAII(operator=ga_operator,
                        nb_generations=self.nb_generations,
                        population_size=self.population_size,

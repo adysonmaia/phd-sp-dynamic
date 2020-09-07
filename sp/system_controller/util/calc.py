@@ -42,7 +42,7 @@ def calc_processing_delay(app_id, node_id, system, control_input, environment_in
     alloc_cpu = control_input.get_allocated_cpu(app_id, node_id)
     if alloc_cpu > 0.0:
         proc_estimator = DefaultProcessingEstimator()
-        proc_result = proc_estimator(app_id, node_id, system, control_input, environment_input)
+        proc_result = proc_estimator.calc(app_id, node_id, system, control_input, environment_input)
         proc_delay = proc_result.delay
 
     return proc_delay

@@ -104,7 +104,7 @@ def main():
     """Main function
     """
     # Load simulation parameters
-    root_output_path = 'output/synthetic/exp/'
+    root_output_path = 'output/synthetic/exp_2/'
     simulation_filename = 'input/synthetic/simulation.json'
     simulation_data = None
     with open(simulation_filename) as json_file:
@@ -152,9 +152,7 @@ def main():
 
     #
     dominance_func = util.preferred_dominates
-    # pool_size = 16
     # pool_size = 12
-    # pool_size = 8
     pool_size = 4
     # pool_size = 0
     # timeout = 3 * 60  # 3 min
@@ -183,101 +181,46 @@ def main():
     opt = CloudOptimizer()
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
-
-    # Single-Objective Heuristic optimizer config
-    opt = SOHeuristicOptimizer()
-    opt.version = [opt.versions.NET_DELAY, opt.versions.DEADLINE]
-    opt_id = opt.__class__.__name__
-    item = (opt_id, opt)
-    # optimizers.append(item)
-
-    # Single-Objective GA optimizer config
-    opt = SOGAOptimizer()
-    opt.objective = single_objective
-    opt.timeout = timeout
-    opt.population_size = ga_pop_size
-    opt.nb_generations = ga_nb_gens
-    opt_id = opt.__class__.__name__
-    item = (opt_id, opt)
-    # optimizers.append(item)
-
-    # Static Optimizer
-    opt = StaticOptimizer()
-    opt.objective = multi_objective
-    opt.pool_size = pool_size
-    opt.timeout = timeout
-    opt.population_size = ga_pop_size
-    opt.nb_generations = ga_nb_gens
-    opt.dominance_func = dominance_func
-    opt_id = opt.__class__.__name__
-    item = (opt_id, opt)
-    # optimizers.append(item)
-
-    # Omitted Migration optimizer config
-    opt = OmittedMigrationOptimizer()
-    opt.objective = multi_objective_without_migration
-    opt.pool_size = pool_size
-    opt.timeout = timeout
-    opt.population_size = ga_pop_size
-    opt.nb_generations = ga_nb_gens
-    opt.dominance_func = dominance_func
-    opt_id = opt.__class__.__name__
-    item = (opt_id, opt)
-    # optimizers.append(item)
-
-    # Multi-Objective GA optimizer config
-    opt = MOGAOptimizer()
-    opt.objective = multi_objective
-    opt.pool_size = pool_size
-    opt.timeout = timeout
-    opt.population_size = ga_pop_size
-    opt.nb_generations = ga_nb_gens
-    opt.dominance_func = dominance_func
-    opt_id = opt.__class__.__name__
-    item = (opt_id, opt)
     optimizers.append(item)
 
-    # LLC Parameters
+    # load_chunks = [0.1, 0.25, 0.5, 0.75, 1.0]
+    load_chunks = [0.1, 0.25, 0.5, 1.0]
 
-    # LLC (control input and plan) finders versions
-    llc_finders = [
-        {
-            'id': 'ssga',
-            'input': input_finder.SSGAInputFinder,
-            'input_params': {'timeout': timeout, 'population_size': ga_pop_size, 'nb_generations': ga_nb_gens},
-            'plan': None
-        },
-        {
-            'id': 'sga',
-            'input': input_finder.SGAInputFinder,
-            'input_params': {'timeout': timeout, 'population_size': ga_pop_size, 'nb_generations': ga_nb_gens},
-            'plan': None
-        },
-        # {
-        #     'id': 'mga',
-        #     'input': input_finder.MGAInputFinder,
-        #     'input_params': {'timeout': timeout},
-        #     'plan': plan_finder.GAPlanFinder,
-        #     'plan_params': {'timeout': timeout},
-        # },
-        # {
-        #     'id': 'ssga_sga',
-        #     'input': input_finder.PipelineInputFinder,
-        #     'plan': None
-        # },
-    ]
+    for load_chunk in load_chunks:
+        # Multi-Objective GA optimizer config
+        opt = MOGAOptimizer()
+        opt.objective = multi_objective
+        opt.pool_size = pool_size
+        opt.timeout = timeout
+        opt.population_size = ga_pop_size
+        opt.nb_generations = ga_nb_gens
+        opt.dominance_func = dominance_func
+        opt.load_chunk_distribution = load_chunk
+        opt_id = '{}_c{}'.format(opt.__class__.__name__, int(load_chunk * 100))
+        item = (opt_id, opt)
+        optimizers.append(item)
 
-    # Prediction windows
-    # prediction_windows = [0, 1, 2]
-    # prediction_windows = [1, 2]
-    # prediction_windows = [0]
-    prediction_windows = [1]
-    # prediction_windows = [2]
-    # prediction_windows = [1, 2, 3, 4]
+        # LLC Parameters
+        # LLC (control input and plan) finders versions
+        llc_input_params = {'timeout': timeout, 'population_size': ga_pop_size,
+                            'nb_generations': ga_nb_gens, 'load_chunk_distribution': load_chunk}
+        llc_finders = [
+            {
+                'id': 'ssga',
+                'input': input_finder.SSGAInputFinder,
+                'input_params': llc_input_params,
+                'plan': None
+            },
+            {
+                'id': 'sga',
+                'input': input_finder.SGAInputFinder,
+                'input_params': llc_input_params,
+                'plan': None
+            },
+        ]
 
-    for window in prediction_windows:
         for llc_finder in llc_finders:
+            window = 1
             opt = LLCOptimizer()
             opt.prediction_window = window
             opt.pool_size = pool_size
@@ -290,7 +233,7 @@ def main():
             opt.plan_finder_params = llc_finder['plan_params'] if 'plan_params' in llc_finder else None
             opt.environment_predictor = env_predictor
 
-            opt_id = '{}_{}_w{}'.format(opt.__class__.__name__, llc_finder['id'], window)
+            opt_id = '{}_{}_w{}_c{}'.format(opt.__class__.__name__, llc_finder['id'], window, int(load_chunk * 100))
             item = (opt_id, opt)
             optimizers.append(item)
 

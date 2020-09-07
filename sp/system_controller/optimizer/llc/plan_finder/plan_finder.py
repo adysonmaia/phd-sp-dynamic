@@ -20,6 +20,7 @@ class PlanFinder(ABC):
         system_estimator (SystemEstimator): system estimator
         dominance_func (function): multi-objective dominance function
         pool_size (int): multi-processing pool size
+        load_chunk_distribution (float): load chunk distribution
     """
 
     def __init__(self,
@@ -30,6 +31,7 @@ class PlanFinder(ABC):
                  system_estimator,
                  dominance_func,
                  pool_size=0,
+                 load_chunk_distribution=None,
                  **kwargs):
         """Initialization
         """
@@ -40,6 +42,7 @@ class PlanFinder(ABC):
         self.objective_aggregator = objective_aggregator
         self.system_estimator = system_estimator
         self.dominance_func = dominance_func
+        self.load_chunk_distribution = load_chunk_distribution
 
         self.pool_size = pool_size
         self.__pool = None
@@ -112,7 +115,7 @@ class PlanFinder(ABC):
         for index in range(len(control_sequence)):
             env_input = self.environment_inputs[index]
             control_input = control_sequence[index]
-            control_input = decode_control_input(system, control_input, env_input)
+            control_input = decode_control_input(system, control_input, env_input, self.load_chunk_distribution)
 
             for (func_index, func) in enumerate(self.objective):
                 value = func(system, control_input, env_input)
@@ -213,20 +216,22 @@ class Plan(UserList):
         return self.fitness is not None
 
 
-def decode_control_input(system, encoded_control, environment_input):
+def decode_control_input(system, encoded_control, environment_input, load_chunk_distribution=None):
     """Decode a control input
 
     Args:
         system (System): system
         encoded_control (GAIndividual): encoded control input
         environment_input (EnvironmentInput): environment input
+        load_chunk_distribution (float): load chunk distribution
     Returns:
         ControlInput: decoded control input
     """
     ga_operator = MOGAOperator(system=system,
                                environment_input=environment_input,
                                objective=None,
-                               use_heuristic=False)
+                               use_heuristic=False,
+                               load_chunk_distribution=load_chunk_distribution)
     return ga_operator.decode(encoded_control)
 
 

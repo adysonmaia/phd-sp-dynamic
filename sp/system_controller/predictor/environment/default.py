@@ -80,6 +80,8 @@ class DefaultEnvironmentPredictor(EnvironmentPredictor):
             system (System): system's state
             environment_input (EnvironmentInput): environment input
         """
+        if self.system == system and self.environment_input == environment_input:
+            return
 
         self.system = system
         self.environment_input = environment_input

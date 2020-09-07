@@ -55,9 +55,13 @@ class Node:
         self.position = None
 
     def __eq__(self, other):
+        if other is None:
+            return False
         return self.id == other.id
 
     def __lt__(self, other):
+        if other is None:
+            return False
         return self.id < other.id
 
     @property

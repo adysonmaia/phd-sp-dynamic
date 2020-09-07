@@ -28,8 +28,8 @@ class OptSolution(ControlInput):
         """
         return self.received_load[app_id][node_id]
 
-    @staticmethod
-    def create_empty(system):
+    @classmethod
+    def create_empty(cls, system):
         """Create a empty solution for a system's scenario
 
         Args:
@@ -38,7 +38,7 @@ class OptSolution(ControlInput):
         Returns:
             OptSolution: solution
         """
-        solution = OptSolution()
+        solution = cls()
 
         for app in system.apps:
             solution.app_placement[app.id] = {}
@@ -46,7 +46,7 @@ class OptSolution(ControlInput):
             solution.load_distribution[app.id] = {}
             solution.received_load[app.id] = {}
             for node in system.nodes:
-                solution.app_placement[app.id][node.id] = False
+                solution.app_placement[app.id][node.id] = 0
                 solution.allocated_resource[app.id][node.id] = {}
                 solution.load_distribution[app.id][node.id] = {}
                 solution.received_load[app.id][node.id] = 0.0
