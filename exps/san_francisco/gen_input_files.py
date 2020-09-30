@@ -49,11 +49,18 @@ def main():
 
     # Scenarios parameters
     scenarios = [
+        {'nb_apps': 5, 'nb_users': 5},
+        {'nb_apps': 20, 'nb_users': 20},
+        {'nb_apps': 35, 'nb_users': 35},
         {'nb_apps': 50, 'nb_users': 50},
-        # {'nb_apps': 100, 'nb_users': 100},
-        # {'nb_apps': 200, 'nb_users': 200},
-        # {'nb_apps': 500, 'nb_users': 500},
     ]
+
+    # scenarios = [
+    #     # {'nb_apps': 50, 'nb_users': 50},
+    #     # {'nb_apps': 100, 'nb_users': 100},
+    #     # {'nb_apps': 200, 'nb_users': 200},
+    #     # {'nb_apps': 500, 'nb_users': 500},
+    # ]
 
     # scenarios = [
     #     {'nb_apps': 1},
@@ -89,16 +96,24 @@ def main():
             # scenario_id = 'a{}_{}'.format(nb_apps, scenario_id)
             scenario_id = 'a{}'.format(nb_apps)
             scenario_path = os.path.join(DATA_PATH, scenario_id, str(run))
+            # scenario_filename, scenario_data = gen_scenario(nb_apps=nb_apps,
+            #                                                 time_start=train_start,
+            #                                                 time_stop=time_stop,
+            #                                                 map_filename=map_filename,
+            #                                                 mobility_path=mobility_path,
+            #                                                 output_path=scenario_path,
+            #                                                 cached_users_data=cached_users_data,
+            #                                                 nb_users=nb_users)
             scenario_filename, scenario_data = gen_scenario(nb_apps=nb_apps,
-                                                            time_start=train_start,
+                                                            time_start=time_start,
                                                             time_stop=time_stop,
                                                             map_filename=map_filename,
                                                             mobility_path=mobility_path,
                                                             output_path=scenario_path,
                                                             cached_users_data=cached_users_data,
                                                             nb_users=nb_users)
-            if cached_users_data is None:
-                cached_users_data = scenario_data['users']
+            if cached_users_data is None and 'all_users' in scenario_data:
+                cached_users_data = scenario_data['all_users']
 
             item = {'scenario_id': scenario_id, 'scenario': scenario_filename, 'run': run}
             item.update(scenario_params)
@@ -152,13 +167,15 @@ def gen_scenario(nb_apps, time_start, time_stop, map_filename, mobility_path, ou
         json.dump(apps_data, outfile, indent=2)
 
     # Generate users if cache is None
-    users_data = None
-    use_cache = cached_users_data is not None and (nb_users is None or nb_users == len(cached_users_data['users']))
+    all_users_data = None
+    use_cache = cached_users_data is not None and (nb_users is None or nb_users <= len(cached_users_data['users']))
     if use_cache:
-        users_data = copy.deepcopy(cached_users_data)
+        # all_users_data = copy.deepcopy(cached_users_data)
+        all_users_data = cached_users_data
     else:
         users_pos_path = os.path.join(output_path, 'users_position')
-        users_data = gen_users(time_start, time_stop, bbox, mobility_path, users_pos_path, nb_users)
+        all_users_data = gen_all_users(time_start, time_stop, bbox, mobility_path, users_pos_path)
+    users_data = select_users(all_users_data, nb_users)
 
     # Distribute users among all applications
     users_data = distribute_users(users_data, apps_data, net_data)
@@ -179,7 +196,8 @@ def gen_scenario(nb_apps, time_start, time_stop, map_filename, mobility_path, ou
     scenario_data = {
         'network': net_data,
         'apps': apps_data,
-        'users': users_data
+        'users': users_data,
+        'all_users': all_users_data
     }
     return scenario_filename, scenario_data
 
@@ -213,15 +231,10 @@ def gen_network(bbox, topology, **kwargs):
     core_properties = {
         'type': 'CORE',
         'avail': 0.999,  # 99.9 %
-        # 'capacity': {
-        #     'CPU': 4 * 5e+9,  # 4 Core with 5 GIPS (Giga Instructions Per Second)
-        #     'RAM': 16e+9,  # 16 GB (Giga Byte)
-        #     'DISK': 32e+9,  # 32 GB (Giga Byte)
-        # },
         'capacity': {
-            'CPU': 0.0,
-            'RAM': 0.0,
-            'DISK': 0.0,
+            'CPU': 4 * 5e+9,  # 4 Core with 5 GIPS (Giga Instructions Per Second)
+            'RAM': 16e+9,  # 16 GB (Giga Byte)
+            'DISK': 32e+9,  # 32 GB (Giga Byte)
         },
         'cost': {
             'CPU': [0.5e-12, 0.5e-12],  # cost for IPS / second
@@ -279,27 +292,28 @@ def gen_network(bbox, topology, **kwargs):
         if 'distance' in link and 'delay' in link:
             extra_delay = link['distance'] / float(link_speed)
             link['delay'] += extra_delay
-            print(link['nodes'], link['distance'], link['delay'])
             del link['distance']
 
     # Create the core node
     core_node = copy.copy(core_properties)
     core_id = len(json_data['nodes'])
     core_node['id'] = core_id
+    core_pos = None
+    if 'position' in core_node and 'position':
+        core_pos = core_node['position']
+        core_pos = GpsPoint(**core_pos)
+
     # Connect each base station to the core node
     for node in json_data['nodes']:
         node_id = node['id']
         link = copy.copy(bs_core_link_properties)
         link['nodes'] = (node_id, core_id)
-        if 'position' in core_node and 'position' in node:
-            core_pos = core_node['position']
-            core_pos = GpsPoint(**core_pos)
+        if core_pos is not None and 'position' in node:
             node_pos = node['position']
             node_pos = GpsPoint(**node_pos)
             dist = node_pos.distance(core_pos)
             extra_delay = dist / float(link_speed)
             link['delay'] += extra_delay
-            print(link['nodes'], dist, link['delay'])
         json_data['links'].append(link)
     json_data['nodes'].append(core_node)
 
@@ -308,8 +322,18 @@ def gen_network(bbox, topology, **kwargs):
     cloud_id = len(json_data['nodes'])
     cloud_node['id'] = cloud_id
     json_data['nodes'].append(cloud_node)
+
     link = copy.copy(core_cloud_link_properties)
     link['nodes'] = (core_id, cloud_id)
+    cloud_pos = None
+    if 'position' in cloud_node and 'position':
+        cloud_pos = cloud_node['position']
+        cloud_pos = GpsPoint(**cloud_pos)
+    if cloud_pos is not None and core_pos is not None:
+        dist = core_pos.distance(cloud_pos)
+        extra_delay = dist / float(link_speed)
+        link['delay'] += extra_delay
+
     json_data['links'].append(link)
 
     return json_data
@@ -590,8 +614,8 @@ def gen_users(time_start, time_stop, bbox, mobility_path, output_path, nb_users=
 
                 # Filter positions in a time and position interval
                 in_interval = time_start <= time <= time_stop
-                in_interval = in_interval and (bbox.x_min <= lon <= bbox.x_max)
-                in_interval = in_interval and (bbox.y_min <= lat <= bbox.y_max)
+                # in_interval = in_interval and (bbox.x_min <= lon <= bbox.x_max)
+                # in_interval = in_interval and (bbox.y_min <= lat <= bbox.y_max)
                 if in_interval:
                     pos = {'lat': lat, 'lon': lon, 't': time}
                     positions.append(pos)
@@ -618,6 +642,90 @@ def gen_users(time_start, time_stop, bbox, mobility_path, output_path, nb_users=
                 user = copy.copy(json_data['users'][index])
                 user['id'] = user_id
                 json_data['users'].append(user)
+
+    return json_data
+
+
+def gen_all_users(time_start, time_stop, bbox, mobility_path, output_path):
+    """Generate users
+
+        Args:
+            time_start (float): simulation start time (unix timestamp)
+            time_stop (float): simulation stop time (unix timestamp)
+            bbox (BoundBox): bound box of the users' positions
+            mobility_path (str): directory of the mobility traces
+            output_path (str): directory to save users' positions
+        Returns:
+            dict: users in json format
+        """
+    cabs_pathname = os.path.join(mobility_path, 'new_*.txt')
+    cabs_filename = glob(cabs_pathname)
+
+    try:
+        os.makedirs(output_path)
+    except OSError:
+        pass
+
+    # Each taxi has its own GPS trace file and it will be a user if the trace is not empty
+    json_data = {'users': []}
+    for filename in cabs_filename:
+        positions = []
+        # Convert GPS traces on csv format to json format
+        with open(filename) as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=" ")
+            for row in csv_reader:
+                lat = float(row[0])
+                lon = float(row[1])
+                time = int(row[3])
+
+                # Filter positions in a time and position interval
+                in_interval = time_start <= time <= time_stop
+                # in_interval = in_interval and (bbox.x_min <= lon <= bbox.x_max)
+                # in_interval = in_interval and (bbox.y_min <= lat <= bbox.y_max)
+                if in_interval:
+                    pos = {'lat': lat, 'lon': lon, 't': time}
+                    positions.append(pos)
+
+        # Only create a user if the taxi has GPS traces during the selected time interval
+        if len(positions) > 0:
+            user_id = len(json_data['users'])
+            # Save the position traces in a separated file
+            pos_filename = os.path.join(output_path, 'user_{}.json'.format(user_id))
+            with open(pos_filename, mode='w') as json_file:
+                json.dump(positions, json_file)
+
+            # Set user's properties
+            user = {'id': user_id, 'pos': pos_filename}
+            json_data['users'].append(user)
+
+    return json_data
+
+
+def select_users(all_users_data, nb_users=None):
+    """Select a specific amount of users from a json data containing all users data
+
+    Args:
+        all_users_data (dict): all users data
+        nb_users (Union[int, None]): number of users to be selected
+
+    Returns:
+        dict: json data of selected users
+    """
+    json_data = {'users': []}
+
+    if nb_users is not None:
+        nb_all_users = len(all_users_data['users'])
+        if nb_users < nb_all_users:
+            json_data['users'] = random.sample(all_users_data['users'], nb_users)
+        elif nb_users > nb_all_users:
+            json_data['users'] = copy.copy(all_users_data['users'])
+            for user_id in range(nb_all_users, nb_users):
+                index = user_id % nb_all_users
+                user = copy.copy(all_users_data['users'][index])
+                user['id'] = user_id
+                json_data['users'].append(user)
+    else:
+        json_data = all_users_data
 
     return json_data
 

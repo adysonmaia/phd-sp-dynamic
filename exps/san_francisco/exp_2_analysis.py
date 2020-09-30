@@ -155,6 +155,9 @@ def main():
     #     {'path': 'a10_eyJuYl9hcHBzIjogMTB9', 'x': '10'},
     # ]
     experiments = [
+        {'path': 'a5', 'x': 5},
+        {'path': 'a20', 'x': 20},
+        {'path': 'a35', 'x': 35},
         {'path': 'a50', 'x': 50},
     ]
     plot_metrics(optimizers, experiments, output_path)

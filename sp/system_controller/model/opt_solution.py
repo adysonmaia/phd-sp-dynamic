@@ -46,7 +46,7 @@ class OptSolution(ControlInput):
             solution.load_distribution[app.id] = {}
             solution.received_load[app.id] = {}
             for node in system.nodes:
-                solution.app_placement[app.id][node.id] = 0
+                solution.app_placement[app.id][node.id] = False
                 solution.allocated_resource[app.id][node.id] = {}
                 solution.load_distribution[app.id][node.id] = {}
                 solution.received_load[app.id][node.id] = 0.0

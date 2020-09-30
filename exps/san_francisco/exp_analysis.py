@@ -235,7 +235,8 @@ def main():
     # output_path = 'output/san_francisco/exp/a10_eyJuYl9hcHBzIjogMTB9/'
     # output_path = 'output/san_francisco/exp/a200/'
     # output_path = 'output/san_francisco/exp/a100/'
-    output_path = 'output/san_francisco/exp/a50/'
+    # output_path = 'output/san_francisco/exp/a50/'
+    output_path = 'output/san_francisco/exp/a35/'
     optimizers = [
         # {'id': 'CloudOptimizer', 'label': 'Cloud'},
         {'id': 'StaticOptimizer', 'label': 'Static'},
@@ -243,12 +244,12 @@ def main():
         # {'id': 'OmittedMigrationOptimizer', 'label': 'Omit Migration'},
         {'id': 'MOGAOptimizer', 'label': 'H1'},
         {'id': 'LLCOptimizer_ssga_w1', 'label': 'SS H=2'},
-        # {'id': 'LLCOptimizer_sga_w1', 'label': 'GS H=2'},
+        {'id': 'LLCOptimizer_sga_w1', 'label': 'GS H=2'},
     ]
 
     # run_dirs = glob(os.path.join(output_path, '[0-9]*/'))
     # nb_runs = len(run_dirs)
-    nb_runs = 1
+    nb_runs = 3
 
     plot_metrics(optimizers, output_path, nb_runs)
     # plot_placement_total(optimizers, output_path, nb_runs)

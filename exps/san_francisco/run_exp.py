@@ -87,18 +87,18 @@ class ExpRunMonitor(OptimizerMonitor):
         #         overall_violation, max_violation, len(places), places
         #     ))
 
-        print('\nFree Resources')
-        for node in system.nodes:
-            free_str = 'node {:2d}, '.format(node.id)
-            for resource in system.resources:
-                capacity = node.capacity[resource.name]
-                alloc = sum([control_input.get_allocated_resource(a.id, node.id, resource.name) for a in system.apps])
-                free = 1.0
-                if capacity > 0.0 and not math.isinf(capacity):
-                    free = (capacity - alloc) / float(capacity)
-                    free = round(free, 3)
-                free_str += '{} {:6.3f}, '.format(resource.name, free)
-            print(free_str)
+        # print('\nFree Resources')
+        # for node in system.nodes:
+        #     free_str = 'node {:2d}, '.format(node.id)
+        #     for resource in system.resources:
+        #         capacity = node.capacity[resource.name]
+        #         alloc = sum([control_input.get_allocated_resource(a.id, node.id, resource.name) for a in system.apps])
+        #         free = 1.0
+        #         if capacity > 0.0 and not math.isinf(capacity):
+        #             free = (capacity - alloc) / float(capacity)
+        #             free = round(free, 3)
+        #         free_str += '{} {:6.3f}, '.format(resource.name, free)
+        #     print(free_str)
 
         # print('\nLoad Distribution')
         # for app in system.apps:
@@ -170,19 +170,19 @@ def main():
     # timeout = 3 * 60  # 3 min
     # timeout = 2 * 60  # 2 min
     timeout = 1 * 60  # 1 min
-    # ga_pop_size = 100
-    ga_pop_size = 50
+    ga_pop_size = 100
+    # ga_pop_size = 50
     # ga_nb_gens = 100
     ga_nb_gens = 50
 
     # Set environment forecasting
     env_predictor = MultiProcessingEnvironmentPredictor()
     env_predictor.pool_size = pool_size
-    env_predictor.load_predictor_class = SARIMAPredictor
+    # env_predictor.load_predictor_class = SARIMAPredictor
     # env_predictor.load_predictor_params = {'order': (1, 1, 0), 'enforce_stationarity': False,
     #                                        'enforce_invertibility': False}
     # env_predictor.load_predictor_class = AutoARIMAPredictor
-    # # env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': True, 'maxiter': 10}
+    # env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': True, 'maxiter': 10}
     # env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': False,
     #                                        'random': True, 'n_fits': 2, 'maxiter': 2}
     env_predictor.load_predictor_class = SimpleExpSmoothingPredictor
