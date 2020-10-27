@@ -82,6 +82,9 @@ class MultiProcessingEnvironmentPredictor(EnvironmentPredictor):
         self._pool = None
         self._map_func = None
 
+        self._cached_pred_load = None
+        self._cached_pred_net = None
+
         self.init_params()
 
     def init_params(self):
@@ -130,6 +133,8 @@ class MultiProcessingEnvironmentPredictor(EnvironmentPredictor):
         self.environment_input = None
         self._load_data = defaultdict(lambda: defaultdict(lambda: []))
         self._net_delay_data = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: [])))
+        self._cached_pred_load = None
+        self._cached_pred_net = None
         self._clear_pool()
 
     def _init_pool(self):
@@ -167,6 +172,9 @@ class MultiProcessingEnvironmentPredictor(EnvironmentPredictor):
 
         self.system = system
         self.environment_input = environment_input
+
+        self._cached_pred_load = None
+        self._cached_pred_net = None
 
         total_elapsed_time = 0.0
 
@@ -248,26 +256,37 @@ class MultiProcessingEnvironmentPredictor(EnvironmentPredictor):
             list(EnvironmentInput): predicted data
         """
         steps = len(env_inputs)
-        list_params = []
-        map_func = self._map_func
-        if self.load_predictor_class == NaivePredictor:
-            map_func = map
-
-        for app in self.system.apps:
-            for src_node in self.system.nodes:
-                data = self._load_data[app.id][src_node.id]
-                params = {"app_id": app.id, "node_id": src_node.id,
-                          "data": data, "steps": steps,
-                          "predictor_class": self.load_predictor_class,
-                          "predictor_params": self.load_predictor_params}
-                list_params.append(params)
-
-        predictions = list(map_func(_predict, list_params))
-        for (params, values) in zip(list_params, predictions):
-            app_id = params["app_id"]
-            node_id = params["node_id"]
+        if self._cached_pred_load is not None and len(self._cached_pred_load) >= steps:
+            predictions = self._cached_pred_load[:steps]
             for index in range(steps):
-                env_inputs[index].generated_load[app_id][node_id] = values[index]
+                for app in self.system.apps:
+                    for src_node in self.system.nodes:
+                        value = predictions[index][app.id][src_node.id]
+                        env_inputs[index].generated_load[app.id][src_node.id] = value
+        else:
+            list_params = []
+            map_func = self._map_func
+            if self.load_predictor_class == NaivePredictor:
+                map_func = map
+
+            for app in self.system.apps:
+                for src_node in self.system.nodes:
+                    data = self._load_data[app.id][src_node.id]
+                    params = {"app_id": app.id, "node_id": src_node.id,
+                              "data": data, "steps": steps,
+                              "predictor_class": self.load_predictor_class,
+                              "predictor_params": self.load_predictor_params}
+                    list_params.append(params)
+
+            predictions = list(map_func(_predict, list_params))
+            self._cached_pred_load = [defaultdict(lambda: defaultdict(lambda: 0.0)) for _ in range(steps)]
+            for (params, values) in zip(list_params, predictions):
+                app_id = params["app_id"]
+                node_id = params["node_id"]
+                for index in range(steps):
+                    value = values[index]
+                    env_inputs[index].generated_load[app_id][node_id] = value
+                    self._cached_pred_load[index][app_id][node_id] = value
 
         return env_inputs
 
@@ -280,28 +299,41 @@ class MultiProcessingEnvironmentPredictor(EnvironmentPredictor):
             list(EnvironmentInput): predicted data
         """
         steps = len(env_inputs)
-        list_params = []
-        map_func = self._map_func
-        if self.net_delay_predictor_class == NaivePredictor:
-            map_func = map
-
-        for app in self.system.apps:
-            for src_node in self.system.nodes:
-                for dst_node in self.system.nodes:
-                    data = self._net_delay_data[app.id][src_node.id][dst_node.id]
-                    params = {"app_id": app.id, "src_node_id": src_node.id, "dst_node_id": dst_node.id,
-                              "data": data, "steps": steps,
-                              "predictor_class": self.net_delay_predictor_class,
-                              "predictor_params": self.net_delay_predictor_params}
-                    list_params.append(params)
-
-        predictions = list(map_func(_predict, list_params))
-        for (params, values) in zip(list_params, predictions):
-            app_id = params["app_id"]
-            src_node_id = params["src_node_id"]
-            dst_node_id = params["dst_node_id"]
+        if self._cached_pred_net is not None and len(self._cached_pred_net) >= steps:
+            predictions = self._cached_pred_net[:steps]
             for index in range(steps):
-                env_inputs[index].net_delay[app_id][src_node_id][dst_node_id] = values[index]
+                for app in self.system.apps:
+                    for src_node in self.system.nodes:
+                        for dst_node in self.system.nodes:
+                            value = predictions[index][app.id][src_node.id][dst_node.id]
+                            env_inputs[index].net_delay[app.id][src_node.id][dst_node.id] = value
+        else:
+            list_params = []
+            map_func = self._map_func
+            if self.net_delay_predictor_class == NaivePredictor:
+                map_func = map
+
+            for app in self.system.apps:
+                for src_node in self.system.nodes:
+                    for dst_node in self.system.nodes:
+                        data = self._net_delay_data[app.id][src_node.id][dst_node.id]
+                        params = {"app_id": app.id, "src_node_id": src_node.id, "dst_node_id": dst_node.id,
+                                  "data": data, "steps": steps,
+                                  "predictor_class": self.net_delay_predictor_class,
+                                  "predictor_params": self.net_delay_predictor_params}
+                        list_params.append(params)
+
+            predictions = list(map_func(_predict, list_params))
+            self._cached_pred_net = [defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0.0)))
+                                     for _ in range(steps)]
+            for (params, values) in zip(list_params, predictions):
+                app_id = params["app_id"]
+                src_node_id = params["src_node_id"]
+                dst_node_id = params["dst_node_id"]
+                for index in range(steps):
+                    value = values[index]
+                    env_inputs[index].net_delay[app_id][src_node_id][dst_node_id] = value
+                    self._cached_pred_net[index][app_id][src_node_id][dst_node_id] = value
 
         for index in range(steps):
             env_inputs[index].net_path = self.environment_input.net_path

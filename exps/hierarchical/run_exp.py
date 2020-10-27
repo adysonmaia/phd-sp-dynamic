@@ -24,24 +24,6 @@ import gc
 # logging.basicConfig(level=logging.DEBUG)
 
 
-def test_objective(system, control_input, environment_input):
-    """
-
-    Args:
-        system (GlobalSystem): system
-        control_input (GlobalControlInput): control input
-        environment_input (GlobalEnvironmentInput):  environment input
-    Returns:
-        float: metric value
-    """
-    count = 0.0
-    for app in system.apps:
-        for node in system.nodes:
-            count += control_input.get_app_placement(app.id, node.id)
-
-    return -1.0 * count
-
-
 class ExpRunMonitor(OptimizerMonitor):
     """Simulation monitor
     """
@@ -266,8 +248,8 @@ def main():
     # CLuster LLC Optimizer
     cluster_pool_size = 0
     cluster_prediction_windows = [1]
-    cluster_max_iterations = [0, 1, 2]
-    # cluster_max_iterations = [1]
+    # cluster_max_iterations = [0, 1, 2]
+    cluster_max_iterations = [1]
     # cluster_llga_operators = [SimpleClusterLLGAOperator, GeneralClusterLLGAOperator]
     cluster_llga_operators = [GeneralClusterLLGAOperator]
 
