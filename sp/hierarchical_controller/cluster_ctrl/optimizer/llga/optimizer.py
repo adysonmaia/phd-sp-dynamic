@@ -1,12 +1,23 @@
-from sp.system_controller.predictor import DefaultEnvironmentPredictor
+from sp.system_controller.predictor import DefaultEnvironmentPredictor, EnvironmentPredictor
 from sp.hierarchical_controller.cluster_ctrl.optimizer import ClusterOptimizer
+from sp.hierarchical_controller.cluster_ctrl import metric
 from .iter_coop import IterativeCooperation
+from .no_coop import NoCooperation
 from .ga_operator import GeneralClusterLLGAOperator
 
 
 class ClusterLLGAOptimizer(ClusterOptimizer):
     """Cluster Distributed Limited Lookahead GA control Optimizer
 
+    Attributes:
+        prediction_window (int): prediction window size
+        max_iteration (int): max coordination iteration
+        pool_size (int): coordination multi-threading pool size
+        objective (list): list of objective functions
+        ga_params (dict): GA parameters
+        ga_operator_class: GA operator class
+        ga_operator_params (dict): GA operator initialization parameters
+        environment_predictor (EnvironmentPredictor): real environment predictor
     """
 
     def __init__(self):
@@ -16,6 +27,8 @@ class ClusterLLGAOptimizer(ClusterOptimizer):
 
         self.prediction_window = 1
         self.max_iteration = 1
+        self.pool_size = 0
+        self.objective = None
         self.ga_params = {}
         self.ga_operator_class = None
         self.ga_operator_params = {}
@@ -26,17 +39,33 @@ class ClusterLLGAOptimizer(ClusterOptimizer):
     def init_params(self):
         """Initialize parameters for a simulation
         """
+        if self.objective is None:
+            self.objective = [metric.deadline.weighted_avg_deadline_violation,
+                              metric.cost.overall_cost,
+                              metric.migration.weighted_migration_rate]
+
         if self.ga_operator_class is None:
             self.ga_operator_class = GeneralClusterLLGAOperator
 
         if self.environment_predictor is None:
             self.environment_predictor = DefaultEnvironmentPredictor()
-        self.environment_predictor.init_params()
+            # TODO: predictor that is shared with multiple objects
+            self.environment_predictor.init_params()
 
-        self._iter_coop = IterativeCooperation(ga_params=self.ga_params,
-                                               ga_operator_class=self.ga_operator_class,
-                                               ga_operator_params=self.ga_operator_params,
-                                               max_iteration=self.max_iteration)
+        if self.max_iteration > 0:
+            self._iter_coop = IterativeCooperation(objective=self.objective,
+                                                   ga_params=self.ga_params,
+                                                   ga_operator_class=self.ga_operator_class,
+                                                   ga_operator_params=self.ga_operator_params,
+                                                   max_iteration=self.max_iteration,
+                                                   pool_size=self.pool_size)
+        else:
+            self._iter_coop = NoCooperation(objective=self.objective,
+                                            ga_params=self.ga_params,
+                                            ga_operator_class=self.ga_operator_class,
+                                            ga_operator_params=self.ga_operator_params,
+                                            pool_size=self.pool_size)
+
         self._iter_coop.init_params()
 
     def clear_params(self):

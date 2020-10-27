@@ -249,7 +249,7 @@ def gen_bs_network(nb_nodes):
 
     # Set grid's bound box
     point_1 = CartesianPoint(0.0, 0.0)
-    point_2 = CartesianPoint(nb_cols * cell_side, nb_rows * cell_side)
+    point_2 = CartesianPoint((nb_cols - 1) * cell_side, (nb_rows - 1) * cell_side)
     bbox = BoundBox(point_1, point_2)
 
     # Create grid topology

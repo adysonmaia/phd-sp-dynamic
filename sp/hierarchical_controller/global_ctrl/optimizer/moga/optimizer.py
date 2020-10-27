@@ -93,7 +93,7 @@ class GlobalMOGAOptimizer(GlobalOptimizer):
         else:
             self._last_population = population
 
-        solution = ga_operator.decode(population[0])
+        solution = ga_operator.decode(population[0], debug=True)
         return solution
 
 

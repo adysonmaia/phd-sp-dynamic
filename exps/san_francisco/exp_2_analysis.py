@@ -111,8 +111,8 @@ def plot_metrics(optimizers, experiments, output_path):
     sns.set()
     sns.set_context("paper")
     # sns.relplot(x='x', y='weighted_avg_deadline_violation', hue='opt', kind='line', data=metrics_df)
-    # sns.catplot(x='x', y='weighted_avg_deadline_violation', hue='opt', kind='point', ci=None, data=metrics_df)
-    sns.catplot(x='x', y='weighted_avg_deadline_violation', hue='opt', kind='bar', ci=95, data=metrics_df)
+    sns.catplot(x='x', y='weighted_avg_deadline_violation', hue='opt', kind='point', ci=None, data=metrics_df)
+    # sns.catplot(x='x', y='weighted_avg_deadline_violation', hue='opt', kind='bar', ci=95, data=metrics_df)
     # sns.boxplot(x='x', y='weighted_avg_deadline_violation', hue='opt', notch=False, data=metrics_df)
     plt.show()
 
@@ -128,7 +128,7 @@ def main():
     optimizers = [
         {'id': 'CloudOptimizer', 'label': 'Cloud'},
         {'id': 'StaticOptimizer', 'label': 'Static'},
-        {'id': 'SOHeuristicOptimizer', 'label': 'N+D'},
+        # {'id': 'SOHeuristicOptimizer', 'label': 'N+D'},
         # {'id': 'OmittedMigrationOptimizer', 'label': 'Omit Migration'},
         {'id': 'MOGAOptimizer', 'label': 'H=1'},
         {'id': 'LLCOptimizer_ssga_w1', 'label': 'SS H=2'},

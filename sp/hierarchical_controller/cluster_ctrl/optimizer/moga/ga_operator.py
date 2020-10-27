@@ -184,7 +184,8 @@ class ClusterMOGAOperator(GAOperator):
         return solution
 
     def _decode_stage_1(self, individual_parts):
-        """Decode Stage I
+        """Decode Stage I.
+        It sets variables of external cluster systems
 
         Args:
             individual_parts (list(list)): individual's parts
@@ -201,12 +202,16 @@ class ClusterMOGAOperator(GAOperator):
                     nb_instances = int(max(1, nb_instances))
                 if nb_instances > 0:
                     load = self.environment_input.get_additional_received_load(app.id, ext_node.id)
-                    if self._alloc_resources(app, ext_node, solution, load, increment=False):
-                        solution.app_placement[app.id][ext_node.id] = True
+                    solution.received_load[app.id][ext_node.id] = load
+                    for resource in self.system.resources:
+                        demand = app.demand[resource.name](load)
+                        solution.allocated_resource[app.id][ext_node.id][resource.name] = demand
+                    solution.app_placement[app.id][ext_node.id] = True
         return solution
 
     def _decode_stage_2(self, individual_parts, solution):
-        """Decode Stage II
+        """Decode Stage II.
+        It selects internal nodes as hosting candidates
 
         Args:
             individual_parts (list(list)): individual's parts
@@ -244,7 +249,7 @@ class ClusterMOGAOperator(GAOperator):
 
     def _decode_stage_3(self, individual_parts, solution, selected_nodes):
         """Decode Stage III.
-        It distributes load among the selected nodes of stage I
+        It distributes load among the selected nodes
 
         Args:
             individual_parts (list(list)): individual's parts
@@ -255,6 +260,7 @@ class ClusterMOGAOperator(GAOperator):
         """
         nb_apps = len(self.system.apps)
         nb_all_nodes = len(self.system.nodes)
+        cloud_node = self.system.cloud_node
 
         priority = individual_parts[2]
         cached_delays = CachedDelays()
@@ -274,11 +280,15 @@ class ClusterMOGAOperator(GAOperator):
 
             if total_load > 0.0:
                 nodes = list(selected_nodes[app.id])
-                for ext_node in self.system.external_nodes:
-                    max_load = self._max_dispatching_load[app.id][src_node.id][ext_node.id]
-                    place = solution.app_placement[app.id][ext_node.id]
-                    if max_load > 0 and place:
-                        nodes.append(ext_node)
+                if not isinstance(src_node, GlobalNode):
+                    for ext_node in self.system.external_nodes:
+                        max_load = self._max_dispatching_load[app.id][src_node.id][ext_node.id]
+                        place = solution.app_placement[app.id][ext_node.id]
+                        if max_load > 0 and place:
+                            nodes.append(ext_node)
+
+                if cloud_node is not None:
+                    nodes.append(cloud_node)
 
                 nodes.sort(key=lambda n: self._calc_response_time(app, src_node, n, solution, cached_delays))
                 while remaining_load > 0.0 and chunk_count < max_nb_chunks:
@@ -411,7 +421,11 @@ class ClusterMOGAOperator(GAOperator):
             return True
 
     def _check_constraints(self, node, solution):
-        """Check if a solution respects constraints in a specific node
+        """Check if a solution respects constraints in a specific node.
+        Checked constraints:
+
+        * Resource capacity for internal nodes
+        * Max load dispatched to external cluster systems
 
         Args:
             node (Node):
@@ -421,12 +435,14 @@ class ClusterMOGAOperator(GAOperator):
         """
         if isinstance(node, GlobalNode):
             for app in self.system.apps:
+                nb_instance = self.environment_input.get_nb_instances(app.id, node.id)
                 load = solution.received_load[app.id][node.id]
                 init_load = self.environment_input.get_additional_received_load(app.id, node.id)
                 max_load = math.inf
                 if self.control_limit is not None:
                     max_load = self.control_limit.get_max_dispatch_load(app.id, node.id)
-                return (load - init_load) <= max_load
+                if nb_instance * (load - init_load) > max_load:
+                    return False
         else:
             alloc_res = solution.allocated_resource
             for resource in self.system.resources:

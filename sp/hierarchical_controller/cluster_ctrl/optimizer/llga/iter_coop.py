@@ -11,6 +11,9 @@ from sp.hierarchical_controller.cluster_ctrl.util.make import make_real_control_
 import copy
 import math
 
+from multiprocessing.dummy import Pool as ThreadPool
+import multiprocessing as mp
+
 
 _GA_PARAMS = {
     "nb_generations": 100,
@@ -24,7 +27,6 @@ _GA_PARAMS = {
     "dominance_func": preferred_dominates,
 }
 
-
 _GA_OPERATOR_PARAMS = {
     "load_chunk_distribution": None,
     "objective_aggregator": sum,
@@ -35,23 +37,29 @@ class IterativeCooperation:
     """Iterative Cooperation LLC Algorithm
 
     Attributes:
+        objective (list): list of objective functions
         ga_params (dict): genetic algorithm parameters
         ga_operator_class: ga operator class
         ga_operator_params (dict): ga operator parameters
         max_iteration (int): max. algorithm iteration
+        pool_size (int): multi-thread pool size
     """
 
     def __init__(self,
+                 objective,
                  ga_params,
                  ga_operator_class,
                  ga_operator_params,
-                 max_iteration=0):
+                 max_iteration=1,
+                 pool_size=0):
         """Initialization
         """
+        self.objective = objective
         self.ga_params = ga_params
         self.ga_operator_class = ga_operator_class
         self.ga_operator_params = ga_operator_params
-        self.max_iteration = max_iteration
+        self.max_iteration = int(max(1, max_iteration))
+        self.pool_size = pool_size
 
         self._real_system = None
         self._real_environment_inputs = None
@@ -99,6 +107,56 @@ class IterativeCooperation:
         """
         self._set_cluster_params(system, environment_inputs, global_scenario, global_control_input)
 
+        map_func = map
+        pool_size = int(min(self.pool_size, mp.cpu_count(), len(self._global_scenario.network.nodes)))
+        pool = None
+        if pool_size > 1:
+            try:
+                pool = ThreadPool(pool_size)
+                map_func = pool.map
+            except ValueError:
+                pass
+
+        for it in range(self.max_iteration):
+            result = list(map_func(self._solver_for_cluster, self._global_scenario.network.nodes_id))
+            # for global_node in self._global_scenario.network.nodes:
+            #     self._solver_for_cluster(global_node.id, iteration=it)
+
+            self._update_ext_info()
+
+        ctrl_inputs = {n.id: self._cluster_ctrl_inputs[n.id][0] for n in self._global_scenario.network.nodes}
+        real_ctrl_input = make_real_control_input(system, environment_inputs[0], ctrl_inputs, global_scenario)
+
+        # from sp.system_controller.util.calc import calc_load_after_distribution
+        # for app in system.apps:
+        #     for global_src_node in global_scenario.network.nodes:
+        #         for global_dst_node in global_scenario.network.nodes:
+        #             if global_src_node == global_dst_node:
+        #                 continue
+        #             total_load = 0.0
+        #             max_load = global_control_input.get_max_load(app.id, global_src_node.id, global_dst_node.id)
+        #
+        #             for real_src_node in global_src_node.nodes:
+        #                 for real_dst_node in global_dst_node.nodes:
+        #                     load = calc_load_after_distribution(app.id, real_src_node.id, real_dst_node.id,
+        #                                                         system, real_ctrl_input, environment_inputs[0])
+        #                     total_load += load
+        #
+        #             if total_load > max_load:
+        #                 print("app {} ({} -> {}) = {}, max {}".format(app.id, global_src_node.id, global_dst_node.id,
+        #                                                               total_load, max_load))
+
+        return real_ctrl_input
+
+    def _solver_for_cluster(self, cluster_id, iteration=None):
+        """
+
+        Args:
+            cluster_id (int): cluster's id
+            iteration (int): iteration
+        Returns:
+
+        """
         ga_params = copy.copy(_GA_PARAMS)
         if isinstance(self.ga_params, dict):
             ga_params.update(self.ga_params)
@@ -107,37 +165,54 @@ class IterativeCooperation:
         if isinstance(self.ga_operator_params, dict):
             ga_operator_params.update(self.ga_operator_params)
 
-        for _ in range(self.max_iteration + 1):
-            for global_node in self._global_scenario.network.nodes:
-                cluster_system = self._cluster_systems[global_node.id][0]
-                cluster_env_inputs = self._cluster_env_inputs[global_node.id]
-                cluster_ctrl_limits = self._cluster_ctrl_limits[global_node.id]
-                cluster_last_population = None
-                if global_node.id in self._cluster_last_population:
-                    cluster_last_population = self._cluster_last_population[global_node.id]
+        cluster_system = self._cluster_systems[cluster_id][0]
+        cluster_env_inputs = self._cluster_env_inputs[cluster_id]
+        cluster_ctrl_limits = self._cluster_ctrl_limits[cluster_id]
+        cluster_last_population = None
+        if cluster_id in self._cluster_last_population:
+            cluster_last_population = self._cluster_last_population[cluster_id]
 
-                ga_operator = self.ga_operator_class(system=cluster_system,
-                                                     environment_inputs=cluster_env_inputs,
-                                                     control_limits=cluster_ctrl_limits,
-                                                     system_estimator=self._system_estimator,
-                                                     extra_first_population=cluster_last_population,
-                                                     **ga_operator_params)
+        ga_operator = self.ga_operator_class(objective=self.objective,
+                                             system=cluster_system,
+                                             environment_inputs=cluster_env_inputs,
+                                             control_limits=cluster_ctrl_limits,
+                                             system_estimator=self._system_estimator,
+                                             extra_first_population=cluster_last_population,
+                                             **ga_operator_params)
 
-                ga = NSGAII(operator=ga_operator, **ga_params)
-                population = ga.solve()
-                best_individual = population[0]
-                ctrl_sequence, system_sequence = ga_operator.decode(best_individual)
+        ga = NSGAII(operator=ga_operator, **ga_params)
+        population = ga.solve()
+        best_individual = population[0]
+        ctrl_sequence, system_sequence = ga_operator.decode(best_individual)
 
-                self._cluster_ctrl_inputs[global_node.id] = ctrl_sequence
-                self._cluster_systems[global_node.id] = system_sequence
-                self._cluster_last_population[global_node.id] = population
+        # from sp.hierarchical_controller.cluster_ctrl.util import calc as cluster_calc
+        # # from sp.system_controller.util import calc as cluster_calc
+        # ctrl_input = ctrl_sequence[0]
+        # ctrl_limit = cluster_ctrl_limits[0]
+        # env_input = cluster_env_inputs[0]
+        # for app in cluster_system.apps:
+        #     for ext_node in cluster_system.external_nodes:
+        #         max_load = ctrl_limit.get_max_dispatch_load(app.id, ext_node.id)
+        #         # nb_instance = env_input.get_nb_instances(app.id, ext_node.id)
+        #         # init_load = env_input.get_additional_received_load(app.id, ext_node.id)
+        #         # load = ctrl_input.get_received_load(app.id, ext_node.id)
+        #         # print("iter", it, global_node.id, ext_node.id, app.id, nb_instance, init_load, load, max_load)
+        #         # if nb_instance * (load - init_load) > max_load:
+        #         #     print("test", app.id, global_node.id, ext_node.id, load, max_load)
+        #
+        #         load = 0.0
+        #         for int_node in cluster_system.internal_nodes:
+        #             load += cluster_calc.calc_load_after_distribution(app.id, int_node.id, ext_node.id,
+        #                                                               cluster_system, ctrl_input, env_input,
+        #                                                               per_instance=False)
+        #         if load > max_load:
+        #             print("iter", iteration, cluster_id, ext_node.id, app.id, load, max_load)
 
-            self._update_ext_info()
+        self._cluster_ctrl_inputs[cluster_id] = ctrl_sequence
+        self._cluster_systems[cluster_id] = system_sequence
+        self._cluster_last_population[cluster_id] = population
 
-        ctrl_inputs = {n.id: self._cluster_ctrl_inputs[n.id][0] for n in self._global_scenario.network.nodes}
-        real_ctrl_input = make_real_control_input(system, environment_inputs[0], ctrl_inputs, global_scenario)
-
-        return real_ctrl_input
+        return cluster_id
 
     def _set_cluster_params(self, system, environment_inputs, global_scenario, global_control_input):
         """Set clusters' parameters
@@ -185,8 +260,11 @@ class IterativeCooperation:
                 env_input = self._cluster_env_inputs[node.id][time_step]
 
                 for app in system.apps:
-                    max_instances = self._global_control_input.get_max_app_placement(app.id, node.id)
-                    min_instances = self._global_control_input.get_min_app_placement(app.id, node.id)
+                    max_instances = app.max_instances
+                    min_instances = 0
+                    if self._global_control_input is not None:
+                        max_instances = self._global_control_input.get_max_app_placement(app.id, node.id)
+                        min_instances = self._global_control_input.get_min_app_placement(app.id, node.id)
                     ctrl_limit.max_app_placement[app.id] = max_instances
                     ctrl_limit.min_app_placement[app.id] = min_instances
 
@@ -194,19 +272,24 @@ class IterativeCooperation:
                         if node == ext_node:
                             continue
 
-                        # Estimate the number of instances in a external cluster
-                        # as the max number of instances defined by the global controller
-                        nb_instances = self._global_control_input.get_max_app_placement(app.id, ext_node.id)
-                        env_input.nb_instances[app.id][ext_node.id] = nb_instances
+                        if self._global_control_input is not None:
+                            # Estimate the number of instances in a external cluster
+                            # as the max number of instances defined by the global controller
+                            nb_instances = self._global_control_input.get_max_app_placement(app.id, ext_node.id)
+                            env_input.nb_instances[app.id][ext_node.id] = nb_instances
 
-                        max_dispatch_load = self._global_control_input.get_max_load(app.id, node.id, ext_node.id)
-                        ctrl_limit.max_dispatch_load[app.id][ext_node.id] = max_dispatch_load
+                            max_dispatch_load = self._global_control_input.get_max_load(app.id, node.id, ext_node.id)
+                            ctrl_limit.max_dispatch_load[app.id][ext_node.id] = max_dispatch_load
 
-                        # Estimate the load from a external cluster as the max load allowed by the global controller
-                        gen_load = self._global_control_input.get_max_load(app.id, ext_node.id, node.id)
-                        if math.isinf(gen_load):
-                            gen_load = 0.0
-                        env_input.generated_load[app.id][ext_node.id] = gen_load
+                            # Estimate the load from a external cluster as the max load allowed by the global controller
+                            gen_load = self._global_control_input.get_max_load(app.id, ext_node.id, node.id)
+                            if math.isinf(gen_load):
+                                gen_load = 0.0
+                            env_input.generated_load[app.id][ext_node.id] = gen_load
+                        else:
+                            env_input.nb_instances[app.id][ext_node.id] = 0
+                            ctrl_limit.max_dispatch_load[app.id][ext_node.id] = math.inf
+                            env_input.generated_load[app.id][ext_node.id] = 0.0
 
                         # Estimate arrive rate of an instance in a external cluster from other clusters as zero
                         env_input.additional_received_load[app.id][ext_node.id] = 0.0
@@ -250,12 +333,15 @@ class IterativeCooperation:
                         rec_load = sum(map(lambda n: calc_received_load(app.id, n.id, ext_system,
                                                                         ext_ctrl_input, ext_env_input),
                                            ext_system.internal_nodes))
+                        # print(node.id, ext_node.id, app.id, nb_instances, rec_load)
                         rec_load -= sum(map(lambda n: calc_load_after_distribution(app.id, node.id, n.id,
                                                                                    ext_system, ext_ctrl_input,
-                                                                                   ext_env_input),
+                                                                                   ext_env_input, per_instance=False),
                                             ext_system.internal_nodes))
+                        # print(node.id, ext_node.id, app.id, nb_instances, rec_load)
                         rec_load = rec_load / float(nb_instances) if nb_instances > 0 and rec_load > 0.0 else 0.0
                         env_input.additional_received_load[app.id][ext_node.id] = rec_load
+                        # print("update ext", node.id, ext_node.id, app.id, nb_instances, rec_load)
 
                         # Set max dispatch load to an external node
                         if ext_node.is_cloud():

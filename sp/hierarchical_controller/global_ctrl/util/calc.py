@@ -1,5 +1,5 @@
 from sp.core.model import Resource
-from sp.system_controller.util.calc import calc_load_before_distribution, calc_network_delay, calc_app_size
+from sp.system_controller.util.calc import calc_load_before_distribution, calc_app_size
 from sp.hierarchical_controller.global_ctrl.model import GlobalSystem, GlobalControlInput, GlobalEnvironmentInput
 import math
 
@@ -50,6 +50,30 @@ def calc_processing_delay(app_id, node_id, system, control_input, environment_in
     return proc_delay
 
 
+def calc_network_delay(app_id, src_node_id, dst_node_id, system, control_input, environment_input):
+    """Calculate average request network delay
+
+    Args:
+        app_id (int): id of the requested application
+        src_node_id (int): source node's id of the request
+        dst_node_id (int): id of the node where the request is processed
+        system (GlobalSystem): system
+        control_input (GlobalControlInput): control input
+        environment_input (GlobalEnvironmentInput): environment input
+    Returns:
+        float: network delay
+    """
+    delay = environment_input.get_net_delay(app_id, src_node_id, dst_node_id)
+    if control_input is not None and src_node_id == dst_node_id:
+        nb_instances = control_input.get_app_placement(app_id, dst_node_id)
+        dst_node = system.get_node(dst_node_id)
+        nb_nodes = len(dst_node.nodes)
+        if nb_nodes > 0:
+            delay *= (1.0 - nb_instances/float(nb_nodes))
+
+    return delay
+
+
 def calc_initialization_delay(app_id, node_id, system, control_input, environment_input):
     """Calculate initialization delay of application instance in a node
 
@@ -62,27 +86,28 @@ def calc_initialization_delay(app_id, node_id, system, control_input, environmen
     Returns:
         float: initialization delay
     """
+    return 0.0
 
-    curr_control = system.control_input
-    next_control = control_input
-    if curr_control is None:
-        return 0.0
-
-    curr_place = curr_control.get_app_placement(app_id, node_id)
-    next_place = next_control.get_app_placement(app_id, node_id)
-    if next_place - curr_place <= 0:
-        return 0.0
-
-    init_delay = 0.0
-    t = system.sampling_time
-    mig_delay = calc_min_migration_delay(app_id, node_id, system, control_input, environment_input)
-    if t > mig_delay:
-        init_delay = mig_delay * (mig_delay + 1.0) / (2.0 * t)
-    else:
-        init_delay = mig_delay
-
-    mig_delay = mig_delay * (1.0 - curr_place / float(next_place))
-    return mig_delay
+    # curr_control = system.control_input
+    # next_control = control_input
+    # if curr_control is None:
+    #     return 0.0
+    #
+    # curr_place = curr_control.get_app_placement(app_id, node_id)
+    # next_place = next_control.get_app_placement(app_id, node_id)
+    # if next_place - curr_place <= 0:
+    #     return 0.0
+    #
+    # init_delay = 0.0
+    # t = system.sampling_time
+    # mig_delay = calc_min_migration_delay(app_id, node_id, system, control_input, environment_input)
+    # if t > mig_delay:
+    #     init_delay = mig_delay * (mig_delay + 1.0) / (2.0 * t)
+    # else:
+    #     init_delay = mig_delay
+    #
+    # mig_delay = mig_delay * (1.0 - curr_place / float(next_place))
+    # return mig_delay
 
 
 def calc_min_migration_delay(app_id, dst_node_id, system, control_input, environment_input, return_src_node_id=False):

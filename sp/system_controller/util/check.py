@@ -7,13 +7,14 @@ import logging
 ERROR_TOLERANCE = 0.001
 
 
-def is_solution_valid(system, solution, environment_input):
+def is_solution_valid(system, solution, environment_input, allow_surplus_alloc=False):
     """Check if a solution is valid
 
     Args:
         system (System): system
         solution (Union[ControlInput, OptSolution]): optimization solution
         environment_input (EnvironmentInput): environment input
+        allow_surplus_alloc (bool): whether or not the allocation of surplus resources to an application is allowed
     Returns:
         bool: valid or not
     """
@@ -75,10 +76,16 @@ def is_solution_valid(system, solution, environment_input):
                     return False
 
                 app_demand = app.demand[resource.name](dst_load)
-                if abs(app_demand - alloc_res) > ERROR_TOLERANCE and solution.app_placement[app.id][dst_node.id]:
-                    logging.debug("Invalid allocated resource for (app %d, node %d, resource %s): %f (valid %f)",
-                                  app.id, dst_node.id, resource.name, alloc_res, app_demand)
-                    return False
+                if allow_surplus_alloc:
+                    if alloc_res - app_demand <= -1 * ERROR_TOLERANCE and solution.app_placement[app.id][dst_node.id]:
+                        logging.debug("Invalid allocated resource for (app %d, node %d, resource %s): %f (valid %f)",
+                                      app.id, dst_node.id, resource.name, alloc_res, app_demand)
+                        return False
+                else:
+                    if abs(app_demand - alloc_res) > ERROR_TOLERANCE and solution.app_placement[app.id][dst_node.id]:
+                        logging.debug("Invalid allocated resource for (app %d, node %d, resource %s): %f (valid %f)",
+                                      app.id, dst_node.id, resource.name, alloc_res, app_demand)
+                        return False
 
             capacity = dst_node.capacity[resource.name]
             if allocated - capacity > ERROR_TOLERANCE:

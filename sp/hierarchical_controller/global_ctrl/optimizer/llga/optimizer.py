@@ -5,29 +5,37 @@ from sp.hierarchical_controller.global_ctrl.estimator.system import GlobalSystem
 from sp.hierarchical_controller.global_ctrl.predictor.environment import GlobalEnvironmentPredictor
 from sp.hierarchical_controller.global_ctrl import metric
 from .ga_operator import GeneralGlobalLLGAOperator, SimpleGlobalLLGAOperator
+import copy
+
+
+_GA_PARAMS = {
+    "nb_generations": 100,
+    "population_size": 100,
+    "elite_proportion": 0.1,
+    "mutant_proportion": 0.1,
+    "elite_probability": 0.6,
+    "stop_threshold": 0.10,
+    "timeout": None,
+    "pool_size": 4,
+    "dominance_func": preferred_dominates,
+}
+
+_GA_OPERATOR_PARAMS = {
+    "load_chunk_distribution": None,
+    "objective_aggregator": sum,
+}
 
 
 class GlobalLLGAOptimizer(GlobalOptimizer):
     """Global Limited Lookahead GA control Optimizer
 
     Attributes:
-        objective_aggregator (function): objective aggregator function
         prediction_window (int): prediction window size
+        ga_params (dict): GA parameters
+        ga_operator_class: GA operator class
+        ga_operator_params (dict): GA operator initialization parameters
         environment_predictor (GlobalEnvironmentPredictor): global environment input predictor
-        system_estimator (GlobalSystemEstimator): global system estimator
         objective (Union[function, list(function)]): list of optimization functions
-        nb_generations (int): maximum number of generations
-        population_size (int): population size
-        elite_proportion (float): proportion of elite individuals in a population (value between 0 and 1)
-        mutant_proportion (float): proportion of mutant individuals in a population (value between 0 and 1)
-        elite_probability (float): probability of selecting a elite's gene during a crossover (value between 0 and 1)
-        dominance_func (function): multi-objective dominance function
-        stop_threshold (float): MGBM stopping threshold
-        use_heuristic (bool): whether heuristics is used to generate the first population or not
-        pool_size (int): multi-processing pool size. If zero, the optimizer doesn't use multi-processing
-        timeout (Union[float, None]): maximum execution time of the optimizer. If None, there is no timeout
-        load_chunk_distribution (float): load chunk distribution (value between 0 and 1).
-            Loads are distributed in chunks where its size is defined by this attribute
     """
 
     def __init__(self):
@@ -35,25 +43,15 @@ class GlobalLLGAOptimizer(GlobalOptimizer):
         """
         GlobalOptimizer.__init__(self)
 
-        self.objective_aggregator = None
         self.prediction_window = 1
-        self.environment_predictor = None
-        self.system_estimator = None
-
+        self.ga_params = {}
         self.ga_operator_class = None
-        self.objective = None
-        self.nb_generations = 100
-        self.population_size = 100
-        self.elite_proportion = 0.1
-        self.mutant_proportion = 0.1
-        self.elite_probability = 0.6
-        self.dominance_func = preferred_dominates
-        self.stop_threshold = 0.10
-        self.use_heuristic = True
-        self.timeout = None
-        self.pool_size = 4
-        self.load_chunk_distribution = 0.25
+        self.ga_operator_params = {}
 
+        self.objective = None
+        self.environment_predictor = None
+
+        self._system_estimator = GlobalSystemEstimator()
         self._last_population = None
 
     def init_params(self):
@@ -65,13 +63,14 @@ class GlobalLLGAOptimizer(GlobalOptimizer):
                               metric.migration.weighted_migration_rate]
         if not isinstance(self.objective, list):
             self.objective = [self.objective]
-        if self.objective_aggregator is None:
-            self.objective_aggregator = sum
-        if self.system_estimator is None:
-            self.system_estimator = GlobalSystemEstimator()
+
+        if self.environment_predictor is None:
+            self.environment_predictor = GlobalEnvironmentPredictor()
+            # TODO: implement env predictor that is shared between scheduler and optimizer
+            self.environment_predictor.init_params()
+
         if self.ga_operator_class is None:
             self.ga_operator_class = GeneralGlobalLLGAOperator
-        # TODO: implement env predictor that is shared between scheduler and optimizer
 
     def clear_params(self):
         """Clear parameters of a simulation
@@ -92,28 +91,25 @@ class GlobalLLGAOptimizer(GlobalOptimizer):
         environment_inputs = [environment_input]
         environment_inputs += self.environment_predictor.predict(self.prediction_window)
 
+        ga_params = copy.copy(_GA_PARAMS)
+        if isinstance(self.ga_params, dict):
+            ga_params.update(self.ga_params)
+
+        ga_operator_params = copy.copy(_GA_OPERATOR_PARAMS)
+        if isinstance(self.ga_operator_params, dict):
+            ga_operator_params.update(self.ga_operator_params)
+
         ga_operator = self.ga_operator_class(system=system,
                                              environment_inputs=environment_inputs,
                                              objective=self.objective,
-                                             objective_aggregator=self.objective_aggregator,
-                                             system_estimator=self.system_estimator,
-                                             use_heuristic=self.use_heuristic,
+                                             system_estimator=self._system_estimator,
                                              extra_first_population=self._last_population,
-                                             load_chunk_distribution=self.load_chunk_distribution)
+                                             **ga_operator_params)
 
-        mo_ga = NSGAII(operator=ga_operator,
-                       nb_generations=self.nb_generations,
-                       population_size=self.population_size,
-                       elite_proportion=self.elite_proportion,
-                       mutant_proportion=self.mutant_proportion,
-                       elite_probability=self.elite_probability,
-                       stop_threshold=self.stop_threshold,
-                       dominance_func=self.dominance_func,
-                       timeout=self.timeout,
-                       pool_size=self.pool_size)
+        mo_ga = NSGAII(operator=ga_operator, **ga_params)
         population = mo_ga.solve()
 
-        last_pop_size = int(round(self.elite_proportion * len(population)))
+        last_pop_size = int(round(mo_ga.elite_proportion * len(population)))
         if last_pop_size > 0:
             self._last_population = population[:last_pop_size]
         else:

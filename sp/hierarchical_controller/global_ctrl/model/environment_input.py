@@ -89,12 +89,14 @@ def from_real_environment_inputs(environment_inputs, global_scenario):
             for real_node in global_node.nodes:
                 for env_input in environment_inputs:
                     loads.append(env_input.get_generated_load(app.id, real_node.id))
-                    delays.append(env_input.get_net_delay(app.id, global_node.central_node.id, real_node.id))
+                    if real_node.id != global_node.central_node.id:
+                        delays.append(env_input.get_net_delay(app.id, global_node.central_node.id, real_node.id))
             avg_load = mean(loads) if len(loads) > 0 else 0.0
             avg_delay = mean(delays) if len(delays) > 0 else 0.0
 
             global_env.generated_load[app.id][global_node.id] = avg_load
             global_env.net_delay[app.id][global_node.id][global_node.id] = avg_delay
+            # global_env.net_delay[app.id][global_node.id][global_node.id] = 0.0
             global_env.net_path[app.id][global_node.id][global_node.id] = []
 
     for app in apps:

@@ -1,17 +1,45 @@
 from sp.core.model import Scenario
 from sp.core.predictor import AutoARIMAPredictor, SARIMAPredictor, NaivePredictor
+from sp.core.util import json_util
 from sp.simulator import Simulator
 from sp.simulator.monitor import OptimizerMonitor, EnvironmentMonitor
 from sp.system_controller import metric, util
-from sp.system_controller.optimizer.llc import LLCOptimizer, plan_finder, input_finder
-from sp.system_controller.optimizer import SOGAOptimizer, MOGAOptimizer, CloudOptimizer, SOHeuristicOptimizer
-from sp.system_controller.optimizer import OmittedMigrationOptimizer, StaticOptimizer
 from sp.system_controller.predictor import MultiProcessingEnvironmentPredictor
+from sp.hierarchical_controller.system_controller import HierarchicalSystemController
+from sp.hierarchical_controller.global_ctrl.model import GlobalScenario
+from sp.hierarchical_controller.global_ctrl.scheduler import GlobalPeriodicScheduler
+from sp.hierarchical_controller.global_ctrl.optimizer import GlobalMOGAOptimizer, GlobalLLGAOptimizer
+from sp.hierarchical_controller.global_ctrl.optimizer.llga import SimpleGlobalLLGAOperator, GeneralGlobalLLGAOperator
+from sp.hierarchical_controller.global_ctrl.predictor import GlobalEnvironmentPredictor
+from sp.hierarchical_controller.global_ctrl import metric as global_metric
+from sp.hierarchical_controller.cluster_ctrl.optimizer import ClusterLLGAOptimizer
+from sp.hierarchical_controller.cluster_ctrl.optimizer.llga import SimpleClusterLLGAOperator, GeneralClusterLLGAOperator
+from sp.hierarchical_controller.cluster_ctrl import metric as cluster_metric
 import json
 import math
 import os
 import time
 import gc
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
+
+
+def test_objective(system, control_input, environment_input):
+    """
+
+    Args:
+        system (GlobalSystem): system
+        control_input (GlobalControlInput): control input
+        environment_input (GlobalEnvironmentInput):  environment input
+    Returns:
+        float: metric value
+    """
+    count = 0.0
+    for app in system.apps:
+        for node in system.nodes:
+            count += control_input.get_app_placement(app.id, node.id)
+
+    return -1.0 * count
 
 
 class ExpRunMonitor(OptimizerMonitor):
@@ -28,6 +56,7 @@ class ExpRunMonitor(OptimizerMonitor):
         """
         OptimizerMonitor.__init__(self, metrics_func, output_path)
         self.debug_prefix = debug_prefix
+        self.valid_checking_extra_params = {'allow_surplus_alloc': True}
 
     def on_sys_ctrl_ended(self, sim_time, system, control_input, environment_input):
         """Event dispatched when the system controller update ended
@@ -104,25 +133,37 @@ def main():
     """Main function
     """
     # Load simulation parameters
-    root_output_path = 'output/synthetic/exp/'
-    simulation_filename = 'input/synthetic/simulation.json'
+    root_output_path = 'output/hierarchical/exp/'
+    simulation_filename = 'input/hierarchical/simulation.json'
     simulation_data = None
     with open(simulation_filename) as json_file:
         simulation_data = json.load(json_file)
     simulation_time = simulation_data['time']
 
-    # Set objectives and metrics functions
-    optimizers = []
-    multi_objective = [
-        metric.deadline.weighted_avg_deadline_violation,
-        metric.cost.overall_cost,
-        metric.migration.weighted_migration_rate,
+    # Set global parameters
+    global_optimizers = []
+    global_multi_objective = [
+        global_metric.deadline.weighted_avg_deadline_violation,
+        global_metric.cost.overall_cost,
+        global_metric.response_time.weighted_avg_response_time,
+        # test_objective,
     ]
-    multi_objective_without_migration = [
-        metric.deadline.weighted_avg_deadline_violation,
-        metric.cost.overall_cost,
+    # global_multi_objective = [
+    #     global_metric.deadline.weighted_avg_deadline_violation,
+    #     global_metric.cost.overall_cost,
+    #     # global_metric.migration.weighted_migration_rate,
+    # ]
+    global_period = 2
+
+    # Set cluster parameters
+    cluster_multi_objective = [
+        cluster_metric.deadline.weighted_avg_deadline_violation,
+        cluster_metric.cost.overall_cost,
+        cluster_metric.migration.weighted_migration_rate,
     ]
-    single_objective = metric.deadline.weighted_avg_deadline_violation
+    cluster_optimizers = []
+
+    # Set metric functions
     metrics = [
         metric.deadline.overall_deadline_violation,
         metric.deadline.weighted_overall_deadline_violation,
@@ -165,134 +206,90 @@ def main():
     # ga_nb_gens = 100
     ga_nb_gens = 50
 
+    # GA parameters as dict
+    ga_params = {
+        'nb_generations': ga_nb_gens,
+        'population_size': ga_pop_size,
+        'timeout': timeout,
+        'pool_size': pool_size,
+        'dominance_func': dominance_func,
+    }
+    ga_operator_params = {}
+
     # Set environment forecasting
     env_predictor = MultiProcessingEnvironmentPredictor()
     env_predictor.pool_size = pool_size
-    # env_predictor.load_predictor_class = SARIMAPredictor
-    # env_predictor.load_predictor_params = {'order': (1, 1, 0), 'enforce_stationarity': False,
-    #                                        'enforce_invertibility': False}
     env_predictor.load_predictor_class = AutoARIMAPredictor
     env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': True, 'maxiter': 10}
     # env_predictor.load_predictor_params = {'max_p': 3, 'max_q': 3, 'stepwise': False,
     #                                        'random': True, 'n_fits': 2, 'maxiter': 2}
     env_predictor.net_delay_predictor_class = NaivePredictor
 
+    # Set global environment forecasting
+    global_env_predictor = GlobalEnvironmentPredictor()
+    global_env_predictor.real_environment_predictor = env_predictor
+
     # Set optimizer solutions
 
-    # Cloud optimizer config
-    opt = CloudOptimizer()
-    opt_id = opt.__class__.__name__
-    item = (opt_id, opt)
-    # optimizers.append(item)
-
-    # Single-Objective Heuristic optimizer config
-    opt = SOHeuristicOptimizer()
-    opt.version = [opt.versions.NET_DELAY, opt.versions.DEADLINE]
-    opt_id = opt.__class__.__name__
-    item = (opt_id, opt)
-    # optimizers.append(item)
-
-    # Single-Objective GA optimizer config
-    opt = SOGAOptimizer()
-    opt.objective = single_objective
-    opt.timeout = timeout
-    opt.population_size = ga_pop_size
-    opt.nb_generations = ga_nb_gens
-    opt_id = opt.__class__.__name__
-    item = (opt_id, opt)
-    # optimizers.append(item)
-
-    # Static Optimizer
-    opt = StaticOptimizer()
-    opt.objective = multi_objective
+    # Global Multi-Objective GA optimizer config
+    opt = GlobalMOGAOptimizer()
+    opt.objective = global_multi_objective
     opt.pool_size = pool_size
     opt.timeout = timeout
     opt.population_size = ga_pop_size
     opt.nb_generations = ga_nb_gens
     opt.dominance_func = dominance_func
+    opt.environment_predictor = global_env_predictor
     opt_id = opt.__class__.__name__
     item = (opt_id, opt)
-    # optimizers.append(item)
+    global_optimizers.append(item)
 
-    # Omitted Migration optimizer config
-    opt = OmittedMigrationOptimizer()
-    opt.objective = multi_objective_without_migration
-    opt.pool_size = pool_size
-    opt.timeout = timeout
-    opt.population_size = ga_pop_size
-    opt.nb_generations = ga_nb_gens
-    opt.dominance_func = dominance_func
-    opt_id = opt.__class__.__name__
-    item = (opt_id, opt)
-    # optimizers.append(item)
+    # Global LLC Optimizer
+    # global_prediction_windows = [1]
+    # # global_llga_operators = [SimpleGlobalLLGAOperator, GeneralGlobalLLGAOperator]
+    # global_llga_operators = [GeneralGlobalLLGAOperator]
+    #
+    # for window in global_prediction_windows:
+    #     for ga_operator in global_llga_operators:
+    #         opt = GlobalLLGAOptimizer()
+    #         opt.prediction_window = window
+    #         opt.ga_params = ga_params
+    #         opt.ga_operator_class = ga_operator
+    #         opt.ga_operator_params = ga_operator_params
+    #         opt.objective = global_multi_objective
+    #         opt.environment_predictor = global_env_predictor
+    #
+    #         opt_id = '{}_w{}'.format(ga_operator.__name__, window)
+    #         item = (opt_id, opt)
+    #         # global_optimizers.append(item)
 
-    # Multi-Objective GA optimizer config
-    opt = MOGAOptimizer()
-    opt.objective = multi_objective
-    opt.pool_size = pool_size
-    opt.timeout = timeout
-    opt.population_size = ga_pop_size
-    opt.nb_generations = ga_nb_gens
-    opt.dominance_func = dominance_func
-    opt_id = opt.__class__.__name__
-    item = (opt_id, opt)
-    # optimizers.append(item)
+    # CLuster LLC Optimizer
+    cluster_pool_size = 0
+    cluster_prediction_windows = [1]
+    cluster_max_iterations = [0, 1, 2]
+    # cluster_max_iterations = [1]
+    # cluster_llga_operators = [SimpleClusterLLGAOperator, GeneralClusterLLGAOperator]
+    cluster_llga_operators = [GeneralClusterLLGAOperator]
 
-    # LLC Parameters
+    for max_iteration in cluster_max_iterations:
+        for window in cluster_prediction_windows:
+            for ga_operator in cluster_llga_operators:
+                opt = ClusterLLGAOptimizer()
+                opt.objective = cluster_multi_objective
+                opt.prediction_window = window
+                opt.ga_params = ga_params
+                opt.ga_operator_class = ga_operator
+                opt.ga_operator_params = ga_operator_params
+                opt.max_iteration = max_iteration
+                opt.pool_size = cluster_pool_size
 
-    # LLC (control input and plan) finders versions
-    llc_finders = [
-        {
-            'id': 'ssga',
-            'input': input_finder.SSGAInputFinder,
-            'input_params': {'timeout': timeout, 'population_size': ga_pop_size, 'nb_generations': ga_nb_gens},
-            'plan': None
-        },
-        # {
-        #     'id': 'sga',
-        #     'input': input_finder.SGAInputFinder,
-        #     'input_params': {'timeout': timeout, 'population_size': ga_pop_size, 'nb_generations': ga_nb_gens},
-        #     'plan': None
-        # },
-        # {
-        #     'id': 'mga',
-        #     'input': input_finder.MGAInputFinder,
-        #     'input_params': {'timeout': timeout},
-        #     'plan': plan_finder.GAPlanFinder,
-        #     'plan_params': {'timeout': timeout},
-        # },
-        # {
-        #     'id': 'ssga_sga',
-        #     'input': input_finder.PipelineInputFinder,
-        #     'plan': None
-        # },
-    ]
+                opt_id = '{}_w{}_i{}'.format(ga_operator.__name__, window, max_iteration)
+                item = (opt_id, opt)
+                cluster_optimizers.append(item)
 
-    # Prediction windows
-    # prediction_windows = [0, 1, 2]
-    # prediction_windows = [1, 2]
-    # prediction_windows = [0]
-    prediction_windows = [1]
-    # prediction_windows = [2]
-    # prediction_windows = [1, 2, 3, 4]
-
-    for window in prediction_windows:
-        for llc_finder in llc_finders:
-            opt = LLCOptimizer()
-            opt.prediction_window = window
-            opt.pool_size = pool_size
-            opt.dominance_func = dominance_func
-            opt.objective = multi_objective
-            opt.objective_aggregator = util.sum_aggregator
-            opt.input_finder_class = llc_finder['input']
-            opt.input_finder_params = llc_finder['input_params'] if 'input_params' in llc_finder else None
-            opt.plan_finder_class = llc_finder['plan']
-            opt.plan_finder_params = llc_finder['plan_params'] if 'plan_params' in llc_finder else None
-            opt.environment_predictor = env_predictor
-
-            opt_id = '{}_{}_w{}'.format(opt.__class__.__name__, llc_finder['id'], window)
-            item = (opt_id, opt)
-            optimizers.append(item)
+    clusters = None
+    if 'clusters' in simulation_data:
+        clusters = json_util.load_key_content(simulation_data, 'clusters')
 
     # Create a simulation for each loaded scenario
     for scenario_data in simulation_data['scenarios']:
@@ -309,40 +306,62 @@ def main():
         with open(scenario_filename) as json_file:
             scenario_json = json.load(json_file)
             scenario = Scenario.from_json(scenario_json)
+            if 'clusters' in scenario_json:
+                clusters = json_util.load_key_content(scenario_json, 'clusters')
         elapsed_time = time.perf_counter() - perf_count
         print('finished in {:5.2f}s'.format(elapsed_time))
 
+        # Create scenario for global controller
+        if clusters is None:
+            clusters = [[n.id] for n in scenario.network.nodes]
+        global_scenario = GlobalScenario.from_real_scenario(scenario, clusters)
+
         # Execute simulation for each optimizer nb_runs times
-        for (opt_id, opt) in optimizers:
-            # Set simulation output parameters
-            output_sub_path = '{}/{}/{}'.format(scenario_id, run, opt_id)
-            output_path = os.path.join(root_output_path, output_sub_path)
-            debug_prefix = output_sub_path
-            try:
-                os.makedirs(output_path)
-            except OSError:
-                pass
+        for (global_opt_id, global_opt) in global_optimizers:
+            for (cluster_opt_id, cluster_opt) in cluster_optimizers:
+                # Set simulation output parameters
+                output_sub_path = '{}/{}/{}_{}'.format(scenario_id, run, global_opt_id, cluster_opt_id)
+                output_path = os.path.join(root_output_path, output_sub_path)
+                debug_prefix = output_sub_path
+                try:
+                    os.makedirs(output_path)
+                except OSError:
+                    pass
 
-            metrics_filename = os.path.join(output_path, 'metrics.json')
-            if os.path.isfile(metrics_filename):
-                continue
+                metrics_filename = os.path.join(output_path, 'metrics.json')
+                if os.path.isfile(metrics_filename):
+                    continue
 
-            # Set simulation parameters
-            time_start, time_stop, time_step = time_data['start'], time_data['stop'], time_data['step']
-            sim = Simulator(scenario=scenario)
-            sim.set_time(start=time_start, stop=time_stop, step=time_step)
-            sim.optimizer = opt
-            sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=output_path, debug_prefix=debug_prefix)
-            # sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=None, debug_prefix=debug_prefix)
+                # Set simulation parameters
+                time_start, time_stop, time_step = time_data['start'], time_data['stop'], time_data['step']
+                sim = Simulator(scenario=scenario)
+                sim.set_time(start=time_start, stop=time_stop, step=time_step)
 
-            # Run simulation
-            perf_count = time.perf_counter()
-            sim.run()
-            elapsed_time = time.perf_counter() - perf_count
-            print('scenario {}, run {}, opt {} - sim exec time: {}s'.format(scenario_id, run, opt_id, elapsed_time))
+                global_scheduler = GlobalPeriodicScheduler()
+                global_scheduler.period = global_period
+                global_scheduler.global_scenario = global_scenario
+                global_scheduler.environment_predictor = global_env_predictor
 
-        scenario = None
-        gc.collect()
+                controller = HierarchicalSystemController()
+                controller.global_scenario = global_scenario
+                controller.global_optimizer = global_opt
+                controller.global_scheduler = global_scheduler
+                controller.optimizer = cluster_opt
+
+                sim.system_controller = controller
+                sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=output_path, debug_prefix=debug_prefix)
+                # sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=None, debug_prefix=debug_prefix)
+
+                # Run simulation
+                perf_count = time.perf_counter()
+                sim.run()
+                elapsed_time = time.perf_counter() - perf_count
+                print('scenario {}, run {}, opt ({}, {}) - sim exec time: {}s'.format(scenario_id, run, global_opt_id,
+                                                                                      opt_id, elapsed_time))
+
+            scenario = None
+            global_scenario = None
+            gc.collect()
 
 
 if __name__ == '__main__':

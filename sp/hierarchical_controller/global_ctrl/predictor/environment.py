@@ -1,6 +1,6 @@
 from sp.core.model import System, EnvironmentInput
 from sp.system_controller.predictor.environment import EnvironmentPredictor, DefaultEnvironmentPredictor
-from sp.hierarchical_controller.global_ctrl.model import GlobalEnvironmentInput, GlobalScenario
+from sp.hierarchical_controller.global_ctrl.model import GlobalEnvironmentInput, GlobalScenario, GlobalSystem
 
 
 class GlobalEnvironmentPredictor(EnvironmentPredictor):
@@ -36,9 +36,16 @@ class GlobalEnvironmentPredictor(EnvironmentPredictor):
             system (System): real system's state
             environment_input (EnvironmentInput): real environment input
         """
-        self._real_system = system
-        self._real_env_input = environment_input
-        self.real_environment_predictor.update(system, environment_input)
+        real_system = system
+        real_env_input = environment_input
+        if isinstance(system, GlobalSystem):
+            real_system = system.real_system
+        if isinstance(environment_input, GlobalEnvironmentInput):
+            real_env_input = environment_input.real_environment_input
+
+        self._real_system = real_system
+        self._real_env_input = real_env_input
+        self.real_environment_predictor.update(real_system, real_env_input)
 
     def predict(self, steps=1):
         """Predict next environment inputs.

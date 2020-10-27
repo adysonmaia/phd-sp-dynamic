@@ -23,6 +23,7 @@ class OptimizerMonitor(Monitor):
         Monitor.__init__(self)
         self.metrics_func = metrics_func  # metric functions
         self.output_path = output_path
+        self.valid_checking_extra_params = {}
 
         self._metrics_data = list()  # log of metric data
         self._control_data = dict()  # log of control data
@@ -59,7 +60,7 @@ class OptimizerMonitor(Monitor):
         """
         opt_name = self.simulator.optimizer.__class__.__name__
         elapsed_time = time.perf_counter() - self._perf_count
-        valid = util.is_solution_valid(system, control_input, environment_input)
+        valid = util.is_solution_valid(system, control_input, environment_input, **self.valid_checking_extra_params)
         datum = {'time': sim_time, 'opt': opt_name, 'elapsed_time': elapsed_time, 'valid': valid}
         for func in self.metrics_func:
             key = func.__name__

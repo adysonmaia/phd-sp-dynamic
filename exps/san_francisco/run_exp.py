@@ -202,6 +202,12 @@ def main():
     item = (opt_id, opt)
     optimizers.append(item)
 
+    opt = SOHeuristicOptimizer()
+    opt.version = [opt.versions.LOAD, opt.versions.DEADLINE]
+    opt_id = '{}_{}'.format(opt.__class__.__name__, 'ld')
+    item = (opt_id, opt)
+    optimizers.append(item)
+
     # Single-Objective GA optimizer config
     opt = SOGAOptimizer()
     opt.objective = single_objective

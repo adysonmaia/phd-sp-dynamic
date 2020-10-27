@@ -1,10 +1,10 @@
 from sp.core.model import Resource, Application
 from sp.core.heuristic.brkga import GAOperator, GAIndividual
-from sp.system_controller.optimizer.soga.cached_delays import CachedDelays
 from sp.hierarchical_controller.global_ctrl.model import GlobalSystem, GlobalControlInput, GlobalEnvironmentInput
 from sp.hierarchical_controller.global_ctrl.model import GlobalNode
 from sp.hierarchical_controller.global_ctrl.util.calc import calc_load_before_distribution, calc_network_delay
 from sp.hierarchical_controller.global_ctrl.util.calc import calc_processing_delay, calc_initialization_delay
+from .cached_delays import GlobalCachedDelays
 from collections import defaultdict
 import math
 import copy
@@ -124,7 +124,7 @@ class GlobalMOGAOperator(GAOperator):
         fitness = [f(self.system, solution, self.environment_input) for f in self.objective]
         return fitness
 
-    def decode(self, individual):
+    def decode(self, individual, debug=False):
         """Decode the individual's chromosome and obtain a valid solution for the global optimization problem
 
         Args:
@@ -132,6 +132,7 @@ class GlobalMOGAOperator(GAOperator):
         Returns:
             GlobalControlInput: a valid solution
         """
+        self._debug = debug
 
         nb_apps = len(self.system.apps)
         nb_nodes = len(self.system.nodes)
@@ -173,7 +174,8 @@ class GlobalMOGAOperator(GAOperator):
         selected_nodes = {}
         selected_nb_instances = defaultdict(lambda: defaultdict(lambda: 0))
         for (a_index, app) in enumerate(all_apps):
-            max_nb_instances = int(min(nb_real_nodes, math.ceil(individual_parts[0][a_index] * (app.max_instances - 1))))
+            max_nb_instances = int(min(nb_real_nodes,
+                                       math.ceil(individual_parts[0][a_index] * (app.max_instances - 1))))
             max_nb_nodes = int(min(max_nb_instances, math.ceil(individual_parts[1][a_index] * (nb_nodes - 1))))
 
             start = a_index * nb_nodes
@@ -184,21 +186,54 @@ class GlobalMOGAOperator(GAOperator):
             nodes_index.sort(key=lambda i: priority[i], reverse=True)
             nodes_index = nodes_index[:max_nb_nodes]
 
-            app_nodes = list(map(lambda index: all_nodes[index], nodes_index))
+            app_nodes = list(map(lambda i: all_nodes[i], nodes_index))
             app_nodes.append(cloud_node)
             selected_nodes[app.id] = app_nodes
 
             percentages = individual_parts[3][start:end]
-            normalize = float(sum(map(lambda index: percentages[index], nodes_index)))
-            for node_index in nodes_index:
-                node = all_nodes[node_index]
-                node_percentage = percentages[node_index]
-                nb_instances = 0
-                if normalize > 0:
-                    nb_instances = 1 + math.floor((max_nb_instances - max_nb_nodes) * node_percentage / normalize)
-                else:
-                    nb_instances = math.floor(max_nb_instances / float(max_nb_nodes))
-                selected_nb_instances[app.id][node.id] = int(min(nb_instances, len(node.nodes)))
+            normalize = float(sum(map(lambda i: percentages[i], nodes_index)))
+            nb_selected_real_nodes = float(sum(map(lambda n: len(n.nodes), app_nodes)))
+
+            if max_nb_instances >= nb_selected_real_nodes:
+                for node_index in nodes_index:
+                    node = all_nodes[node_index]
+                    nb_instances = len(node.nodes)
+                    selected_nb_instances[app.id][node.id] = nb_instances
+            else:
+                for node_index in nodes_index:
+                    node = all_nodes[node_index]
+                    selected_nb_instances[app.id][node.id] = 1
+
+                    node_percentage = percentages[node_index]
+                    normal_value = 0.0
+                    if normalize > 0:
+                        normal_value = node_percentage / normalize
+                    else:
+                        normal_value = 1.0 / max_nb_nodes
+                    percentages[node_index] = normal_value
+
+                remaining_instances = max_nb_instances - max_nb_nodes
+                index = 0
+                while remaining_instances > 0:
+                    node_index = nodes_index[index]
+                    node = all_nodes[node_index]
+                    node_percentage = percentages[node_index]
+                    nb_instances = int(max(1, math.floor(remaining_instances * node_percentage)))
+                    if selected_nb_instances[app.id][node.id] + nb_instances <= len(node.nodes):
+                        selected_nb_instances[app.id][node.id] += nb_instances
+                        remaining_instances -= nb_instances
+
+                    index = (index + 1) % len(nodes_index)
+
+            # if self._debug:
+            #     total = 0
+            #     for node_index in nodes_index:
+            #         node = all_nodes[node_index]
+            #         nb_instances = selected_nb_instances[app.id][node.id]
+            #         total += nb_instances
+            #         print(app.id, node.id, max_nb_instances, len(node.nodes), nb_instances)
+            #     print(app.id, max_nb_instances, total)
+
             selected_nb_instances[app.id][cloud_node.id] = 1
 
         return solution, selected_nodes, selected_nb_instances
@@ -216,7 +251,7 @@ class GlobalMOGAOperator(GAOperator):
             GlobalControlInput: solution
         """
         cloud_node = self.system.cloud_node
-        cached_delays = CachedDelays()
+        cached_delays = GlobalCachedDelays()
 
         priority = individual_parts[4]
         requests_index = list(range(len(self.requests)))
@@ -259,6 +294,37 @@ class GlobalMOGAOperator(GAOperator):
                             cached_delays.invalidate(app.id, src_node.id, dst_node.id)
                             break
 
+                        # nb_instances_options = []
+                        # if solution.app_placement[app.id][dst_node.id] > 0:
+                        #     nb_instances_options = [solution.app_placement[app.id][dst_node.id]]
+                        # elif selected_nb_instances[app.id][dst_node.id] > 0:
+                        #     # nb_instances_options = list(
+                        #     #     reversed(range(1, selected_nb_instances[app.id][dst_node.id] + 1)))
+                        #     nb_instances_options = [selected_nb_instances[app.id][dst_node.id]]
+                        #
+                        # if len(nb_instances_options) <= 0:
+                        #     continue
+                        #
+                        # placed = False
+                        # index = 0
+                        # while not placed and index < len(nb_instances_options):
+                        #     nb_instances = nb_instances_options[index]
+                        #
+                        #     if self._alloc_resources(app, dst_node, solution, chunk, nb_instances, increment=True):
+                        #         chunk_ld = chunk / total_load if total_load > 0.0 else 1.0
+                        #         solution.load_distribution[app.id][src_node.id][dst_node.id] += chunk_ld
+                        #
+                        #         remaining_load -= chunk
+                        #         chunk = min(remaining_load, chunk)
+                        #         chunk_count += 1
+                        #         cached_delays.invalidate(app.id, src_node.id, dst_node.id)
+                        #         placed = True
+                        #
+                        #     index += 1
+                        #
+                        # if placed:
+                        #     break
+
         return solution
 
     def _decode_stage_3(self, individual_parts, solution, selected_nodes, selected_nb_instances):
@@ -278,6 +344,20 @@ class GlobalMOGAOperator(GAOperator):
             nb_instances = solution.app_placement[app.id][cloud_node.id]
             nb_instances = int(max(1, nb_instances))
             solution.app_placement[app.id][cloud_node.id] = nb_instances
+
+            app_nodes = list(selected_nodes[app.id])
+            for dst_node in app_nodes:
+                if solution.app_placement[app.id][dst_node.id] > 0:
+                    continue
+
+                nb_instances_options = []
+                if selected_nb_instances[app.id][dst_node.id] > 0:
+                    nb_instances_options = list(
+                        reversed(range(1, selected_nb_instances[app.id][dst_node.id] + 1)))
+                    for nb_instances in nb_instances_options:
+                        chunk = 0.0
+                        if self._alloc_resources(app, dst_node, solution, chunk, nb_instances, increment=False):
+                            break
 
         return solution
 

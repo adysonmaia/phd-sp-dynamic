@@ -247,9 +247,8 @@ class SimpleClusterLLGAOperator(GeneralClusterLLGAOperator):
         Returns:
             individuals (list(GAIndividual)): list of individuals
         """
-        population = None
+        population = []
         if self.extra_first_population is not None:
-            population = []
             for indiv in self.extra_first_population:
                 if len(indiv) == self.nb_genes:
                     population.append(indiv.clear_copy())

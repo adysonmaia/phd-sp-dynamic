@@ -62,8 +62,11 @@ def make_real_control_input(system, environment_input, cluster_control_inputs, g
 
         # Calculate and cache received load
         for node in system.nodes:
+            prev_load = ctrl_input.received_load[app.id][node.id]
             load = calc_received_load(app.id, node.id, system, ctrl_input, environment_input, use_cache=False)
             ctrl_input.received_load[app.id][node.id] = load
+            # if prev_load < load:
+            #     print(app.id, node.id, prev_load, load)
 
         # Allocate resource for cloud
         for resource in system.resources:

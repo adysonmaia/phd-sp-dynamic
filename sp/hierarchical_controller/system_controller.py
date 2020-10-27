@@ -5,6 +5,8 @@ from sp.hierarchical_controller.global_ctrl.model import GlobalScenario
 from sp.hierarchical_controller.global_ctrl.scheduler import GlobalScheduler, GlobalPeriodicScheduler
 from sp.hierarchical_controller.global_ctrl.optimizer import GlobalCloudOptimizer
 from sp.hierarchical_controller.global_ctrl.util.make import make_global_limits
+from sp.hierarchical_controller.global_ctrl import metric as global_metric
+import sys
 
 
 class HierarchicalSystemController(SystemController):
@@ -22,6 +24,8 @@ class HierarchicalSystemController(SystemController):
         self.global_scenario = None
         self.global_optimizer = None
         self.global_scheduler = None
+
+        self._global_control_input = None
 
     def init_params(self):
         """Initialize simulation parameters
@@ -41,6 +45,7 @@ class HierarchicalSystemController(SystemController):
         """Clear simulation parameters
         """
         SystemController.clear_params(self)
+        self._global_control_input = None
 
         self.global_scheduler.clear_params()
         self.global_optimizer.clear_params()
@@ -53,22 +58,41 @@ class HierarchicalSystemController(SystemController):
             environment_input (EnvironmentInput): environment input
         """
         control_input = None
-        global_control_input = None
 
         if self.global_scheduler.needs_update(system, environment_input):
             global_system, global_env_input = self.global_scheduler.update(system, environment_input)
             try:
-                global_control_input = self.global_optimizer.solve(global_system, global_env_input)
-                global_control_input = make_global_limits(global_system, global_control_input, global_env_input)
+                global_solution = self.global_optimizer.solve(global_system, global_env_input)
+                self._global_control_input = make_global_limits(global_system, global_solution, global_env_input)
+
+                # print(" -- ")
+                # for app in global_system.apps:
+                #     total_nb_instances = 0
+                #     total_load = 0.0
+                #     for node in global_system.nodes:
+                #         nb_instances = global_solution.get_max_app_placement(app.id, node.id)
+                #         load = global_env_input.get_generated_load(app.id, node.id)
+                #         total_nb_instances += nb_instances
+                #         total_load += load
+                #         print(app.id, node.id, nb_instances, load)
+                #     print(app.id, app.type, round(app.deadline, 5), app.max_instances, total_nb_instances, total_load)
+                #     # print(app.id, global_solution.load_distribution[app.id])
+                #
+                # rt = global_metric.response_time.weighted_avg_response_time(global_system, global_solution,
+                #                                                             global_env_input)
+                # dv = global_metric.deadline.weighted_avg_deadline_violation(global_system, global_solution,
+                #                                                             global_env_input)
+                # print("rt", rt, "dv", dv)
             except OptimizerError:
                 pass
 
-        # TODO: transform global control input into upper bound limits
+        # sys.exit()
 
         if self.scheduler.needs_update(system, environment_input):
             estimated_system, estimated_env_input = self.scheduler.update(system, environment_input)
             try:
-                control_input = self.optimizer.solve(estimated_system, estimated_env_input)
+                control_input = self.optimizer.solve(estimated_system, estimated_env_input,
+                                                     self.global_scenario, self._global_control_input)
             except OptimizerError:
                 pass
 
