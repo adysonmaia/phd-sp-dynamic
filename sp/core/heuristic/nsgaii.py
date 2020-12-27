@@ -1,7 +1,9 @@
 from functools import cmp_to_key
 from sp.core.heuristic.brkga import BRKGA, GAIndividual, GAOperator
+import math
 
-MAX_CRWD_DIST = 1.0
+# MAX_CRWD_DIST = 1.0
+MAX_CRWD_DIST = math.inf
 
 
 def pareto_dominates(fitness_1, fitness_2):
@@ -136,7 +138,7 @@ class NSGAII(BRKGA):
             if rank[index_1] < rank[index_2]:
                 return -1
             elif (rank[index_1] == rank[index_2]
-                  and crwd_dist[index_1] < crwd_dist[index_2]):
+                  and crwd_dist[index_1] > crwd_dist[index_2]):
                 return -1
             else:
                 return 1

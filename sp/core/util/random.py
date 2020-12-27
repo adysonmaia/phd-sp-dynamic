@@ -1,5 +1,6 @@
 from sp.core.util import json_util
 from collections.abc import Iterable
+from scipy import special as sps
 import numpy as np
 import math
 
@@ -278,6 +279,35 @@ def random_uniform(nb_samples=None, noise=None):
         return y
 
 
+# def random_beta_pdf(alpha=2, beta=3, nb_samples=None, noise=None):
+#     """Generate values of the beta distribution's probability density function
+#
+#     Args:
+#         alpha (float): alpha parameter of the beta distribution
+#         beta (float): beta parameter of the beta distribution
+#         nb_samples (int): number of generated samples. If None, function returns only a single value
+#         noise (float): it adds a white noise to the generated values if this parameter is not None
+#
+#     Returns:
+#         Union[list, float]: list of random values or a single value if nb_samples is None.
+#             Resulted values are between 0 and 1
+#     """
+#     bin_size = 100
+#     nb_steps = nb_samples if nb_samples else 1
+#     size = nb_steps * bin_size
+#
+#     s = np.random.beta(alpha, beta, size)
+#     hist, bin_edges = np.histogram(s, nb_steps, density=False)
+#
+#     max_v = float(max(hist))
+#     y = [v / max_v for v in hist]
+#     y = add_white_noise(y, noise)
+#
+#     if nb_samples is None:
+#         return y[0]
+#     else:
+#         return y
+
 def random_beta_pdf(alpha=2, beta=3, nb_samples=None, noise=None):
     """Generate values of the beta distribution's probability density function
 
@@ -291,15 +321,13 @@ def random_beta_pdf(alpha=2, beta=3, nb_samples=None, noise=None):
         Union[list, float]: list of random values or a single value if nb_samples is None.
             Resulted values are between 0 and 1
     """
-    bin_size = 100
     nb_steps = nb_samples if nb_samples else 1
-    size = nb_steps * bin_size
+    y = np.zeros(nb_steps)
+    for i in range(nb_steps):
+        t = i / float(nb_steps)
+        y[i] = (1.0 / sps.beta(alpha, beta)) * (t ** (alpha - 1)) * ((1 - t) ** (beta - 1))
 
-    s = np.random.beta(alpha, beta, size)
-    hist, bin_edges = np.histogram(s, nb_steps, density=False)
-
-    max_v = float(max(hist))
-    y = [v / max_v for v in hist]
+    y = scale_samples(y)
     y = add_white_noise(y, noise)
 
     if nb_samples is None:

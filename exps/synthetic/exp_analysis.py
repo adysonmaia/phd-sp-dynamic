@@ -4,6 +4,8 @@ import os
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import faulthandler
+faulthandler.enable()
 
 
 def s_to_ms(value):
@@ -59,15 +61,19 @@ def plot_metrics(optimizers, experiments, metrics, data_path, x_label):
     sns.set_context('paper', font_scale=2.0)
     sns.set_style('ticks', {'axes.grid': True, 'grid.linestyle': '--'})
 
-    metric_id = 'weighted_avg_deadline_violation'
+    # metric_id = 'weighted_avg_deadline_violation'
+    metric_id = 'weighted_migration_rate'
+    print(metrics_df.groupby(['x', 'opt'])[metric_id].mean())
+    exit()
+
     # sns.relplot(x='x', y=metric_id, hue='opt', kind='line', data=metrics_df)
     # sns.catplot(x='x', y=metric_id, hue='opt', kind='point', ci=None, data=metrics_df, facet_kws=dict(despine=False))
     # sns.pointplot(x='x', y=metric_id, hue='opt', ci=None, data=metrics_df)
     # sns.catplot(x='x', y=metric_id, hue='opt', kind='point', col='run', col_wrap=10, ci=None, data=metrics_df)
     # sns.catplot(x='x', y=metric_id, hue='opt', kind='bar', ci=95, data=metrics_df)
-    sns.boxplot(x='x', y=metric_id, hue='opt', notch=False, data=metrics_df)
+    # sns.boxplot(x='x', y=metric_id, hue='opt', notch=False, data=metrics_df)
     # print(sns.axes_style())
-    plt.show()
+    # plt.show()
 
     markers_unique = ['o', 's', 'd', '^', 'v', '<']
     opt_count = metrics_df['opt'].nunique()
@@ -270,7 +276,9 @@ def main():
     except OSError:
         pass
 
-    data_path = 'output/synthetic/exp_apps/'
+    # data_path = 'output/synthetic/exp_apps/'
+    data_path = 'output/synthetic/exp_comp/exp_apps'
+    # data_path = 'output/synthetic/exp_2020_08_31/apps_2'
     optimizers = [
         {'id': 'CloudOptimizer', 'label': 'Cloud'},
         {'id': 'StaticOptimizer', 'label': 'Static'},
@@ -298,16 +306,17 @@ def main():
         #  'legend_pos': (0.5, 0.3),
         #  'fig_file': os.path.join(fig_path, 'apps_oc.png')
         #  },
-        # {'id': 'weighted_migration_rate',
-        #  'label': 'Migration Cost (%)',
-        #  'func': to_percent,
-        #  'legend_pos': (0.5, 0.2),
-        #  'fig_file': os.path.join(fig_path, 'apps_mc.png')
-        #  }
+        {'id': 'weighted_migration_rate',
+         'label': 'Migration Cost (%)',
+         'func': to_percent,
+         'legend_pos': (0.5, 0.2),
+         # 'fig_file': os.path.join(fig_path, 'apps_mc.png')
+         }
     ]
-    plot_metrics(optimizers, experiments, metrics, data_path, x_label)
+    # plot_metrics(optimizers, experiments, metrics, data_path, x_label)
 
-    data_path = 'output/synthetic/exp_users/'
+    # data_path = 'output/synthetic/exp_users/'
+    data_path = 'output/synthetic/exp_comp/exp_users'
     experiments = [
         {'path': 'n9_a5_u5000', 'x': 5000},
         {'path': 'n9_a5_u10000', 'x': 10000},
@@ -316,23 +325,23 @@ def main():
     ]
     x_label = 'Number of Users'
     metrics = [
-        {'id': 'weighted_avg_deadline_violation',
-         'label': 'Normalized Deadline Violation',
-         'normalize': True,
-         'fig_file': os.path.join(fig_path, 'users_dv.png')
-         },
-        {'id': 'overall_cost',
-         'label': 'Operational Cost',
-         'fig_file': os.path.join(fig_path, 'users_oc.png')
-         },
+        # {'id': 'weighted_avg_deadline_violation',
+        #  'label': 'Normalized Deadline Violation',
+        #  'normalize': True,
+        #  # 'fig_file': os.path.join(fig_path, 'users_dv.png')
+        #  },
+        # {'id': 'overall_cost',
+        #  'label': 'Operational Cost',
+        #  'fig_file': os.path.join(fig_path, 'users_oc.png')
+        #  },
         {'id': 'weighted_migration_rate',
          'label': 'Migration Cost (%)',
          'func': to_percent,
          'legend_pos': (0.3, 0.2),
-         'fig_file': os.path.join(fig_path, 'users_mc.png')
+         # 'fig_file': os.path.join(fig_path, 'users_mc.png')
          }
     ]
-    # plot_metrics(optimizers, experiments, metrics, data_path, x_label)
+    plot_metrics(optimizers, experiments, metrics, data_path, x_label)
 
 
 if __name__ == '__main__':
