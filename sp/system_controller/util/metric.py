@@ -3,7 +3,7 @@ def filter_metric(metric_func, system, control_input, environment_input,
     """Filter a metric for the specified applications and nodes
 
     Args:
-        metric_func (function): metric function
+        metric_func: metric function
         system (sp.core.model.system.System): system
         control_input (sp.core.model.control_input.ControlInput): control input
         environment_input (sp.core.model.environment_input.EnvironmentInput): environment input

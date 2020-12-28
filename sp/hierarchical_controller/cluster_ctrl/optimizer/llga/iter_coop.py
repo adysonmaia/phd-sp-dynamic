@@ -43,6 +43,7 @@ class IterativeCooperation:
         ga_operator_params (dict): ga operator parameters
         max_iteration (int): max. algorithm iteration
         pool_size (int): multi-thread pool size
+        monitor (sp.simulator.monitor.monitor.Monitor): simulator's monitor
     """
 
     def __init__(self,
@@ -51,7 +52,8 @@ class IterativeCooperation:
                  ga_operator_class,
                  ga_operator_params,
                  max_iteration=1,
-                 pool_size=0):
+                 pool_size=0,
+                 monitor=None):
         """Initialization
         """
         self.objective = objective
@@ -60,6 +62,7 @@ class IterativeCooperation:
         self.ga_operator_params = ga_operator_params
         self.max_iteration = int(max(1, max_iteration))
         self.pool_size = pool_size
+        self.monitor = monitor
 
         self._real_system = None
         self._real_environment_inputs = None
@@ -119,32 +122,10 @@ class IterativeCooperation:
 
         for it in range(self.max_iteration):
             result = list(map_func(self._solver_for_cluster, self._global_scenario.network.nodes_id))
-            # for global_node in self._global_scenario.network.nodes:
-            #     self._solver_for_cluster(global_node.id, iteration=it)
-
             self._update_ext_info()
 
         ctrl_inputs = {n.id: self._cluster_ctrl_inputs[n.id][0] for n in self._global_scenario.network.nodes}
         real_ctrl_input = make_real_control_input(system, environment_inputs[0], ctrl_inputs, global_scenario)
-
-        # from sp.system_controller.util.calc import calc_load_after_distribution
-        # for app in system.apps:
-        #     for global_src_node in global_scenario.network.nodes:
-        #         for global_dst_node in global_scenario.network.nodes:
-        #             if global_src_node == global_dst_node:
-        #                 continue
-        #             total_load = 0.0
-        #             max_load = global_control_input.get_max_load(app.id, global_src_node.id, global_dst_node.id)
-        #
-        #             for real_src_node in global_src_node.nodes:
-        #                 for real_dst_node in global_dst_node.nodes:
-        #                     load = calc_load_after_distribution(app.id, real_src_node.id, real_dst_node.id,
-        #                                                         system, real_ctrl_input, environment_inputs[0])
-        #                     total_load += load
-        #
-        #             if total_load > max_load:
-        #                 print("app {} ({} -> {}) = {}, max {}".format(app.id, global_src_node.id, global_dst_node.id,
-        #                                                               total_load, max_load))
 
         return real_ctrl_input
 
@@ -157,6 +138,9 @@ class IterativeCooperation:
         Returns:
 
         """
+        if self.monitor is not None:
+            self.monitor("on_cluster_ctrl_started", self._real_system.time, cluster_id=cluster_id)
+
         ga_params = copy.copy(_GA_PARAMS)
         if isinstance(self.ga_params, dict):
             ga_params.update(self.ga_params)
@@ -211,6 +195,12 @@ class IterativeCooperation:
         self._cluster_ctrl_inputs[cluster_id] = ctrl_sequence
         self._cluster_systems[cluster_id] = system_sequence
         self._cluster_last_population[cluster_id] = population
+
+        if self.monitor is not None:
+            self.monitor("on_cluster_ctrl_ended", self._real_system.time,
+                         cluster_id=cluster_id,
+                         system=cluster_system, environment_input=cluster_env_inputs[0],
+                         control_input=ctrl_sequence[0])
 
         return cluster_id
 

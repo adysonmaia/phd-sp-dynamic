@@ -12,7 +12,8 @@ class NoCooperation(IterativeCooperation):
                  ga_params,
                  ga_operator_class,
                  ga_operator_params,
-                 pool_size=0):
+                 pool_size=0,
+                 monitor=None):
         """Initialization
         """
         IterativeCooperation.__init__(self,
@@ -21,7 +22,8 @@ class NoCooperation(IterativeCooperation):
                                       ga_operator_class=ga_operator_class,
                                       ga_operator_params=ga_operator_params,
                                       max_iteration=0,
-                                      pool_size=pool_size)
+                                      pool_size=pool_size,
+                                      monitor=monitor)
 
     def _init_ext_info(self):
         """Initialize information about external external nodes of each cluster

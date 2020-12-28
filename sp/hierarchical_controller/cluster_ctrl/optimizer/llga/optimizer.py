@@ -58,13 +58,15 @@ class ClusterLLGAOptimizer(ClusterOptimizer):
                                                    ga_operator_class=self.ga_operator_class,
                                                    ga_operator_params=self.ga_operator_params,
                                                    max_iteration=self.max_iteration,
-                                                   pool_size=self.pool_size)
+                                                   pool_size=self.pool_size,
+                                                   monitor=self.monitor)
         else:
             self._iter_coop = NoCooperation(objective=self.objective,
                                             ga_params=self.ga_params,
                                             ga_operator_class=self.ga_operator_class,
                                             ga_operator_params=self.ga_operator_params,
-                                            pool_size=self.pool_size)
+                                            pool_size=self.pool_size,
+                                            monitor=self.monitor)
 
         self._iter_coop.init_params()
 

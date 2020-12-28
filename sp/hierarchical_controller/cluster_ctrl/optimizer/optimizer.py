@@ -8,12 +8,15 @@ from abc import abstractmethod
 class ClusterOptimizer(Optimizer):
     """Cluster Optimizer
 
+    Attributes:
+        monitor (sp.simulator.monitor.monitor.Monitor): simulator's monitor
     """
 
     def __init__(self):
         """Initialization
         """
         Optimizer.__init__(self)
+        self.monitor = None
 
     @abstractmethod
     def solve(self, system, environment_input, global_scenario=None, global_control_input=None):

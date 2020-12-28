@@ -15,6 +15,7 @@ from sp.hierarchical_controller.global_ctrl import metric as global_metric
 from sp.hierarchical_controller.cluster_ctrl.optimizer import ClusterLLGAOptimizer
 from sp.hierarchical_controller.cluster_ctrl.optimizer.llga import SimpleClusterLLGAOperator, GeneralClusterLLGAOperator
 from sp.hierarchical_controller.cluster_ctrl import metric as cluster_metric
+from collections import defaultdict
 import json
 import math
 import os
@@ -39,6 +40,73 @@ class ExpRunMonitor(OptimizerMonitor):
         OptimizerMonitor.__init__(self, metrics_func, output_path)
         self.debug_prefix = debug_prefix
         self.valid_checking_extra_params = {'allow_surplus_alloc': True}
+
+        self._times_data = []
+        self._cluster_perf_count = defaultdict(lambda: 0.0)
+        self._global_perf_count = 0
+        self._all_clusters_perf_count = 0
+
+    def on_global_ctrl_started(self, sim_time):
+        """Event dispatched when the global controller update started
+
+        Args:
+            sim_time (float): current simulation time
+        """
+        self._global_perf_count = time.perf_counter()
+
+    def on_global_ctrl_ended(self, sim_time, **kwargs):
+        """Event dispatched when the global controller update ended
+
+        Args:
+            sim_time (float): current simulation time
+            **kwargs:
+        """
+        elapsed_time = time.perf_counter() - self._global_perf_count
+        datum = {'time': sim_time, 'elapsed_time': elapsed_time, 'id': -1, 'type': 'global'}
+        self._times_data.append(datum)
+        print(datum)
+
+    def on_all_cluster_ctrls_started(self, sim_time):
+        """Event dispatched when the update of all cluster controllers started
+
+        Args:
+            sim_time (float): current simulation time
+        """
+        self._all_clusters_perf_count = time.perf_counter()
+
+    def on_all_cluster_ctrls_ended(self, sim_time, **kwargs):
+        """Event dispatched when the update of all cluster controllers ended
+
+        Args:
+            sim_time (float): current simulation time
+            **kwargs:
+        """
+        elapsed_time = time.perf_counter() - self._all_clusters_perf_count
+        datum = {'time': sim_time, 'elapsed_time': elapsed_time, 'id': -2, 'type': 'all_clusters'}
+        self._times_data.append(datum)
+        print(datum)
+
+    def on_cluster_ctrl_started(self, sim_time, cluster_id):
+        """Event dispatched when a cluster controller update started
+
+        Args:
+            sim_time (float): current simulation time
+            cluster_id (int): cluster's id
+        """
+        self._cluster_perf_count[cluster_id] = time.perf_counter()
+
+    def on_cluster_ctrl_ended(self, sim_time, cluster_id, **kwargs):
+        """Event dispatched when a cluster controller update ended
+
+        Args:
+            sim_time (float): current simulation time
+            cluster_id (int): cluster's id
+            **kwargs:
+        """
+        elapsed_time = time.perf_counter() - self._cluster_perf_count[cluster_id]
+        datum = {'time': sim_time, 'elapsed_time': elapsed_time, 'id': cluster_id, 'type': 'cluster'}
+        self._times_data.append(datum)
+        print(datum)
 
     def on_sys_ctrl_ended(self, sim_time, system, control_input, environment_input):
         """Event dispatched when the system controller update ended
@@ -110,6 +178,20 @@ class ExpRunMonitor(OptimizerMonitor):
 
         print("--")
 
+    def on_sim_ended(self, sim_time):
+        """Event dispatched when the simulation ended
+
+        Args:
+            sim_time (float): current simulation time
+        """
+        OptimizerMonitor.on_sim_ended(self, sim_time)
+        if self.output_path is None:
+            return
+
+        times_filename = os.path.join(self.output_path, 'times.json')
+        with open(times_filename, 'w') as file:
+            json.dump(self._times_data, file, indent=2)
+
 
 def main():
     """Main function
@@ -128,13 +210,7 @@ def main():
         global_metric.deadline.weighted_avg_deadline_violation,
         global_metric.cost.overall_cost,
         global_metric.response_time.weighted_avg_response_time,
-        # test_objective,
     ]
-    # global_multi_objective = [
-    #     global_metric.deadline.weighted_avg_deadline_violation,
-    #     global_metric.cost.overall_cost,
-    #     # global_metric.migration.weighted_migration_rate,
-    # ]
     global_period = 2
 
     # Set cluster parameters
@@ -177,12 +253,13 @@ def main():
     dominance_func = util.preferred_dominates
     # pool_size = 16
     # pool_size = 12
-    # pool_size = 8
-    pool_size = 4
+    pool_size = 8
+    # pool_size = 4
     # pool_size = 0
     # timeout = 3 * 60  # 3 min
     # timeout = 2 * 60  # 2 min
     timeout = 1 * 60  # 1 min
+    # timeout = None
     ga_pop_size = 100
     # ga_pop_size = 50
     # ga_nb_gens = 100
@@ -324,15 +401,18 @@ def main():
                 global_scheduler.global_scenario = global_scenario
                 global_scheduler.environment_predictor = global_env_predictor
 
+                monitor = ExpRunMonitor(metrics_func=metrics, output_path=output_path, debug_prefix=debug_prefix)
+                cluster_opt.monitor = monitor
+
                 controller = HierarchicalSystemController()
                 controller.global_scenario = global_scenario
                 controller.global_optimizer = global_opt
                 controller.global_scheduler = global_scheduler
                 controller.optimizer = cluster_opt
+                controller.monitor = monitor
 
                 sim.system_controller = controller
-                sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=output_path, debug_prefix=debug_prefix)
-                # sim.monitor = ExpRunMonitor(metrics_func=metrics, output_path=None, debug_prefix=debug_prefix)
+                sim.monitor = monitor
 
                 # Run simulation
                 perf_count = time.perf_counter()
